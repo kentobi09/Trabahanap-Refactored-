@@ -170,8 +170,46 @@ export const getAllPosts = getCommunityPostings;
 
 export const getUsername = async (req, res) => {
   try {
-    const { userId } = req.query;
+    const { userId, ids } = req.query;
     const db = await getNativeDb();
+
+    // If query has 'ids' parameter (batch request from client)
+    if (ids) {
+      let idList = [];
+      if (Array.isArray(ids)) {
+        idList = ids.map(item => item?.userId).filter(Boolean);
+      } else if (typeof ids === "object") {
+        idList = Object.values(ids).map(item => item?.userId).filter(Boolean);
+      }
+
+      // Convert to ObjectId array
+      const objIds = idList.map(id => {
+        try { return new ObjectId(id); } catch(e) { return null; }
+      }).filter(Boolean);
+
+      // Find all users
+      const users = await db.collection("users").find({
+        _id: { $in: objIds }
+      }).toArray();
+
+      // Construct dictionary map
+      const resultMap = {};
+      users.forEach(user => {
+        resultMap[user._id.toString()] = {
+          firstName: user.firstName || "",
+          middleName: user.middleName || "",
+          lastName: user.lastName || ""
+        };
+      });
+
+      return res.status(200).json(resultMap);
+    }
+
+    // Otherwise, handle single userId request
+    if (!userId) {
+      return res.status(400).json({ message: "userId or ids query parameter is required" });
+    }
+
     let userIdObj;
     try { userIdObj = new ObjectId(userId); } catch (e) { userIdObj = userId; }
 
