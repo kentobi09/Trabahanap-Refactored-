@@ -250,7 +250,7 @@ model Chat {
   offerStatus   String?       @default("none")
   messages      Message[]
 
-  @@map("chat")
+  @@map("chats")
 }
 
 model Participant {
