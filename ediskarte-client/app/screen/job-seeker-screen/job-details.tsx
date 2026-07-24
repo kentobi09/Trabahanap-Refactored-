@@ -48,6 +48,31 @@ export default function JobDetailsScreen() {
   const [activeSlide, setActiveSlide] = useState<number>(0);
   const flatListRef = useRef<FlatList>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [hasApplied, setHasApplied] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    const checkAppliedStatus = async () => {
+      try {
+        const token = await AsyncStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/job/${params.id}/check-applied`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setHasApplied(data.hasApplied);
+        }
+      } catch (error) {
+        console.error("Error checking applied status:", error);
+      }
+    };
+    if (params.id) {
+      checkAppliedStatus();
+    }
+  }, [params.id]);
 
   const handleBackPress = () => {
     router.back();
@@ -322,11 +347,17 @@ export default function JobDetailsScreen() {
         {jobData.isMyJob !== "true" && 
          jobData.jobStatus !== "pending" && 
          jobData.jobStatus !== "completed" && 
-         jobData.jobStatus !== "reviewed" &&(
-          <TouchableOpacity style={styles.applyButton} onPress={handleApplyNow}>
-            <Text style={styles.applyButtonText}>Apply Now</Text>
-          </TouchableOpacity>
-        )}
+         jobData.jobStatus !== "reviewed" && (
+           <TouchableOpacity 
+             style={[styles.applyButton, hasApplied && styles.appliedButton]} 
+             onPress={hasApplied ? undefined : handleApplyNow}
+             disabled={hasApplied}
+           >
+             <Text style={styles.applyButtonText}>
+               {hasApplied ? "Applied" : "Apply Now"}
+             </Text>
+           </TouchableOpacity>
+         )}
       </View>
 
       <Modal
@@ -528,6 +559,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
+  },
+  appliedButton: {
+    backgroundColor: '#8E9AA6',
   },
   applyButtonText: {
     color: '#fff',
