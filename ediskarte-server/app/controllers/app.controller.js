@@ -414,14 +414,25 @@ export const getJobSeekerTags = async (req, res) => {
 
 export const getMyJobs = async (req, res) => {
   try {
-    // Get job seeker ID from auth token or session
-    const jobSeekerId = req.user.id; // Adjust based on your auth setup
+    const userId = req.user.id;
+
+    // Resolve the JobSeeker.id associated with this User
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { jobSeeker: true }
+    });
+
+    const jobSeekerId = user?.jobSeeker?.id;
+
+    if (!jobSeekerId) {
+      return res.json([]); // Return empty if not a job seeker or has no seeker profile
+    }
 
     const myJobs = await prisma.jobRequest.findMany({
       where: {
         jobSeekerId: jobSeekerId,
         jobStatus: {
-          in: ["accepted", "pending", "completed", "reviewed"], // Only show accepted/pending jobs
+          in: ["accepted", "pending", "completed", "reviewed"], // Only show accepted/pending/completed/reviewed jobs
         },
       },
       include: {
@@ -433,7 +444,6 @@ export const getMyJobs = async (req, res) => {
             profileImage: true,
           },
         },
-        // Include reviews for completed and reviewed jobs
         reviews: {
           include: {
             reviewer: {
@@ -462,7 +472,19 @@ export const getMyJobs = async (req, res) => {
 export const markJobAsCompleted = async (req, res) => {
   try {
     const { jobId } = req.params;
-    const jobSeekerId = req.user.id; // Adjust based on your auth setup
+    const userId = req.user.id;
+
+    // Resolve the JobSeeker.id associated with this User
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { jobSeeker: true }
+    });
+
+    const jobSeekerId = user?.jobSeeker?.id;
+
+    if (!jobSeekerId) {
+      return res.status(404).json({ error: "Job seeker profile not found" });
+    }
 
     // Verify job exists and belongs to this job seeker
     const job = await prisma.jobRequest.findFirst({
@@ -544,8 +566,18 @@ export const reviewnRating = async (req, res) => {
     }
 
     // 2. Check if reviewer is a participant
+    let reviewerJobSeekerId = null;
+    const reviewerJobSeeker = await prisma.jobSeeker.findUnique({
+      where: { userId: reviewerId }
+    });
+    if (reviewerJobSeeker) {
+      reviewerJobSeekerId = reviewerJobSeeker.id;
+    }
+
     const isValidReviewer =
-      reviewerId === job.clientId || reviewerId === job.jobSeekerId;
+      reviewerId === job.clientId ||
+      reviewerId === job.jobSeekerId ||
+      reviewerJobSeekerId === job.jobSeekerId;
 
     if (!isValidReviewer) {
       return res.status(403).json({
@@ -573,8 +605,16 @@ export const reviewnRating = async (req, res) => {
     });
 
     // --- Increment jobsDone for the reviewee ---
+    let userToIncrementId = reviewedId;
+    const js = await prisma.jobSeeker.findUnique({
+      where: { id: reviewedId }
+    });
+    if (js) {
+      userToIncrementId = js.userId;
+    }
+
     await prisma.user.update({
-      where: { id: reviewedId },
+      where: { id: userToIncrementId },
       data: {
         jobsDone: { increment: 1 },
       },
