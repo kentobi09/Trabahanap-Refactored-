@@ -562,6 +562,10 @@ export const getUserProfile = async (req, res) => {
   try {
     const userId = req.params.id;
 
+    if (!userId || userId === "undefined" || userId.length !== 24) {
+      return res.status(404).json({ error: "User profile not found" });
+    }
+
     // Get the job seeker with all related data
     const jobSeeker = await prisma.jobSeeker.findUnique({
       where: { userId },
