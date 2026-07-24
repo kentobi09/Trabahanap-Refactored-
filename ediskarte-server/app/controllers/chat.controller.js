@@ -576,7 +576,6 @@ export const getUserProfile = async (req, res) => {
             id: true,
             achievementName: true,
             jobRequired: true,
-            achievementIcon: true,
           },
         },
         jobRequest: {

@@ -82,6 +82,9 @@ model Achievement {
   achievementName  String
   jobRequired      String
   requiredJobCount Int
+  achievementIcon  String?
+  description      String?
+  dateAchieved     DateTime? @default(now())
   jobSeeker        JobSeeker? @relation(fields: [jobSeekerId], references: [id]) // Made JobSeeker relation optional
   jobSeekerId      String?    @db.ObjectId // Made jobSeekerId optional
   // jobSeeker        JobSeeker @relation(fields: [jobSeekerId], references: [id]) // Corresponding relation for jobSeekerId

@@ -93,6 +93,13 @@ const truncateName = (name: string, maxLength: number = 15) => {
   return name.length > maxLength ? `${name.substring(0, maxLength)}...` : name;
 };
 
+const getProfileImageUri = (imagePath: any) => {
+  if (!imagePath) return undefined;
+  const normalized = (imagePath + "").replace(/\\/g, "/");
+  const fileName = normalized.split("profiles/")[1] || "";
+  return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${fileName}`;
+};
+
 const ChatScreen: React.FC<ChatProps> = ({
   recipientId = "1",
   recipientName = "Ken Robbie Galapate",
@@ -122,7 +129,8 @@ const ChatScreen: React.FC<ChatProps> = ({
     receiverImage,
   } = useLocalSearchParams();
   const [offerAmount, setOfferAmount] = useState(offer); // Define the money offer amount
-  const [currentOfferStatus, setOfferStatus] = useState(offerStatus);
+  const initialOfferStatus = (offerStatus === "null" || offerStatus === "undefined" || !offerStatus) ? "none" : (offerStatus as string);
+  const [currentOfferStatus, setOfferStatus] = useState(initialOfferStatus);
   const [messageInput, setMessageInput] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -1092,9 +1100,7 @@ const ChatScreen: React.FC<ChatProps> = ({
             {!isCurrentUser && recipientPic && (
               <Image
                 source={{
-                  uri: profileImage
-                    ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${(profileImage + "").split("profiles/")[1] || ""}`
-                    : undefined,
+                  uri: getProfileImageUri(profileImage),
                 }}
                 style={styles.senderAvatar}
                 defaultSource={require("assets/images/client-user.png")}
@@ -1230,9 +1236,7 @@ const ChatScreen: React.FC<ChatProps> = ({
             {!isCurrentUser && recipientPic && (
               <Image
                 source={{
-                  uri: profileImage
-                    ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${(profileImage+"").split("profiles/")[1]|| ''}`
-                    : undefined
+                  uri: getProfileImageUri(profileImage)
                 }}
                 style={styles.senderAvatar}
                 defaultSource={require("assets/images/client-user.png")}
@@ -1311,11 +1315,7 @@ const ChatScreen: React.FC<ChatProps> = ({
             {!isCurrentUser && recipientPic && (
               <Image
                 source={{
-                  uri: profileImage
-                    ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${
-                        (profileImage + "").split("profiles/")[1] || ""
-                      }`
-                    : undefined,
+                  uri: getProfileImageUri(profileImage),
                 }}
                 style={styles.senderAvatar}
                 defaultSource={require("assets/images/client-user.png")}
@@ -1386,9 +1386,7 @@ const ChatScreen: React.FC<ChatProps> = ({
           {item.messageType === 'received' && recipientPic && (
             <Image
               source={{
-                uri: profileImage
-                  ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${(profileImage+'').split("profiles/")[1]|| ''}`
-                  : undefined
+                uri: getProfileImageUri(profileImage)
               }}
               style={styles.senderAvatar}
               defaultSource={require('assets/images/client-user.png')}
@@ -1717,9 +1715,7 @@ const ChatScreen: React.FC<ChatProps> = ({
           <View style={styles.headerUserInfo}>
             <Image
               source={{
-                uri: profileImage
-                  ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${(profileImage + "").split("profiles/")[1] || ""}`
-                  : undefined,
+                uri: getProfileImageUri(profileImage),
               }}
               style={styles.recipientAvatar}
             />
@@ -2190,9 +2186,7 @@ const ChatScreen: React.FC<ChatProps> = ({
             <View style={styles.floatingCardContent}>
               <Image
                 source={{
-                  uri: profileImage
-                    ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${(profileImage + "").split("profiles/")[1] || ""}`
-                    : undefined
+                  uri: getProfileImageUri(profileImage)
                 }}
                 style={styles.floatingCardAvatar}
               />
@@ -2235,9 +2229,7 @@ const ChatScreen: React.FC<ChatProps> = ({
             <View style={styles.floatingCardContent}>
               <Image
                 source={{
-                  uri: incomingCallInfo?.callerInfo?.profileImage
-                    ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${(incomingCallInfo.callerInfo.profileImage + "").split("profiles/")[1] || ""}`
-                    : undefined
+                  uri: getProfileImageUri(incomingCallInfo?.callerInfo?.profileImage)
                 }}
                 style={styles.floatingCardAvatar}
                 defaultSource={require("assets/images/client-user.png")}

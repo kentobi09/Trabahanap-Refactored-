@@ -388,21 +388,16 @@ export function initializeSocketIO(httpServer) {
           return;
         }
     
-        // Update the read status only if there's an unread message
-        const result = await prisma.readStatus.updateMany({
-          where: {
-            participantId: participant.id,
-            readAt: null,
-            message: {
-              chatId,
-              senderId: { not: socket.user.id }
-            }
-          },
-          data: {
-            readAt: new Date()
-          }
+        // Update the read status only if there's an unread message using native mongo to avoid replica set transaction error
+        const unreadIds = unreadMessages.map(um => {
+          try { return new ObjectId(um.id); } catch(e) { return um.id; }
         });
-        console.log('Updated read statuses:', result);
+        const db = await getNativeDb();
+        const result = await db.collection("read_status").updateMany(
+          { _id: { $in: unreadIds } },
+          { $set: { readAt: new Date() } }
+        );
+        console.log('Updated read statuses:', result.modifiedCount);
     
         // Get the last message to update seen status
         const lastMessage = await prisma.message.findFirst({
@@ -444,27 +439,31 @@ export function initializeSocketIO(httpServer) {
     if (!participant) return;
 
     const readStatuses = [];
+    const db = await getNativeDb();
     for (const messageId of messageIds) {
       try {
-        const rs = await prisma.readStatus.upsert({
-          where: {
-            messageId_participantId: {
-              messageId,
-              participantId: participant.id
+        let msgIdObj, partIdObj;
+        try { msgIdObj = new ObjectId(messageId); } catch(e) { msgIdObj = messageId; }
+        try { partIdObj = new ObjectId(participant.id); } catch(e) { partIdObj = participant.id; }
+
+        await db.collection("read_status").updateOne(
+          { messageId: msgIdObj, participantId: partIdObj },
+          {
+            $set: {
+              messageId: msgIdObj,
+              participantId: partIdObj,
+              readAt: new Date()
             }
           },
-          create: {
-            messageId,
-            participantId: participant.id,
-            readAt: new Date()
-          },
-          update: {
-            readAt: new Date()
-          },
-          include: {
-            participant: true
-          }
-        });
+          { upsert: true }
+        );
+
+        const rs = {
+          messageId,
+          participantId: participant.id,
+          readAt: new Date(),
+          participant: participant
+        };
         readStatuses.push(rs);
       } catch (e) {}
     }

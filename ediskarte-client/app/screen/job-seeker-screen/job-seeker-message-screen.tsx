@@ -84,6 +84,13 @@ const truncateName = (name: string, maxLength: number = 15) => {
   return name.length > maxLength ? `${name.substring(0, maxLength)}...` : name;
 };
 
+const getProfileImageUri = (imagePath: any) => {
+  if (!imagePath) return undefined;
+  const normalized = (imagePath + "").replace(/\\/g, "/");
+  const fileName = normalized.split("profiles/")[1] || "";
+  return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${fileName}`;
+};
+
 const ChatScreen: React.FC<ChatProps> = ({
   recipientId = "1",
   recipientPic = "https://randomuser.me/api/portraits/men/1.jpg",
@@ -105,7 +112,8 @@ const ChatScreen: React.FC<ChatProps> = ({
     otherParticipantId,
     profileImage,
   } = useLocalSearchParams();
-  const [currentOfferStatus, setOfferStatus] = useState(offerStatus);
+  const initialOfferStatus = (offerStatus === "null" || offerStatus === "undefined" || !offerStatus) ? "none" : (offerStatus as string);
+  const [currentOfferStatus, setOfferStatus] = useState(initialOfferStatus);
   const [messageInput, setMessageInput] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -798,13 +806,7 @@ const ChatScreen: React.FC<ChatProps> = ({
             {!isCurrentUser && recipientPic && (
               <Image
                 source={{
-                  uri: profileImage
-                    ? `http://${
-                        process.env.EXPO_PUBLIC_IP_ADDRESS
-                      }:3000/uploads/profiles/${
-                        (profileImage + "").split("profiles/")[1] || ""
-                      }`
-                    : undefined,
+                  uri: getProfileImageUri(profileImage),
                 }}
                 style={styles.senderAvatar}
                 defaultSource={require("assets/images/client-user.png")}
@@ -944,11 +946,7 @@ const ChatScreen: React.FC<ChatProps> = ({
             {!isCurrentUser && recipientPic && (
               <Image
                 source={{ 
-                  uri: profileImage 
-                    ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${
-                        (profileImage+'').split("profiles/")[1]|| ''
-                      }`
-                    : undefined 
+                  uri: getProfileImageUri(profileImage) 
                 }}
                 style={styles.senderAvatar}
                 defaultSource={require("assets/images/client-user.png")}
@@ -1031,11 +1029,7 @@ const ChatScreen: React.FC<ChatProps> = ({
             {!isCurrentUser && recipientPic && (
               <Image
                 source={{
-                  uri: profileImage
-                    ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${
-                        (profileImage + "").split("profiles/")[1] || ""
-                      }`
-                    : undefined,
+                  uri: getProfileImageUri(profileImage),
                 }}
                 style={styles.senderAvatar}
                 defaultSource={require("assets/images/client-user.png")}
@@ -1109,11 +1103,7 @@ const ChatScreen: React.FC<ChatProps> = ({
           {item.messageType === "received" && recipientPic && (
             <Image
               source={{
-                uri: profileImage
-                  ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${
-                      (profileImage + "").split("profiles/")[1] || ""
-                    }`
-                  : undefined,
+                uri: getProfileImageUri(profileImage),
               }}
               style={styles.senderAvatar}
               defaultSource={require("assets/images/client-user.png")}
@@ -1519,13 +1509,7 @@ const ChatScreen: React.FC<ChatProps> = ({
           >
             <Image
               source={{
-                uri: profileImage
-                  ? `http://${
-                      process.env.EXPO_PUBLIC_IP_ADDRESS
-                    }:3000/uploads/profiles/${
-                      (profileImage + "").split("profiles/")[1] || ""
-                    }`
-                  : undefined,
+                uri: getProfileImageUri(profileImage),
               }}
               style={styles.recipientAvatar}
             />
@@ -1875,11 +1859,7 @@ const ChatScreen: React.FC<ChatProps> = ({
             <View style={styles.incomingCallHeader}>
               <Image
                 source={{
-                  uri: incomingCall.callerInfo.profileImage
-                    ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${
-                        (incomingCall.callerInfo.profileImage + "").split("profiles/")[1] || ""
-                      }`
-                    : undefined,
+                  uri: getProfileImageUri(incomingCall.callerInfo.profileImage),
                 }}
                 style={styles.incomingCallAvatar}
                 defaultSource={require("assets/images/client-user.png")}
