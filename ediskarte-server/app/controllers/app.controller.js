@@ -600,7 +600,8 @@ export const reviewnRating = async (req, res) => {
       reviewedId: reviewedIdObj,
       rating: parseInt(rating, 10),
       feedback: feedback || "",
-      createdAt: new Date()
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
     const reviewRes = await db.collection("reviews").insertOne(reviewDoc);

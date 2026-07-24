@@ -528,12 +528,21 @@ export const getJobSeekerTags = async (req, res) => {
     const jobSeekerId = req.params.id; // Adjust based on your auth setup
     console.log("THe id is", jobSeekerId);
 
-    const jobSeeker = await prisma.jobSeeker.findUnique({
+    let jobSeeker = await prisma.jobSeeker.findUnique({
       where: { userId: jobSeekerId },
       select: {
         jobTags: true,
       },
     });
+
+    if (!jobSeeker) {
+      jobSeeker = await prisma.jobSeeker.findUnique({
+        where: { id: jobSeekerId },
+        select: {
+          jobTags: true,
+        },
+      });
+    }
 
     if (!jobSeeker) {
       return res.status(404).json({ error: "Job seeker not found" });
@@ -555,7 +564,7 @@ export const getUserProfile = async (req, res) => {
     }
 
     // Get the job seeker with all related data
-    const jobSeeker = await prisma.jobSeeker.findUnique({
+    let jobSeeker = await prisma.jobSeeker.findUnique({
       where: { userId },
       include: {
         user: {
@@ -595,14 +604,55 @@ export const getUserProfile = async (req, res) => {
     });
 
     if (!jobSeeker) {
+      jobSeeker = await prisma.jobSeeker.findUnique({
+        where: { id: userId },
+        include: {
+          user: {
+            select: {
+              firstName: true,
+              middleName: true,
+              lastName: true,
+              suffixName: true,
+              profileImage: true,
+              emailAddress: true,
+              barangay: true,
+              street: true,
+              houseNumber: true,
+              gender: true,
+              birthday: true,
+              jobsDone: true,
+              joinedAt: true,
+            },
+          },
+          achievement: {
+            select: {
+              id: true,
+              achievementName: true,
+              jobRequired: true,
+            },
+          },
+          jobRequest: {
+            where: {
+              AND: [{ jobStatus: "verified" }],
+            },
+            select: {
+              completedAt: true,
+              verifiedAt: true,
+            },
+          },
+        },
+      });
+    }
+
+    if (!jobSeeker) {
       return res.status(404).json({ message: "Job seeker not found" });
     }
 
-    // Fetch all reviews for this jobseeker (by jobRequest)
+    // Fetch all reviews for this jobseeker (by jobRequest) using correct jobSeekerId
     const reviews = await prisma.review.findMany({
       where: {
         jobRequest: {
-          jobSeekerId: userId,
+          jobSeekerId: jobSeeker.id,
           jobStatus: "verified",
         },
       },
@@ -692,10 +742,19 @@ export const getReviews = async (req, res) => {
   try {
     const userId = req.params.id;
 
+    // Resolve the JobSeeker profile ID associated with this User ID
+    let queryReviewedId = userId;
+    const js = await prisma.jobSeeker.findUnique({
+      where: { userId }
+    });
+    if (js) {
+      queryReviewedId = js.id;
+    }
+
     // Get all reviews for this job seeker (by reviewedId only)
     const reviews = await prisma.review.findMany({
       where: {
-        reviewedId: userId,
+        reviewedId: queryReviewedId,
       },
       select: {
         id: true,

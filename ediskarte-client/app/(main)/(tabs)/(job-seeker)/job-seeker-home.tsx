@@ -196,32 +196,32 @@ export default function JobListingScreen() {
         rate: job.budget,
         offer:job.offer,
         location: job.jobLocation,
-        otherParticipant: job.client.id,
+        otherParticipant: job.client?.id || "",
         jobImages: job.jobImage,
         jobDuration: job.jobDuration,
-        clientFirstName: job.client.firstName,
-        clientLastName: job.client.lastName,
-        clientProfileImage: job.client.profileImage,
+        clientFirstName: job.client?.firstName || "",
+        clientLastName: job.client?.lastName || "",
+        clientProfileImage: job.client?.profileImage || "",
         isMyJob: activeTab === "pendingJobs" ? "true" : "false",
         jobStatus: job.jobStatus,
         review: job.reviews?.[0] ? JSON.stringify({
           rating: job.reviews[0].rating,
           feedback: job.reviews[0].feedback,
           reviewer: {
-            id: job.reviews[0].reviewer.id,
-            firstName: job.reviews[0].reviewer.firstName,
-            lastName: job.reviews[0].reviewer.lastName,
-            profileImage: job.reviews[0].reviewer.profileImage
+            id: job.reviews[0].reviewer?.id || "",
+            firstName: job.reviews[0].reviewer?.firstName || "",
+            lastName: job.reviews[0].reviewer?.lastName || "",
+            profileImage: job.reviews[0].reviewer?.profileImage || ""
           }
         }) : undefined,
         jobSeekerReview: job.reviews?.[1] ? JSON.stringify({
           rating: job.reviews[1].rating,
           feedback: job.reviews[1].feedback,
           reviewer: {
-            id: job.reviews[1].reviewer.id,
-            firstName: job.reviews[1].reviewer.firstName,
-            lastName: job.reviews[1].reviewer.lastName,
-            profileImage: job.reviews[1].reviewer.profileImage
+            id: job.reviews[1].reviewer?.id || "",
+            firstName: job.reviews[1].reviewer?.firstName || "",
+            lastName: job.reviews[1].reviewer?.lastName || "",
+            profileImage: job.reviews[1].reviewer?.profileImage || ""
           }
         }) : undefined,
       },
@@ -401,20 +401,20 @@ export default function JobListingScreen() {
                         e.stopPropagation();
                         router.push({
                           pathname: "../../../screen/profile/view-profile/view-page-client",
-                          params: { otherParticipantId: job.client.id },
+                          params: { otherParticipantId: job.client?.id || "" },
                         });
                       }}
                     >
                       <Image
                         source={
-                          job.client.profileImage
+                          job.client?.profileImage
                             ? { uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${job.client.profileImage}` }
                             : require("assets/images/default-user.png")//here
                         }
                         style={styles.posterProfileImage}
                       />
                       <Text style={styles.posterName}>
-                        {job.client.firstName + " " + job.client.lastName}
+                        {job.client ? (job.client.firstName + " " + job.client.lastName) : "Unknown Client"}
                       </Text>
                     </TouchableOpacity>
                   </View>

@@ -668,7 +668,7 @@ export function initializeSocketIO(httpServer) {
             $set: {
               offer: offer,
               jobStatus: "pending",
-              jobSeekerId: jobseekerid,
+              jobSeekerId: jobseekerid ? new ObjectId(jobseekerid) : null,
               acceptedAt: new Date()
             }
           }
