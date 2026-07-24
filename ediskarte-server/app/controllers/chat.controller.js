@@ -48,7 +48,7 @@ export const createChat = async (req, res) => {
       const chatDoc = {
         chatTitle: job.jobTitle || "Job Chat",
         chatStatus: "pending",
-        jobId: jobId,
+        jobId: jobIdObj,
         createdAt: new Date(),
         lastMessageAt: new Date(),
       };
@@ -60,22 +60,33 @@ export const createChat = async (req, res) => {
       let seekerIdObj;
       try { seekerIdObj = new ObjectId(jobSeekerId); } catch (e) { seekerIdObj = jobSeekerId; }
 
-      const partDoc = {
-        chatId: chatIdStr,
-        userId: clientIdStr(clientId),
+      const clientPartDoc = {
+        chatId: chatRes.insertedId,
+        userId: clientIdObj,
+        jobSeekerId: null,
+        joinedAt: new Date(),
+      };
+
+      const seekerPartDoc = {
+        chatId: chatRes.insertedId,
+        userId: null,
         jobSeekerId: seekerIdObj,
         joinedAt: new Date(),
       };
-      function clientIdStr(id) { return id ? id.toString() : ""; }
 
-      const partRes = await db.collection("participants").insertOne(partDoc);
-      const participant = { id: partRes.insertedId.toString(), ...partDoc };
+      const partResClient = await db.collection("participants").insertOne(clientPartDoc);
+      const partResSeeker = await db.collection("participants").insertOne(seekerPartDoc);
+
+      const participants = [
+        { id: partResClient.insertedId.toString(), ...clientPartDoc, chatId: chatIdStr, userId: clientId, jobSeekerId: null },
+        { id: partResSeeker.insertedId.toString(), ...seekerPartDoc, chatId: chatIdStr, userId: null, jobSeekerId: jobSeekerId }
+      ];
 
       chat = {
         id: chatIdStr,
         _id: chatIdStr,
         ...chatDoc,
-        participants: [participant]
+        participants: participants
       };
 
       await db.collection("jobrequest").updateOne({ _id: jobIdObj }, { $inc: { applicantCount: 1 } });
@@ -163,12 +174,11 @@ export const getUserChats = async (req, res) => {
     const chats = await prisma.chat.findMany({
       where: {
         participants: {
-          // Must have TWO participants: one client (user) and one jobseeker
           some: {
-            userId: userId, // Current user is the client
-          },
-          some: {
-            jobSeekerId: userAsJobSeeker?.id, // Current user is the jobseeker
+            OR: [
+              { userId: userId },
+              { jobSeekerId: userId }
+            ]
           },
         },
       },

@@ -326,10 +326,13 @@ export const uploadCredential = async (req, res) => {
     const newCredentials = [...currentCredentials, ...filePaths];
 
     console.log("Updating database with credential paths");
-    const result = await prisma.jobSeeker.update({
-      where: { userId },
-      data: { credentials: newCredentials },
-    });
+    const db = await getNativeDb();
+    let userIdObj;
+    try { userIdObj = new ObjectId(userId); } catch (e) { userIdObj = userId; }
+    await db.collection("jobseekers").updateOne(
+      { $or: [{ userId: userId }, { userId: userIdObj }] },
+      { $set: { credentials: newCredentials } }
+    );
 
     console.log("Database updated successfully");
 
@@ -361,7 +364,7 @@ export const uploadCredential = async (req, res) => {
 
     return res.status(200).json({
       message: "Credentials uploaded successfully",
-      credentials: result.credentials,
+      credentials: newCredentials,
     });
   } catch (error) {
     console.error("Error in uploadCredential:", error);
