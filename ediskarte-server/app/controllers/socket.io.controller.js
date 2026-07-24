@@ -65,7 +65,7 @@ export function initializeSocketIO(httpServer) {
             participants: {
               some: userAsJobSeeker
                 ? {
-                    jobSeekerId: userAsJobSeeker.id,
+                    jobSeekerId: userAsJobSeeker.userId,
                     deletedByJobSeeker: false
                   }
                 : {
@@ -225,18 +225,8 @@ export function initializeSocketIO(httpServer) {
         }
     
         // 🔍 Ensure sender is a valid participant
-        let resolvedSenderJobSeekerId = null;
-        const senderJobSeeker = await prisma.jobSeeker.findUnique({
-          where: { userId: actualSenderId }
-        });
-        if (senderJobSeeker) {
-          resolvedSenderJobSeekerId = senderJobSeeker.id;
-        }
-
         const sender = chat.participants.find(p => 
-          p.userId === actualSenderId || 
-          p.jobSeekerId === actualSenderId ||
-          (resolvedSenderJobSeekerId && p.jobSeekerId === resolvedSenderJobSeekerId)
+          p.userId === actualSenderId || p.jobSeekerId === actualSenderId
         );
     
         if (!sender) {
@@ -661,7 +651,13 @@ export function initializeSocketIO(httpServer) {
         // Fetch participants manually using ObjectId
         const participants = await db.collection("participants").find({ chatId: chatIdObj }).toArray();
         const jobSeekerParticipant = participants.find(p => p.jobSeekerId);
-        const jobseekerid = jobSeekerParticipant ? (jobSeekerParticipant.jobSeekerId ? jobSeekerParticipant.jobSeekerId.toString() : null) : null;
+        let jobseekerid = jobSeekerParticipant ? (jobSeekerParticipant.jobSeekerId ? jobSeekerParticipant.jobSeekerId.toString() : null) : null;
+        if (jobseekerid) {
+          const jsProfile = await db.collection("jobseekers").findOne({ userId: new ObjectId(jobseekerid) });
+          if (jsProfile) {
+            jobseekerid = jsProfile._id.toString();
+          }
+        }
 
         // Update job request with native MongoDB
         let jobObjId;
