@@ -72,7 +72,9 @@ cd trabahanap-admin/node_modules/@trabahanap-admin/frontend
 npm install
 npm run dev
 
+```
 ## Peek Database
+```bash
 cd C:\ediskarte\ediskarte-server\app>
 npx prisma studio
 ```
