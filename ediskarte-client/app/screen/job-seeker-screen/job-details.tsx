@@ -36,7 +36,7 @@ export default function JobDetailsScreen() {
     clientProfileImage: params.clientProfileImage as string,
     images: params.jobImages 
       ? (params.jobImages as string).split(',').map((imgPath) => ({
-          uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/${imgPath.split('job_request_files/')[1]}`,
+          uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/${(imgPath + "").replace(/\\/g, "/").split('job_request_files/')[1]}`,
         }))
       : [],
     isMyJob: params.isMyJob as string,

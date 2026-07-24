@@ -309,9 +309,11 @@ const SearchScreen = () => {
                     {job.jobImage && (
                       <Image
                         source={{ 
-                          uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/${
-                            job.jobImage?.[0]?.split("job_request_files/")?.[1] ?? ''
-                          }`
+                          uri: job.jobImage?.[0]
+                            ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/${
+                                (job.jobImage[0] + "").replace(/\\/g, "/").split("job_request_files/")[1] ?? ''
+                              }`
+                            : undefined
                         }}
                         style={styles.jobThumbnail}
                       />

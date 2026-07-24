@@ -21,7 +21,19 @@ async function getNativeDb() {
 export const createChat = async (req, res) => {
   try {
     const { clientId, jobId } = req.body;
-    const jobSeekerId = req.user.id; // The job seeker (current user)
+    const userId = req.user.id; // The current user's User.id
+
+    // Resolve the JobSeeker.id associated with this User
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { jobSeeker: true }
+    });
+
+    const jobSeekerId = user?.jobSeeker?.id;
+    if (!jobSeekerId) {
+      return res.status(404).json({ error: "Job seeker profile not found" });
+    }
+
     const io = req.app.get("socketio");
 
     const db = await getNativeDb();
