@@ -887,6 +887,10 @@ export const isBlocked = async (req, res) => {
     const { userId } = req.params;
     const blockerId = req.user.id;
 
+    if (!userId || userId === "undefined" || userId.length !== 24) {
+      return res.status(200).json({ isBlocked: false });
+    }
+
     const block = await prisma.blockedUser.findUnique({
       where: {
         blockerId_blockedId: {

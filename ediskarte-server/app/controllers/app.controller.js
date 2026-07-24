@@ -585,24 +585,37 @@ export const reviewnRating = async (req, res) => {
       });
     }
 
-    // 3. Create review
-    const review = await prisma.review.create({
-      data: {
-        jobRequestId: jobId,
-        reviewerId,
-        reviewedId,
-        rating,
-        feedback,
-      },
-      include: {
-        reviewer: {
-          select: {
-            firstName: true,
-            profileImage: true,
-          },
-        },
-      },
-    });
+    // 3. Create review using native MongoDB to bypass replica set transaction requirement
+    const db = await getNativeDb();
+    let jobIdObj;
+    try { jobIdObj = new ObjectId(jobId); } catch (e) { jobIdObj = jobId; }
+    let reviewerIdObj;
+    try { reviewerIdObj = new ObjectId(reviewerId); } catch (e) { reviewerIdObj = reviewerId; }
+    let reviewedIdObj;
+    try { reviewedIdObj = new ObjectId(reviewedId); } catch (e) { reviewedIdObj = reviewedId; }
+
+    const reviewDoc = {
+      jobRequestId: jobIdObj,
+      reviewerId: reviewerIdObj,
+      reviewedId: reviewedIdObj,
+      rating: parseInt(rating, 10),
+      feedback: feedback || "",
+      createdAt: new Date()
+    };
+
+    const reviewRes = await db.collection("reviews").insertOne(reviewDoc);
+    const reviewIdStr = reviewRes.insertedId.toString();
+
+    // Fetch reviewer details manually
+    const reviewerUser = await db.collection("users").findOne({ _id: reviewerIdObj });
+    const review = {
+      id: reviewIdStr,
+      ...reviewDoc,
+      reviewer: {
+        firstName: reviewerUser?.firstName || "",
+        profileImage: reviewerUser?.profileImage || ""
+      }
+    };
 
     // --- Increment jobsDone for the reviewee ---
     let userToIncrementId = reviewedId;
@@ -613,37 +626,28 @@ export const reviewnRating = async (req, res) => {
       userToIncrementId = js.userId;
     }
 
-    await prisma.user.update({
-      where: { id: userToIncrementId },
-      data: {
-        jobsDone: { increment: 1 },
-      },
-    });
+    let userToIncrementIdObj;
+    try { userToIncrementIdObj = new ObjectId(userToIncrementId); } catch (e) { userToIncrementIdObj = userToIncrementId; }
+    await db.collection("users").updateOne(
+      { _id: userToIncrementIdObj },
+      { $inc: { jobsDone: 1 } }
+    );
 
     // --- Create notification for review ---
-    await prisma.notification.create({
-      data: {
-        clientId: userType === "client" ? reviewerId : job.clientId,
-        jobSeekerId: userType === "job-seeker" ? reviewerId : reviewedId,
-        notificationType:
-          userType === "client" ? "review-jobseeker" : "review-client",
-        notificationTitle: "You received a new review!",
-        notificationMessage: `You have received a new review from ${review.reviewer.firstName}.`,
-        relatedIds: [jobId],
-        isRead: false,
-        createdAt: new Date(),
-      },
+    await db.collection("notifications").insertOne({
+      clientId: userType === "client" ? reviewerIdObj : new ObjectId(job.clientId),
+      jobSeekerId: userType === "job-seeker" ? reviewerIdObj : reviewedIdObj,
+      notificationType:
+        userType === "client" ? "review-jobseeker" : "review-client",
+      notificationTitle: "You received a new review!",
+      notificationMessage: `You have received a new review from ${review.reviewer.firstName}.`,
+      relatedIds: [jobId],
+      isRead: false,
+      createdAt: new Date(),
     });
     // --- End notification logic ---
 
-    // 4. Update job status (optional)
-    const db = await getNativeDb();
-    let jobIdObj;
-    try {
-      jobIdObj = new ObjectId(jobId);
-    } catch (e) {
-      jobIdObj = jobId;
-    }
+    // 4. Update job status
     const newStatus =
       userType === "client"
         ? "completed"

@@ -65,7 +65,7 @@ export function initializeSocketIO(httpServer) {
             participants: {
               some: userAsJobSeeker
                 ? {
-                    jobSeekerId: userAsJobSeeker.userId,
+                    jobSeekerId: userAsJobSeeker.id,
                     deletedByJobSeeker: false
                   }
                 : {
@@ -225,8 +225,18 @@ export function initializeSocketIO(httpServer) {
         }
     
         // 🔍 Ensure sender is a valid participant
+        let resolvedSenderJobSeekerId = null;
+        const senderJobSeeker = await prisma.jobSeeker.findUnique({
+          where: { userId: actualSenderId }
+        });
+        if (senderJobSeeker) {
+          resolvedSenderJobSeekerId = senderJobSeeker.id;
+        }
+
         const sender = chat.participants.find(p => 
-          p.userId === actualSenderId || p.jobSeekerId === actualSenderId
+          p.userId === actualSenderId || 
+          p.jobSeekerId === actualSenderId ||
+          (resolvedSenderJobSeekerId && p.jobSeekerId === resolvedSenderJobSeekerId)
         );
     
         if (!sender) {
@@ -538,14 +548,19 @@ export function initializeSocketIO(httpServer) {
           }
         );
 
-        // Fetch participants manually
-        const participants = await db.collection("participants").find({ chatId }).toArray();
+        // Fetch participants manually using ObjectId
+        const participants = await db.collection("participants").find({ chatId: chatIdObj }).toArray();
 
         // Find the job seeker participant and their user details
         const jobSeekerParticipant = participants.find(p => p.jobSeekerId);
         let jobSeekerName = "A job seeker";
         if (jobSeekerParticipant) {
           let jsUserId = jobSeekerParticipant.userId;
+          if (!jsUserId) {
+            // If participant has no userId, they are a jobSeeker. Let's find their userId from jobseekers collection
+            const jsProfile = await db.collection("jobseekers").findOne({ _id: jobSeekerParticipant.jobSeekerId });
+            jsUserId = jsProfile?.userId;
+          }
           if (jsUserId) {
             let jsUserObjId;
             try { jsUserObjId = new ObjectId(jsUserId); } catch(e) { jsUserObjId = jsUserId; }
@@ -592,9 +607,19 @@ export function initializeSocketIO(httpServer) {
 
         // === NEW: Create notification in DB ===
         const senderId = socket.user.id;
-        const recipientParticipant = participants.find(
-          p => (p.userId && p.userId.toString() !== senderId) || (p.jobSeekerId && p.jobSeekerId.toString() !== senderId)
-        );
+        let senderJobSeekerId = null;
+        const senderJS = await prisma.jobSeeker.findUnique({
+          where: { userId: senderId }
+        });
+        if (senderJS) {
+          senderJobSeekerId = senderJS.id;
+        }
+
+        const recipientParticipant = participants.find(p => {
+          const isSenderUser = p.userId && p.userId.toString() === senderId;
+          const isSenderSeeker = p.jobSeekerId && p.jobSeekerId.toString() === senderJobSeekerId;
+          return !isSenderUser && !isSenderSeeker;
+        });
 
         if (recipientParticipant) {
           await createNotification({
@@ -633,8 +658,8 @@ export function initializeSocketIO(httpServer) {
         const chat = await db.collection("chats").findOne({ _id: chatIdObj });
         const offer = chat?.offer || "0";
 
-        // Fetch participants manually
-        const participants = await db.collection("participants").find({ chatId }).toArray();
+        // Fetch participants manually using ObjectId
+        const participants = await db.collection("participants").find({ chatId: chatIdObj }).toArray();
         const jobSeekerParticipant = participants.find(p => p.jobSeekerId);
         const jobseekerid = jobSeekerParticipant ? (jobSeekerParticipant.jobSeekerId ? jobSeekerParticipant.jobSeekerId.toString() : null) : null;
 
@@ -675,9 +700,19 @@ export function initializeSocketIO(httpServer) {
 
         // Create DB notification
         const senderId = socket.user.id;
-        const recipientParticipant = participants.find(
-          p => (p.userId && p.userId.toString() !== senderId) || (p.jobSeekerId && p.jobSeekerId.toString() !== senderId)
-        );
+        let senderJobSeekerId = null;
+        const senderJS = await prisma.jobSeeker.findUnique({
+          where: { userId: senderId }
+        });
+        if (senderJS) {
+          senderJobSeekerId = senderJS.id;
+        }
+
+        const recipientParticipant = participants.find(p => {
+          const isSenderUser = p.userId && p.userId.toString() === senderId;
+          const isSenderSeeker = p.jobSeekerId && p.jobSeekerId.toString() === senderJobSeekerId;
+          return !isSenderUser && !isSenderSeeker;
+        });
 
         if (recipientParticipant) {
           await createNotification({
@@ -742,12 +777,22 @@ export function initializeSocketIO(httpServer) {
         };
         io.to(chatId).emit("offer_notification", notification);
     
-        // Fetch participants manually
-        const participants = await db.collection("participants").find({ chatId }).toArray();
+        // Fetch participants manually using ObjectId
+        const participants = await db.collection("participants").find({ chatId: chatIdObj }).toArray();
         const senderId = socket.user.id;
-        const recipientParticipant = participants.find(
-          p => (p.userId && p.userId.toString() !== senderId) || (p.jobSeekerId && p.jobSeekerId.toString() !== senderId)
-        );
+        let senderJobSeekerId = null;
+        const senderJS = await prisma.jobSeeker.findUnique({
+          where: { userId: senderId }
+        });
+        if (senderJS) {
+          senderJobSeekerId = senderJS.id;
+        }
+
+        const recipientParticipant = participants.find(p => {
+          const isSenderUser = p.userId && p.userId.toString() === senderId;
+          const isSenderSeeker = p.jobSeekerId && p.jobSeekerId.toString() === senderJobSeekerId;
+          return !isSenderUser && !isSenderSeeker;
+        });
 
         if (recipientParticipant) {
           await createNotification({
