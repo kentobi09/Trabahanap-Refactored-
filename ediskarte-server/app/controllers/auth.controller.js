@@ -154,8 +154,12 @@ export const signUp = async (req, res) => {
 };
 
 export const decodeToken = async (req, res) => {
-  const decodedToken = jwt.verify(req.query.token, process.env.JWT_SECRET);
   try {
+    const token = req.query.token;
+    if (!token) {
+      return res.status(400).json({ error: "Token is required" });
+    }
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
     const getTokenData = await prisma.user.findUnique({
       where: {
         id: decodedToken.id,
@@ -163,7 +167,7 @@ export const decodeToken = async (req, res) => {
     });
     res.json(getTokenData);
   } catch (error) {
-    res.status(500).send("JWT must be provided");
+    res.status(401).send("Invalid or expired token");
   }
 };
 
