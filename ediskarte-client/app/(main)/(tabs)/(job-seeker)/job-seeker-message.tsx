@@ -39,6 +39,13 @@ interface Chat {
   deletedBySender:string;
 }
 
+const getProfileImageUri = (imagePath: any) => {
+  if (!imagePath) return undefined;
+  const normalized = (imagePath + "").replace(/\\/g, "/");
+  const fileName = normalized.split("profiles/")[1] || "";
+  return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${fileName}`;
+};
+
 const ChatScreen: React.FC = () => {
   const [chats, setChats] = useState<Chat[]>([]);
   const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false);
@@ -285,11 +292,7 @@ const ChatScreen: React.FC = () => {
       {item.profileImage ? (
         <Image 
           source={{ 
-            uri: item.profileImage 
-              ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${
-                  item.profileImage.split("profiles/")[1] || ''
-                }`
-              : undefined 
+            uri: getProfileImageUri(item.profileImage)
           }}
           style={styles.avatarPlaceholder}
           defaultSource={require('assets/images/client-user.png')}

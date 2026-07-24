@@ -517,50 +517,61 @@ export function initializeSocketIO(httpServer) {
     
     socket.on("make_offer", async ({ jobRequestId, offerAmount, chatId }) => {
       try {
-        console.log(jobRequestId,offerAmount)
+        console.log(jobRequestId, offerAmount)
         if (!chatId || !offerAmount) {
           socket.emit("make_offer_error", { message: "Missing chatId or offerAmount" });
           return;
         }
 
-        // Update job with offer and jobSeekerId
-        const updatedChat = await prisma.chat.update({
-          where: { id: chatId },
-          data: {
-            offer: offerAmount,
-            offerStatus: "pending",
-          },
-          include: {
-            participants: {
-              include: {
-                jobSeeker: {
-                  include: {
-                    user: true
-                  }
-                }
-              }
+        const db = await getNativeDb();
+        let chatIdObj;
+        try { chatIdObj = new ObjectId(chatId); } catch (e) { chatIdObj = chatId; }
+
+        // Update chat with offer and offerStatus using native MongoDB
+        await db.collection("chats").updateOne(
+          { _id: chatIdObj },
+          {
+            $set: {
+              offer: offerAmount,
+              offerStatus: "pending",
             }
           }
-        });
+        );
+
+        // Fetch participants manually
+        const participants = await db.collection("participants").find({ chatId }).toArray();
 
         // Find the job seeker participant and their user details
-        const jobSeekerParticipant = updatedChat.participants.find(p => p.jobSeekerId);
+        const jobSeekerParticipant = participants.find(p => p.jobSeekerId);
         let jobSeekerName = "A job seeker";
-        if (jobSeekerParticipant && jobSeekerParticipant.jobSeeker && jobSeekerParticipant.jobSeeker.user) {
-          jobSeekerName = `${jobSeekerParticipant.jobSeeker.user.firstName} ${jobSeekerParticipant.jobSeeker.user.lastName}`;
+        if (jobSeekerParticipant) {
+          let jsUserId = jobSeekerParticipant.userId;
+          if (jsUserId) {
+            let jsUserObjId;
+            try { jsUserObjId = new ObjectId(jsUserId); } catch(e) { jsUserObjId = jsUserId; }
+            const jobSeekerUser = await db.collection("users").findOne({ _id: jsUserObjId });
+            if (jobSeekerUser) {
+              jobSeekerName = `${jobSeekerUser.firstName} ${jobSeekerUser.lastName}`;
+            }
+          }
         }
 
         // Fetch job title for notification
-        const job = await prisma.jobRequest.findUnique({
-          where: { id: jobRequestId },
-          select: { jobTitle: true }
-        });
+        let jobTitle = "Unknown";
+        if (jobRequestId) {
+          let jobObjId;
+          try { jobObjId = new ObjectId(jobRequestId); } catch(e) { jobObjId = jobRequestId; }
+          const job = await db.collection("jobrequest").findOne({ _id: jobObjId });
+          if (job) {
+            jobTitle = job.jobTitle || "Unknown";
+          }
+        }
 
         const notification = {
           type: "offer_made",
-          message: `${jobSeekerName} sent an offer of ₱${offerAmount} for "${job?.jobTitle ?? 'a job'}".`,
+          message: `${jobSeekerName} sent an offer of ₱${offerAmount} for "${jobTitle}".`,
           offerAmount,
-          jobTitle: job?.jobTitle ?? 'Unknown',
+          jobTitle,
           chatId,
         };
         io.to(chatId).emit("offer_notification", notification);
@@ -570,28 +581,26 @@ export function initializeSocketIO(httpServer) {
           jobRequestId,
           offerAmount,
         });
-        const status = updatedChat.offerStatus;
-        console.log(status)
-        // Optional: Notify the client (use room or client socket ID if you store them)
+        
+        // Optional: Notify the client
         io.to(chatId).emit("client_offer_notification", {
           jobRequestId,
           offerAmount,
-          status,
+          status: "pending",
           chatId,
         });
 
         // === NEW: Create notification in DB ===
-        const chatParticipants = updatedChat.participants;
         const senderId = socket.user.id;
-        const recipientParticipant = chatParticipants.find(
-          p => (p.userId && p.userId !== senderId) || (p.jobSeekerId && p.jobSeekerId !== senderId)
+        const recipientParticipant = participants.find(
+          p => (p.userId && p.userId.toString() !== senderId) || (p.jobSeekerId && p.jobSeekerId.toString() !== senderId)
         );
 
         if (recipientParticipant) {
           await createNotification({
             recipient: {
-              userId: recipientParticipant.userId,
-              jobSeekerId: recipientParticipant.jobSeekerId,
+              userId: recipientParticipant.userId ? recipientParticipant.userId.toString() : null,
+              jobSeekerId: recipientParticipant.jobSeekerId ? recipientParticipant.jobSeekerId.toString() : null,
             },
             type: "offer_made",
             title: "New Offer Made",
@@ -599,73 +608,82 @@ export function initializeSocketIO(httpServer) {
             relatedIds: [chatId, jobRequestId].filter(Boolean),
           });
         }
-        // === END NEW ===
-
       } catch (error) {
         console.error("❌ make_offer error:", error);
         socket.emit("make_offer_error", { message: "Failed to make offer" });
       }
     });
 
-    socket.on("accept_offer", async ({ chatId,jobRequestId }) => {
+    socket.on("accept_offer", async ({ chatId, jobRequestId }) => {
       try {
-        const updatedChat = await prisma.chat.update({
-          where: { id: chatId },
-          data: {
-            offerStatus: "accepted",
-          },
-          include: {
-            participants: true
-          }
-        });
-        
-        const jobseekerid = updatedChat.participants[0]?.jobSeekerId;
+        const db = await getNativeDb();
+        let chatIdObj;
+        try { chatIdObj = new ObjectId(chatId); } catch (e) { chatIdObj = chatId; }
 
-        const updatedJob = await prisma.jobRequest.update({
-          where: { id: jobRequestId },
-          data: { 
-            offer: updatedChat.offer,
-            jobStatus: "pending",
-            jobSeekerId: jobseekerid,
-            acceptedAt: new Date()
-          },
-        });
-        
-    
+        // Update chat with offerStatus using native MongoDB
+        await db.collection("chats").updateOne(
+          { _id: chatIdObj },
+          {
+            $set: {
+              offerStatus: "accepted",
+            }
+          }
+        );
+
+        const chat = await db.collection("chats").findOne({ _id: chatIdObj });
+        const offer = chat?.offer || "0";
+
+        // Fetch participants manually
+        const participants = await db.collection("participants").find({ chatId }).toArray();
+        const jobSeekerParticipant = participants.find(p => p.jobSeekerId);
+        const jobseekerid = jobSeekerParticipant ? (jobSeekerParticipant.jobSeekerId ? jobSeekerParticipant.jobSeekerId.toString() : null) : null;
+
+        // Update job request with native MongoDB
+        let jobObjId;
+        try { jobObjId = new ObjectId(jobRequestId); } catch(e) { jobObjId = jobRequestId; }
+        await db.collection("jobrequest").updateOne(
+          { _id: jobObjId },
+          {
+            $set: {
+              offer: offer,
+              jobStatus: "pending",
+              jobSeekerId: jobseekerid,
+              acceptedAt: new Date()
+            }
+          }
+        );
+
         // Notify both parties
         io.to(chatId).emit("offer_accepted", {
           chatId,
-          offerAmount: updatedChat.offer,
-          offerStatus: updatedChat.offerStatus
+          offerAmount: offer,
+          offerStatus: "accepted"
         });
 
         // Fetch job title for notification
-        const job = await prisma.jobRequest.findUnique({
-          where: { id: jobRequestId },
-          select: { jobTitle: true }
-        });
+        const job = await db.collection("jobrequest").findOne({ _id: jobObjId });
+        const jobTitle = job?.jobTitle || "a job";
 
         const notification = {
           type: "offer_accepted",
-          message: `The offer of ₱${updatedChat.offer} for "${job?.jobTitle ?? 'a job'}" was accepted by the employer.`,
-          offerAmount: updatedChat.offer,
-          jobTitle: job?.jobTitle ?? 'Unknown',
+          message: `The offer of ₱${offer} for "${jobTitle}" was accepted by the employer.`,
+          offerAmount: offer,
+          jobTitle,
           chatId,
         };
         io.to(chatId).emit("offer_notification", notification);
-    
-        // === NEW: Create notification in DB ===
-        const chatParticipants = updatedChat.participants;
+
+        // Create DB notification
         const senderId = socket.user.id;
-        const recipientParticipant = chatParticipants.find(
-          p => (p.userId && p.userId !== senderId) || (p.jobSeekerId && p.jobSeekerId !== senderId)
+        const recipientParticipant = participants.find(
+          p => (p.userId && p.userId.toString() !== senderId) || (p.jobSeekerId && p.jobSeekerId.toString() !== senderId)
         );
 
         if (recipientParticipant) {
           await createNotification({
             recipient: {
-              userId: recipientParticipant.userId,
-              jobSeekerId: recipientParticipant.jobSeekerId,
+              userId: recipientParticipant.userId ? recipientParticipant.userId.toString() : null,
+              jobSeekerId: recipientParticipant.jobSeekerId ? recipientParticipant.jobSeekerId.toString() : null,
             },
             type: "offer_accepted",
             title: "Offer Accepted",
@@ -673,7 +691,6 @@ export function initializeSocketIO(httpServer) {
             relatedIds: [chatId, jobRequestId].filter(Boolean),
           });
         }
-        // === END NEW ===
 
       } catch (error) {
         console.error("❌ accept_offer error:", error);
@@ -684,34 +701,35 @@ export function initializeSocketIO(httpServer) {
     // Handle offer rejection
     socket.on("reject_offer", async ({ chatId, jobRequestId }) => {
       try {
-        const updatedChat = await prisma.chat.update({
-          where: { id: chatId },
-          data: {
-            offerStatus: "rejected",
+        const db = await getNativeDb();
+        let chatIdObj;
+        try { chatIdObj = new ObjectId(chatId); } catch (e) { chatIdObj = chatId; }
+
+        await db.collection("chats").updateOne(
+          { _id: chatIdObj },
+          {
+            $set: {
+              offerStatus: "rejected",
+            }
           }
-        });
-    
+        );
+
+        const chat = await db.collection("chats").findOne({ _id: chatIdObj });
+        const offerAmount = chat?.offer || "0";
+
         io.to(chatId).emit("offer_rejected", {
           chatId,
-          offerAmount: updatedChat.offer,
-          offerStatus: updatedChat.offerStatus
+          offerAmount: offerAmount,
+          offerStatus: "rejected"
         });
 
-        let offerAmount = updatedChat.offer;
         let jobTitle = 'Unknown';
-        let jobId = null;
-
-        // Try to get jobRequestId from param, or from chat if missing
-        let actualJobRequestId = jobRequestId;
-        if (!actualJobRequestId && updatedChat.jobId) {
-          actualJobRequestId = updatedChat.jobId;
-        }
+        let actualJobRequestId = jobRequestId || chat?.jobId;
 
         if (actualJobRequestId) {
-          const job = await prisma.jobRequest.findUnique({
-            where: { id: actualJobRequestId },
-            select: { jobTitle: true }
-          });
+          let jobObjId;
+          try { jobObjId = new ObjectId(actualJobRequestId); } catch(e) { jobObjId = actualJobRequestId; }
+          const job = await db.collection("jobrequest").findOne({ _id: jobObjId });
           jobTitle = job?.jobTitle ?? 'Unknown';
         }
 
@@ -724,30 +742,25 @@ export function initializeSocketIO(httpServer) {
         };
         io.to(chatId).emit("offer_notification", notification);
     
-        // === NEW: Create notification in DB ===
-        const chat = await prisma.chat.findUnique({
-          where: { id: chatId },
-          include: { participants: true }
-        });
-        const chatParticipants = chat.participants;
+        // Fetch participants manually
+        const participants = await db.collection("participants").find({ chatId }).toArray();
         const senderId = socket.user.id;
-        const recipientParticipant = chatParticipants.find(
-          p => (p.userId && p.userId !== senderId) || (p.jobSeekerId && p.jobSeekerId !== senderId)
+        const recipientParticipant = participants.find(
+          p => (p.userId && p.userId.toString() !== senderId) || (p.jobSeekerId && p.jobSeekerId.toString() !== senderId)
         );
 
         if (recipientParticipant) {
           await createNotification({
             recipient: {
-              userId: recipientParticipant.userId,
-              jobSeekerId: recipientParticipant.jobSeekerId,
+              userId: recipientParticipant.userId ? recipientParticipant.userId.toString() : null,
+              jobSeekerId: recipientParticipant.jobSeekerId ? recipientParticipant.jobSeekerId.toString() : null,
             },
             type: "offer_rejected",
             title: "Your Offer Was Rejected",
             message: `Unfortunately, your offer of ₱${offerAmount} for "${jobTitle}" was rejected by the employer.`,
-            relatedIds: [chatId, jobRequestId].filter(Boolean),
+            relatedIds: [chatId, actualJobRequestId].filter(Boolean),
           });
         }
-        // === END NEW ===
 
       } catch (error) {
         console.error("❌ reject_offer error:", error);

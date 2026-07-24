@@ -392,21 +392,30 @@ export const getAchievements = async (req, res) => {
   try {
     const userId = req.params.userId;
 
-    // 1. Verify the user exists
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { id: userId },
     });
+
+    let targetUserId = userId;
+
+    if (!user) {
+      const jobSeeker = await prisma.jobSeeker.findUnique({
+        where: { id: userId },
+      });
+      if (jobSeeker) {
+        targetUserId = jobSeeker.userId;
+        user = await prisma.user.findUnique({
+          where: { id: targetUserId },
+        });
+      }
+    }
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // 2. Fetch achievements directly by userId for the given user.
-    // This assumes your Achievement model in schema.prisma has a 'userId' field
-    // that correctly links to the User model's id.
-    // If this field is missing or named differently in your schema, Prisma will error.
     const achievements = await prisma.achievement.findMany({
-      where: { userId: userId }, // Querying by the userId field on the Achievement model
+      where: { userId: targetUserId },
     });
 
     return res.status(200).json(achievements);
