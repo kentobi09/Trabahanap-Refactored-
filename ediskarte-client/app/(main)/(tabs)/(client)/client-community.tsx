@@ -444,7 +444,7 @@ const SocialFeedScreen = () => {
 
         if (profileImagePath) {
           setUserProfileImage(
-            `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${profileImagePath}`
+            `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${profileImagePath.replace(/\\/g, "/")}`
           );
         }
         setUsername(userName);
@@ -1089,7 +1089,7 @@ const SocialFeedScreen = () => {
       : null;
 
     const profileImageUrl = item.profileImage
-      ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item.profileImage}`
+      ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item.profileImage.replace(/\\/g, "/")}`
       : null;
 
     return (
