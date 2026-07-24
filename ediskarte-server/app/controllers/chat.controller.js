@@ -65,6 +65,8 @@ export const createChat = async (req, res) => {
         userId: clientIdObj,
         jobSeekerId: null,
         joinedAt: new Date(),
+        deletedByClient: false,
+        deletedByJobSeeker: false,
       };
 
       const seekerPartDoc = {
@@ -72,6 +74,8 @@ export const createChat = async (req, res) => {
         userId: null,
         jobSeekerId: seekerIdObj,
         joinedAt: new Date(),
+        deletedByClient: false,
+        deletedByJobSeeker: false,
       };
 
       const partResClient = await db.collection("participants").insertOne(clientPartDoc);
@@ -267,17 +271,6 @@ export const sendMessage = async (req, res) => {
     const { chatId, messageContent } = req.body;
     const userId = req.user.id; // Authenticated user ID (Client OR Job Seeker's User ID)
 
-    // 🔍 Check if the sender is a Job Seeker
-    const jobSeeker = await prisma.jobSeeker.findUnique({
-      where: { userId },
-      select: { id: true },
-    });
-
-    const senderType = jobSeeker ? "jobSeeker" : "client";
-    const actualSenderId = jobSeeker ? jobSeeker.id : userId; // Use Job Seeker ID if applicable
-
-    console.log(`🔍 Sender Type: ${senderType}, ID: ${actualSenderId}`);
-
     // 🔍 Check if the chat exists
     const chat = await prisma.chat.findUnique({
       where: { id: chatId },
@@ -290,7 +283,7 @@ export const sendMessage = async (req, res) => {
 
     // 🔍 Find the sender as a participant
     const sender = chat.participants.find(
-      (p) => p.userId === actualSenderId || p.jobSeekerId === actualSenderId
+      (p) => p.userId === userId || p.jobSeekerId === userId
     );
     if (!sender) {
       return res
@@ -298,26 +291,39 @@ export const sendMessage = async (req, res) => {
         .json({ message: "You are not a participant in this chat" });
     }
 
-    // ✅ Store the correct senderId in the message
-    const newMessage = await prisma.message.create({
-      data: {
-        chatId,
-        senderId: actualSenderId, // 🔥 Now supports both Clients and Job Seekers
-        messageContent,
-        sentAt: new Date(),
-      },
-    });
+    // ✅ Store using native MongoDB to bypass transaction requirements
+    const db = await getNativeDb();
+    let chatIdObj;
+    try { chatIdObj = new ObjectId(chatId); } catch (e) { chatIdObj = chatId; }
+    let senderIdObj;
+    try { senderIdObj = new ObjectId(userId); } catch (e) { senderIdObj = userId; }
 
-    try {
-      const db = await getNativeDb();
-      let chatIdObj;
-      try { chatIdObj = new ObjectId(chatId); } catch (e) { chatIdObj = chatId; }
-      await db.collection("chats").updateOne({ _id: chatIdObj }, { $set: { lastMessageAt: new Date() } });
-    } catch (e) {}
+    const messageDoc = {
+      chatId: chatIdObj,
+      senderId: senderIdObj,
+      messageContent,
+      messageType: "text",
+      sentAt: new Date(),
+      deletedBySender: "no",
+      deletedByReceiver: "no"
+    };
+
+    const messageRes = await db.collection("messages").insertOne(messageDoc);
+
+    // Update lastMessageAt on the chat
+    await db.collection("chats").updateOne({ _id: chatIdObj }, { $set: { lastMessageAt: new Date() } });
 
     console.log(
-      `✅ Message Sent! Sender ID: ${actualSenderId}, Content: ${messageContent}`
+      `✅ Message Sent! Sender ID: ${userId}, Content: ${messageContent}`
     );
+
+    const newMessage = {
+      id: messageRes.insertedId.toString(),
+      ...messageDoc,
+      chatId,
+      senderId: userId,
+      readBy: []
+    };
 
     return res.status(201).json(newMessage);
   } catch (error) {
@@ -951,4 +957,28 @@ export const reportValidation = async (req, res) => {
   });
 
   res.status(200).json({ message: "Report validated successfully" });
+};
+
+export const checkAppliedStatus = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const userId = req.user.id; // Job Seeker's User ID
+
+    // Check if a chat exists for this jobId where one of the participants is this Job Seeker
+    const chat = await prisma.chat.findFirst({
+      where: {
+        jobId,
+        participants: {
+          some: {
+            jobSeekerId: userId,
+          },
+        },
+      },
+    });
+
+    res.status(200).json({ hasApplied: !!chat });
+  } catch (error) {
+    console.error("Error checking applied status:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };

@@ -19,10 +19,13 @@ import {
   getJobRequestBudget,
   getUsersWhoBlockedMe,
   reportValidation,
+  checkAppliedStatus,
 } from "../controllers/chat.controller.js";
 import authenticateToken from "../middleware/auth.middleware.js";
 import { storePushToken } from "../controllers/notification.controller.js";
 const router = express.Router();
+
+router.get("/job/:jobId/check-applied", authenticateToken, checkAppliedStatus);
 
 router.post("/api/chat/create", authenticateToken, createChat);
 router.get("/api/chat", authenticateToken, getUserChats);

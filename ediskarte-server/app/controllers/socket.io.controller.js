@@ -4,7 +4,19 @@ import jwt from 'jsonwebtoken';
 import fs from 'fs';
 import path from 'path';
 import { Console } from 'console';
+import { MongoClient, ObjectId } from 'mongodb';
+
 const prisma = new PrismaClient();
+
+let nativeDbClient;
+async function getNativeDb() {
+  if (!nativeDbClient) {
+    const mongoUri = process.env.DATABASE_URL || "mongodb://127.0.0.1:27017/ediskarte?directConnection=true";
+    nativeDbClient = new MongoClient(mongoUri);
+    await nativeDbClient.connect();
+  }
+  return nativeDbClient.db("ediskarte");
+}
 
 const onlineUsers = new Map(); // userId -> { socketId, lastSeen, userInfo }
 const activeCalls = new Map(); // chatId -> { callerId, calleeId, status }
@@ -222,45 +234,63 @@ export function initializeSocketIO(httpServer) {
           return;
         }
     
-        // ✅ Store the message
-        const newMessage = await prisma.message.create({
-          data: {
-            chatId,
-            senderId: actualSenderId,
-            messageContent,
-            messageType,
-            sentAt: new Date(),
-          },
-          include:{
-            readBy:true
-          }
-        });
-    
-        // ✅ Update chat's `lastMessageAt`
-        await prisma.chat.update({
-          where: { id: chatId },
-          data: { lastMessageAt: new Date() },
-        }); 
+        // ✅ Store using native MongoDB to bypass transaction requirements
+        const db = await getNativeDb();
+        let chatIdObj;
+        try { chatIdObj = new ObjectId(chatId); } catch (e) { chatIdObj = chatId; }
+        let senderIdObj;
+        try { senderIdObj = new ObjectId(actualSenderId); } catch (e) { senderIdObj = actualSenderId; }
+
+        const messageDoc = {
+          chatId: chatIdObj,
+          senderId: senderIdObj,
+          messageContent,
+          messageType,
+          sentAt: new Date(),
+          deletedBySender: "no",
+          deletedByReceiver: "no"
+        };
+
+        const messageRes = await db.collection("messages").insertOne(messageDoc);
+        const newMessage = {
+          id: messageRes.insertedId.toString(),
+          chatId,
+          senderId: actualSenderId,
+          messageContent,
+          messageType,
+          sentAt: messageDoc.sentAt,
+          deletedBySender: "no",
+          deletedByReceiver: "no",
+          readBy: []
+        };
+
+        // ✅ Update chat's `lastMessageAt` using native Mongo
+        await db.collection("chats").updateOne(
+          { _id: chatIdObj },
+          { $set: { lastMessageAt: new Date() } }
+        );
+
         const participants = await prisma.participant.findMany({
           where: { chatId },
           select: { id: true }
         });
+
         for (const participant of participants.filter(p => p.id !== actualSenderId)) {
           try {
-            await prisma.readStatus.upsert({
-              where: {
-                messageId_participantId: {
-                  messageId: newMessage.id,
-                  participantId: participant.id
+            await db.collection("read_status").updateOne(
+              {
+                messageId: messageRes.insertedId,
+                participantId: new ObjectId(participant.id)
+              },
+              {
+                $set: {
+                  messageId: messageRes.insertedId,
+                  participantId: new ObjectId(participant.id),
+                  readAt: null
                 }
               },
-              create: {
-                messageId: newMessage.id,
-                participantId: participant.id,
-                readAt: null
-              },
-              update: {}
-            });
+              { upsert: true }
+            );
           } catch (e) {}
         }
         
@@ -761,14 +791,34 @@ export function initializeSocketIO(httpServer) {
     
         const relativePath = `assets/messages_files/${chatId}/${filename}`;
     
-        const newMessage = await prisma.message.create({
-          data: {
-            chatId,
-            senderId,
-            messageContent: relativePath,
-            messageType: 'image',
-          },
-        });
+        const db = await getNativeDb();
+        let chatIdObj;
+        try { chatIdObj = new ObjectId(chatId); } catch (e) { chatIdObj = chatId; }
+        let senderIdObj;
+        try { senderIdObj = new ObjectId(senderId); } catch (e) { senderIdObj = senderId; }
+
+        const messageDoc = {
+          chatId: chatIdObj,
+          senderId: senderIdObj,
+          messageContent: relativePath,
+          messageType: 'image',
+          sentAt: new Date(),
+          deletedBySender: "no",
+          deletedByReceiver: "no"
+        };
+        const messageRes = await db.collection("messages").insertOne(messageDoc);
+
+        const newMessage = {
+          id: messageRes.insertedId.toString(),
+          chatId,
+          senderId,
+          messageContent: relativePath,
+          messageType: 'image',
+          sentAt: messageDoc.sentAt,
+          deletedBySender: "no",
+          deletedByReceiver: "no",
+          readBy: []
+        };
     
         io.to(chatId).emit('receive_message', newMessage);
         
@@ -807,16 +857,34 @@ export function initializeSocketIO(httpServer) {
     
         const relativePath = `assets/messages_files/${chatId}/${filename}`;
     
-        const newMessage = await prisma.message.create({
-          data: {
-            chatId,
-            senderId,
-            messageContent: relativePath,
-            messageType: 'file',
-            // fileName: fileName,
-            // fileType: fileType,
-          },
-        });
+        const db = await getNativeDb();
+        let chatIdObj;
+        try { chatIdObj = new ObjectId(chatId); } catch (e) { chatIdObj = chatId; }
+        let senderIdObj;
+        try { senderIdObj = new ObjectId(senderId); } catch (e) { senderIdObj = senderId; }
+
+        const messageDoc = {
+          chatId: chatIdObj,
+          senderId: senderIdObj,
+          messageContent: relativePath,
+          messageType: 'file',
+          sentAt: new Date(),
+          deletedBySender: "no",
+          deletedByReceiver: "no"
+        };
+        const messageRes = await db.collection("messages").insertOne(messageDoc);
+
+        const newMessage = {
+          id: messageRes.insertedId.toString(),
+          chatId,
+          senderId,
+          messageContent: relativePath,
+          messageType: 'file',
+          sentAt: messageDoc.sentAt,
+          deletedBySender: "no",
+          deletedByReceiver: "no",
+          readBy: []
+        };
     
         // Emit success response to the sender
         socket.emit('file_upload_response', {
