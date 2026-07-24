@@ -1,0 +1,15 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy monorepo package definitions
+COPY package*.json ./
+COPY packages/frontend/package*.json ./packages/frontend/
+
+RUN npm install --workspace=packages/frontend
+
+COPY packages/frontend ./packages/frontend
+
+EXPOSE 5173
+
+CMD ["npm", "run", "dev:frontend", "--", "--host", "0.0.0.0"]

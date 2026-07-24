@@ -1,0 +1,92 @@
+name: ediskarte-stack
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: ediskarte-mongodb
+    restart: always
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --eval \"try { rs.status().ok } catch(e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]}).ok }\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mongo-init:
+    image: mongo:7.0
+    container_name: ediskarte-mongo-init
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    command: >
+      sh -c "
+        mongosh --host mongodb:27017 --eval 'rs.initiate({_id:\"rs0\",members:[{_id:0,host:\"mongodb:27017\"}]})' || true;
+        echo 'MongoDB replica set initialized';
+      "
+
+  ediskarte-server:
+    build:
+      context: ./ediskarte-server
+      dockerfile: Dockerfile
+    container_name: ediskarte-server
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DATABASE_URL=mongodb://mongodb:27017/ediskarte?replicaSet=rs0&directConnection=true
+      - JWT_SECRET=ediskarte_super_secret_jwt_key_2026
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      mongo-init:
+        condition: service_completed_successfully
+
+  trabahanap-admin-backend:
+    build:
+      context: ./trabahanap-admin
+      dockerfile: Dockerfile.backend
+    container_name: trabahanap-admin-backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/ediskarte?replicaSet=rs0&directConnection=true
+      - MONGO_DB_NAME=ediskarte
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  trabahanap-admin-frontend:
+    build:
+      context: ./trabahanap-admin
+      dockerfile: Dockerfile.frontend
+    container_name: trabahanap-admin-frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    depends_on:
+      - trabahanap-admin-backend
+
+  ediskarte-client-web:
+    build:
+      context: ./ediskarte-client
+      dockerfile: Dockerfile
+    container_name: ediskarte-client-web
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - EXPO_PUBLIC_IP_ADDRESS=localhost
+      - EXPO_PUBLIC_API_URL=http://localhost:3000
+    depends_on:
+      - ediskarte-server
+
+volumes:
+  mongodb_data:

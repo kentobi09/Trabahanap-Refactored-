@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "167133441888",
+    "project_id": "trabahanap-596e5",
+    "storage_bucket": "trabahanap-596e5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:167133441888:android:dce4477e6224ec15e33805",
+        "android_client_info": {
+          "package_name": "com.neuromint.eDiskarte"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0VbOqSSQy6hk-h19o764D-ZvB49ZA8n4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
