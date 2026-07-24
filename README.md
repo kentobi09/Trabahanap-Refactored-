@@ -71,5 +71,9 @@ The API documentation will be available at `http://localhost:8000/docs`.
 cd trabahanap-admin/node_modules/@trabahanap-admin/frontend
 npm install
 npm run dev
+
+## Peek Database
+cd C:\ediskarte\ediskarte-server\app>
+npx prisma studio
 ```
 The frontend dashboard will be available at `http://localhost:5173`.
