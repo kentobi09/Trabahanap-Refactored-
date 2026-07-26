@@ -79,7 +79,7 @@ export const jobRequest = async (req, res) => {
     if (matchingJobSeekers && matchingJobSeekers.length > 0) {
       const notifications = matchingJobSeekers.map((jobSeeker) => ({
         clientId: clientIdObj,
-        jobSeekerId: jobSeeker.id ? new ObjectId(jobSeeker.id) : null,
+        jobSeekerId: jobSeeker.userId ? new ObjectId(jobSeeker.userId) : null,
         notificationType: "job-match",
         notificationTitle: "New Job Available!",
         notificationMessage: `A new job matching your skills (${jobCategory}) has been posted.`,
@@ -637,7 +637,7 @@ export const reviewnRating = async (req, res) => {
     // --- Create notification for review ---
     await db.collection("notifications").insertOne({
       clientId: userType === "client" ? reviewerIdObj : new ObjectId(job.clientId),
-      jobSeekerId: userType === "job-seeker" ? reviewerIdObj : reviewedIdObj,
+      jobSeekerId: userType === "job-seeker" ? reviewerIdObj : userToIncrementIdObj,
       notificationType:
         userType === "client" ? "review-jobseeker" : "review-client",
       notificationTitle: "You received a new review!",

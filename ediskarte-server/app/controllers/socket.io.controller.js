@@ -1476,7 +1476,10 @@ export function initializeSocketIO(httpServer) {
 }
 
 async function createNotification({ recipient, type, title, message, relatedIds }) {
-  if (!recipient.userId) {
+  // If recipient.userId is null (common for job seekers in Participant model), fall back to jobSeekerId (their User ID)
+  const targetUserId = recipient.userId || recipient.jobSeekerId;
+
+  if (!targetUserId) {
     throw new Error('Notification must have a clientId (userId)');
   }
   const data = {
@@ -1484,7 +1487,7 @@ async function createNotification({ recipient, type, title, message, relatedIds 
     notificationTitle: title,
     notificationMessage: message,
     relatedIds: (relatedIds || []).filter(Boolean),
-    clientId: recipient.userId,
+    clientId: targetUserId,
   };
   if (recipient.jobSeekerId) data.jobSeekerId = recipient.jobSeekerId;
   try {
