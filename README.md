@@ -73,9 +73,22 @@ npm install
 npm run dev
 
 ```
+The frontend dashboard will be available at `http://localhost:5173`.
+
 ## Peek Database
 ```bash
 cd C:\ediskarte\ediskarte-server\app>
 npx prisma studio
 ```
-The frontend dashboard will be available at `http://localhost:5173`.
+
+## Export app as apk
+```bash
+cd C:\ediskarte\ediskarte-client\android
+# if updating the app with changes
+.\gradlew clean
+# Build/rebuilding the app
+.\gradlew assembleRelease
+```
+
+
+
