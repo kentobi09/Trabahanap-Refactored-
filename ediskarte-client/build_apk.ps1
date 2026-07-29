@@ -1,5 +1,6 @@
 param (
-    [string]$TargetIP
+    [string]$TargetIP,
+    [string]$BuildType = "Release" # Can be "Release" or "Debug"
 )
 
 # eDiskarte APK Automated Build Script
@@ -30,7 +31,7 @@ $androidEnvFile = Join-Path $PSScriptRoot "android\.env"
 $envContent = @"
 # use this for local wifi deployment
 EXPO_PUBLIC_IP_ADDRESS=$ip
-EXPO_PUBLIC_API_URL=http://$ip:3000
+EXPO_PUBLIC_API_URL=http://${ip}:3000
 "@
 
 Set-Content -Path $envFile -Value $envContent
@@ -60,11 +61,12 @@ Remove-Item -Recurse -Force (Join-Path $PSScriptRoot "node_modules\.cache") -Err
 Push-Location (Join-Path $PSScriptRoot "android")
 .\gradlew :app:clean
 
-# 5. Build Release APK
-Write-Host "Starting Gradle Release Build..." -ForegroundColor Green
+# 5. Build APK
+$gradleTask = if ($BuildType -eq "Debug") { ":app:assembleDebug" } else { ":app:assembleRelease" }
+Write-Host "Starting Gradle $BuildType Build..." -ForegroundColor Green
 $env:EXPO_PUBLIC_IP_ADDRESS = $ip
 $env:EXPO_PUBLIC_API_URL = "http://$ip:3000"
-.\gradlew :app:assembleRelease --no-build-cache
+.\gradlew $gradleTask --no-build-cache
 
 Pop-Location
 
@@ -79,14 +81,18 @@ foreach ($file in $files) {
 }
 
 # 7. Copy out final APK to root
-$sourceApk = Join-Path $PSScriptRoot "android\app\build\outputs\apk\release\app-release.apk"
-$destApkName = "eDiskarte-$ip.apk"
+$sourceApk = if ($BuildType -eq "Debug") {
+    Join-Path $PSScriptRoot "android\app\build\outputs\apk\debug\app-debug.apk"
+} else {
+    Join-Path $PSScriptRoot "android\app\build\outputs\apk\release\app-release.apk"
+}
+$destApkName = if ($BuildType -eq "Debug") { "eDiskarte-debug-$ip.apk" } else { "eDiskarte-$ip.apk" }
 $destApk = Join-Path $PSScriptRoot $destApkName
 
 if (Test-Path $sourceApk) {
     Copy-Item $sourceApk $destApk -Force
     Write-Host "`nBUILD SUCCESSFUL!" -ForegroundColor Green
-    Write-Host "Your shareable APK is ready at:" -ForegroundColor Green
+    Write-Host "Your shareable $BuildType APK is ready at:" -ForegroundColor Green
     Write-Host $destApk -ForegroundColor Cyan
 } else {
     Write-Error "Build failed: APK not found."
