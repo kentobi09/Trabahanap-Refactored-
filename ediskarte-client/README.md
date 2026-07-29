@@ -34,29 +34,42 @@
    npm start
    ```
 
-## Connecting to the Server
-1. Check your IP address using these commands
+## Connecting to the Server (Local Deployment)
 
-Windows (Check IPv4 Address )
-```sh
-ipconfig
-```
-Mac
-```sh
-ipconfig getifaddr en0
-```
+### 📲 Building the APK for Local Testing
+If you want to run the app on physical Android devices using your laptop as the local server, you can use the automated build script. It configures the endpoint configurations, builds a standalone release APK, and restores the codebase state automatically.
 
-Linux (Unsure of this)
-```
-ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'
-```
+#### Option A: Windows Mobile Hotspot (Recommended - bypasses router blocking)
+If your WiFi router has AP/Client isolation enabled (common on home, mesh, or school networks), devices won't be able to communicate. You can bypass this by turning on your laptop's **Mobile Hotspot**:
+1. On your Windows laptop, go to **Settings > Network & Internet > Mobile Hotspot** and turn it **On**.
+2. Connect your testing phone(s) to this hotspot.
+3. Your laptop's IP on this network is always **`192.168.137.1`**.
+4. Open PowerShell in the client folder and run:
+   ```powershell
+   .\build_apk.ps1 -TargetIP 192.168.137.1
+   ```
+5. Install the resulting **`eDiskarte-192.168.137.1.apk`** on the phone.
 
+#### Option B: Normal local WiFi network
+If your router allows local device communication:
+1. Make sure your phone is connected to the same WiFi network as your laptop.
+2. Open PowerShell in the client folder and run:
+   ```powershell
+   .\build_apk.ps1
+   ```
+   *(The script will auto-detect your current WiFi IP)*
+3. Install the resulting **`eDiskarte-<WiFi_IP>.apk`** on the phone.
 
+### 🛠️ Manual Configuration (Development Mode)
+1. Check your IP address:
+   * **Windows:** Run `ipconfig` (look for Wireless LAN adapter Wi-Fi IPv4 Address)
+   * **Mac:** Run `ipconfig getifaddr en0`
 
-2. Create a .env file on the root folder with this format
-```sh
-EXPO_PUBLIC_IP_ADDRESS=<<IP ADDRESS OF YOUR LAPTOP/DESKTOP>>
-```
+2. Create a `.env` file in the root folder:
+   ```env
+   EXPO_PUBLIC_IP_ADDRESS=192.168.1.15
+   EXPO_PUBLIC_API_URL=http://192.168.1.15:3000
+   ```
 
 
 ## 📌 Future Enhancements

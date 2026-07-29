@@ -1,6 +1,10 @@
 const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 
+// Load environment variables from .env file so they are inlined during bundling
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
+console.log('--- METRO BUNDLER --- EXPO_PUBLIC_IP_ADDRESS:', process.env.EXPO_PUBLIC_IP_ADDRESS);
+
 const config = getDefaultConfig(__dirname);
 
 const rnWebPlatform = path.dirname(require.resolve('react-native-web/package.json'));
