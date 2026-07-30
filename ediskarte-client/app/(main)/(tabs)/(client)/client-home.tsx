@@ -338,7 +338,14 @@ export default function JobListingScreen() {
                     setViewModalVisible(true);
                   }}
                 >
-                  <View style={{ flex: 1, marginRight: hasImage ? 12 : 0 }}>
+                  {hasImage && (
+                    <Image
+                      source={{ uri: imageUri }}
+                      style={styles.cardJobBanner}
+                      resizeMode="cover"
+                    />
+                  )}
+                  <View style={styles.cardContentContainer}>
                     <View style={styles.jobHeader}>
                       <Text style={styles.jobTitle} numberOfLines={1} ellipsizeMode="tail">
                         {job.jobTitle}
@@ -399,14 +406,6 @@ export default function JobListingScreen() {
                       </Text>
                     </View>
                   </View>
-
-                  {hasImage && (
-                    <Image
-                      source={{ uri: imageUri }}
-                      style={styles.cardJobImage}
-                      resizeMode="cover"
-                    />
-                  )}
                 </TouchableOpacity>
               );
             })
@@ -447,7 +446,14 @@ export default function JobListingScreen() {
                     setViewModalVisible(true);
                   }}
                 >
-                  <View style={{ flex: 1, marginRight: hasImage ? 12 : 0 }}>
+                  {hasImage && (
+                    <Image
+                      source={{ uri: imageUri }}
+                      style={styles.cardJobBanner}
+                      resizeMode="cover"
+                    />
+                  )}
+                  <View style={styles.cardContentContainer}>
                     <View style={styles.jobHeader}>
                       <Text style={styles.jobTitle} numberOfLines={1} ellipsizeMode="tail">
                         {job.jobTitle}
@@ -517,14 +523,6 @@ export default function JobListingScreen() {
                       </Text>
                     </View>
                   </View>
-
-                  {hasImage && (
-                    <Image
-                      source={{ uri: imageUri }}
-                      style={styles.cardJobImage}
-                      resizeMode="cover"
-                    />
-                  )}
                 </TouchableOpacity>
               );
             })
@@ -930,16 +928,15 @@ const styles = StyleSheet.create({
   jobCard: {
     backgroundColor: "#f1f1f1",
     borderRadius: 12,
-    padding: 16,
     marginBottom: 16,
-    flexDirection: "row",
-    alignItems: "center",
+    overflow: "hidden",
   },
-  cardJobImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    marginLeft: 12,
+  cardContentContainer: {
+    padding: 16,
+  },
+  cardJobBanner: {
+    width: "100%",
+    height: 140,
   },
   modalJobImageContainer: {
     width: "100%",
@@ -962,6 +959,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 12,
     lineHeight: 20,
+    paddingLeft: 26,
   },
   detailsGrid: {
     flexDirection: "row",
