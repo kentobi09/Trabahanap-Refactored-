@@ -691,10 +691,7 @@ export default function JobListingScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.detailsModalContent, { maxHeight: "80%", width: "90%", paddingBottom: 16 }]}>
             {/* Header */}
-            <View style={styles.detailsModalHeader}>
-              <View style={styles.detailsModalIconCircle}>
-                <Feather name="file-text" size={24} color="#fff" />
-              </View>
+            <View style={[styles.detailsModalHeader, { justifyContent: 'flex-end' }]}>
               <TouchableOpacity
                 style={styles.detailsModalClose}
                 onPress={() => setViewModalVisible(false)}
@@ -704,12 +701,7 @@ export default function JobListingScreen() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
-              {/* Title */}
-              <Text style={styles.detailsModalTitle}>
-                {selectedJob?.jobTitle}
-              </Text>
-
-              {/* Job Image inside Modal */}
+              {/* Job Image inside Modal (placed at top) */}
               {selectedJob?.jobImage?.[0] && (
                 <View style={styles.modalJobImageContainer}>
                   <Image
@@ -724,16 +716,21 @@ export default function JobListingScreen() {
                 </View>
               )}
 
+              {/* Title (below image) */}
+              <Text style={styles.detailsModalTitle}>
+                {selectedJob?.jobTitle}
+              </Text>
+
+              {/* Description (directly underneath title, no header label, no icon, aligned fully left) */}
+              <Text style={[styles.detailsValueBlock, { paddingLeft: 0, marginTop: 8, fontSize: 15, color: "#444" }]}>
+                {selectedJob?.jobDescription}
+              </Text>
+
               {/* Divider */}
               <View style={styles.detailsDivider} />
 
               {/* Info Rows */}
               <View style={styles.detailsInfoContainer}>
-                <View style={styles.detailsRow}>
-                  <Feather name="align-left" size={18} color="#0B153C" style={{ marginRight: 8 }} />
-                  <Text style={styles.detailsLabel}>Description:</Text>
-                </View>
-                <Text style={styles.detailsValueBlock}>{selectedJob?.jobDescription}</Text>
 
                 <View style={styles.detailsGrid}>
                   <View style={styles.detailsGridItem}>
