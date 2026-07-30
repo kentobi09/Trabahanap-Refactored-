@@ -209,7 +209,7 @@ export const updateJobTags = async (req, res) => {
 
 export const getJobSeekerProfileByUserId = async (req, res) => {
   try {
-    const { userId } = req.params; // This is the User.id
+    const userId = req.params.userId || req.params.jobSeekerId; // This is the User.id
     console.log(
       `[getJobSeekerProfileByUserId] Received request for User ID: ${userId}`
     ); // Added log

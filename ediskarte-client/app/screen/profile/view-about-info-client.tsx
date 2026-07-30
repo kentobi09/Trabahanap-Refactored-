@@ -224,35 +224,7 @@ const AboutInfoPage: React.FC = () => {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Basic Information</Text>
 
-          <View style={styles.infoItem}>
-            <Ionicons name="person-outline" size={24} color="#0B153C" />
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Gender</Text>
-              <Text style={styles.infoValue}>
-                {formatGender(workerInfo.gender)}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.infoItem}>
-            <MaterialCommunityIcons
-              name="cake-variant-outline"
-              size={24}
-              color="#0B153C"
-            />
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Birthday</Text>
-              <Text style={styles.infoValue}>
-                {formatBirthday(workerInfo.birthday)}
-              </Text>
-            </View>
-          </View>
-        </View>
       </ScrollView>
     </View>
   );
