@@ -813,6 +813,7 @@ export const getClientProfile = async (req, res) => {
         profileImage: true,
         emailAddress: true,
         phoneNumber: true,
+        phoneVisibility: true,
         barangay: true,
         street: true,
         houseNumber: true,
@@ -827,6 +828,7 @@ export const getClientProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    const isPhonePrivate = user.phoneVisibility === "private";
     const response = {
       name: `${user.firstName} ${user.middleName || ""} ${user.lastName}`,
       profileImage: user.profileImage || "",
@@ -834,7 +836,7 @@ export const getClientProfile = async (req, res) => {
         user.barangay || ""
       }`,
       email: user.emailAddress,
-      phoneNumber: user.phoneNumber || "",
+      phoneNumber: isPhonePrivate ? "Private" : (user.phoneNumber || ""),
       gender: user.gender,
       birthday: user.birthday ? user.birthday.toISOString() : null,
       jobsDone: user.jobsDone || 0,

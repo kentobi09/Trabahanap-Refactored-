@@ -20,6 +20,7 @@ model User {
   emailAddress           String
   password               String
   phoneNumber            String?
+  phoneVisibility        String?        @default("public")
   profileImage           String?
   bio                    String?
   barangay               String
@@ -350,6 +351,7 @@ model Applicants {
   emailAddress           String
   password               String
   phoneNumber            String?
+  phoneVisibility        String?              @default("public")
   profileImage           String?
   bio                    String?
   barangay               String

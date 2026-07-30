@@ -32,6 +32,7 @@ export const getUserProfile = async (req, res) => {
           profileImage: true,
           emailAddress: true,
           phoneNumber: true,
+          phoneVisibility: true,
           barangay: true,
           street: true,
           houseNumber: true,
@@ -60,6 +61,7 @@ export const getUserProfile = async (req, res) => {
               profileImage: true,
               emailAddress: true,
               phoneNumber: true,
+              phoneVisibility: true,
               barangay: true,
               street: true,
               houseNumber: true,
@@ -114,6 +116,7 @@ export const updateUserProfile = async (req, res) => {
       gender: req.body.gender ? req.body.gender.toLowerCase() : undefined,
       birthday: req.body.birthday ? new Date(req.body.birthday) : undefined,
       phoneNumber: req.body.phoneNumber,
+      phoneVisibility: req.body.phoneVisibility,
       barangay: req.body.barangay,
       street: req.body.street,
       houseNumber: req.body.houseNumber,
@@ -228,6 +231,7 @@ export const getJobSeekerProfileByUserId = async (req, res) => {
             profileImage: true,
             emailAddress: true,
             phoneNumber: true,
+            phoneVisibility: true,
             barangay: true,
             street: true,
             houseNumber: true,
@@ -257,10 +261,14 @@ export const getJobSeekerProfileByUserId = async (req, res) => {
       return res.status(404).json({ message: "Job seeker profile not found" });
     }
 
+    // Mask the phone number if it is marked as private
+    const isPhonePrivate = jobSeeker.user?.phoneVisibility === "private";
+    const userCopy = jobSeeker.user ? {
+      ...jobSeeker.user,
+      phoneNumber: isPhonePrivate ? "Private" : (jobSeeker.user.phoneNumber || ""),
+    } : null;
+
     // Combine user data and jobSeeker specific data
-    // The 'user' object is already nested under jobSeeker from the include
-    // We might want to flatten it or structure it as the frontend expects.
-    // For now, let's return a structure that clearly separates JobSeeker fields and User fields.
     const responsePayload = {
       jobSeekerId: jobSeeker.id, // This is the JobSeeker's own _id
       availability: jobSeeker.availability,
@@ -269,7 +277,7 @@ export const getJobSeekerProfileByUserId = async (req, res) => {
       rate: jobSeeker.rate,
       jobTags: jobSeeker.jobTags, // This is an array of enum JobTag
       // ... other JobSeeker specific fields
-      user: jobSeeker.user, // Contains all the selected user fields
+      user: userCopy, // Contains all the selected user fields
     };
 
     return res.status(200).json(responsePayload);

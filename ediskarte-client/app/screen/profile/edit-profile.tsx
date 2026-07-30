@@ -10,6 +10,7 @@ import {
   TextInput,
   Alert,
   Modal,
+  Switch,
 } from "react-native";
 import {
   AntDesign,
@@ -58,6 +59,7 @@ const EditProfilePage: React.FC = () => {
     suffixName: "",
     emailAddress: "",
     phoneNumber: "",
+    phoneVisibility: "public",
     gender: "",
     birthday: "",
     houseNumber: "",
@@ -78,6 +80,7 @@ const EditProfilePage: React.FC = () => {
         suffixName: userData.suffixName || "",
         emailAddress: userData.emailAddress || "",
         phoneNumber: userData.phoneNumber || "",
+        phoneVisibility: userData.phoneVisibility || "public",
         gender: formatGender(userData.gender) || "",
         birthday: formatBirthday(userData.birthday) || "",
         houseNumber: userData.houseNumber || "",
@@ -455,6 +458,21 @@ const EditProfilePage: React.FC = () => {
             {errors.phoneNumber ? (
               <Text style={styles.errorText}>{errors.phoneNumber}</Text>
             ) : null}
+
+            {/* Visibility Toggle */}
+            <View style={styles.visibilityContainer}>
+              <Text style={styles.visibilityLabel}>
+                Phone Number Visibility: <Text style={{ fontWeight: "bold", color: "#0B153C" }}>{formData.phoneVisibility === "public" ? "Public" : "Private"}</Text>
+              </Text>
+              <Switch
+                trackColor={{ false: "#E2E8F0", true: "#0B153C" }}
+                thumbColor={formData.phoneVisibility === "public" ? "#FFF" : "#A0AEC0"}
+                onValueChange={(value) =>
+                  handleInputChange("phoneVisibility", value ? "public" : "private")
+                }
+                value={formData.phoneVisibility === "public"}
+              />
+            </View>
           </View>
 
           <View style={styles.fieldContainer}>
@@ -548,6 +566,22 @@ const EditProfilePage: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  visibilityContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  visibilityLabel: {
+    fontSize: 14,
+    color: "#475569",
+  },
   mainContainer: {
     flex: 1,
     backgroundColor: "#f8f9fa",
