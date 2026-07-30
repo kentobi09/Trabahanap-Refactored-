@@ -217,7 +217,7 @@ export const getJobSeekerProfileByUserId = async (req, res) => {
       `[getJobSeekerProfileByUserId] Received request for User ID: ${userId}`
     ); // Added log
 
-    const jobSeeker = await prisma.jobSeeker.findUnique({
+    let jobSeeker = await prisma.jobSeeker.findUnique({
       where: { userId: userId }, // Find JobSeeker by the unique userId (foreign key to User table)
       include: {
         user: {
@@ -249,8 +249,42 @@ export const getJobSeekerProfileByUserId = async (req, res) => {
       },
     });
 
+    if (!jobSeeker) {
+      console.log(
+        `[getJobSeekerProfileByUserId] No JobSeeker found by userId ${userId}. Trying JobSeeker id lookup.`
+      );
+      jobSeeker = await prisma.jobSeeker.findUnique({
+        where: { id: userId }, // Try finding by JobSeeker's own id (which maps to _id)
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              middleName: true,
+              lastName: true,
+              suffixName: true,
+              profileImage: true,
+              emailAddress: true,
+              phoneNumber: true,
+              phoneVisibility: true,
+              barangay: true,
+              street: true,
+              houseNumber: true,
+              gender: true,
+              birthday: true,
+              bio: true,
+              userType: true,
+              jobsDone: true,
+              joinedAt: true,
+              verificationStatus: true,
+            },
+          },
+        },
+      });
+    }
+
     console.log(
-      `[getJobSeekerProfileByUserId] Prisma findUnique result for userId ${userId}:`,
+      `[getJobSeekerProfileByUserId] Prisma query result:`,
       jobSeeker
     ); // Added log
 

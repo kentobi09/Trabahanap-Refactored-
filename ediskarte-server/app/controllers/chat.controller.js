@@ -575,6 +575,8 @@ export const getUserProfile = async (req, res) => {
             suffixName: true,
             profileImage: true,
             emailAddress: true,
+            phoneNumber: true,
+            phoneVisibility: true,
             barangay: true,
             street: true,
             houseNumber: true,
@@ -615,6 +617,8 @@ export const getUserProfile = async (req, res) => {
               suffixName: true,
               profileImage: true,
               emailAddress: true,
+              phoneNumber: true,
+              phoneVisibility: true,
               barangay: true,
               street: true,
               houseNumber: true,
@@ -708,6 +712,7 @@ export const getUserProfile = async (req, res) => {
       (new Date() - firstJobDate) / (1000 * 60 * 60 * 24 * 365)
     );
 
+    const isPhonePrivate = jobSeeker.user.phoneVisibility === "private";
     const response = {
       name: `${jobSeeker.user.firstName}  ${jobSeeker.user.middleName} ${jobSeeker.user.lastName}`,
       profileImage: jobSeeker.user.profileImage || "",
@@ -720,7 +725,7 @@ export const getUserProfile = async (req, res) => {
       skills: [], // We'll need to fetch job tags separately or modify the schema
       achievements,
       email: jobSeeker.user.emailAddress,
-      phoneNumber: "", // Not currently stored in the schema
+      phoneNumber: isPhonePrivate ? "Private" : (jobSeeker.user.phoneNumber || ""),
       gender: jobSeeker.user.gender,
       birthday: jobSeeker.user.birthday.toISOString(),
       feedbacks,
