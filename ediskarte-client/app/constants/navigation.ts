@@ -9,7 +9,7 @@ if (!(global as any).navigationState) {
 }
 
 const state = (global as any).navigationState;
-const THROTTLE_DELAY = 1200; // 1.2 second block to prevent double-tap navigation
+const THROTTLE_DELAY = 1000; // 1 second block to prevent double-tap navigation
 
 export const registerLoadingListener = (callback: (visible: boolean) => void) => {
   state.setLoadingVisible = callback;
