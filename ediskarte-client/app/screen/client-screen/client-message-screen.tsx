@@ -243,24 +243,44 @@ const ChatScreen: React.FC<ChatProps> = ({
 
   // 2. Handle option selected (camera or gallery)
   const handleOptionPress = async (index: number) => {
-    if (index === 0) {
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 1,
-      });
-      if (!result.canceled) {
-        console.log("📷 Camera image:", result.assets[0].uri);
+    if (!socket || !currentUserId) return;
+
+    try {
+      let result;
+      if (index === 0) {
+        // Take Photo
+        result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          quality: 0.7,
+          base64: true,
+        });
+      } else if (index === 1) {
+        // Choose from Gallery
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          quality: 0.7,
+          base64: true,
+        });
+      } else {
+        return;
       }
-    } else if (index === 1) {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 1,
-      });
-      if (!result.canceled) {
-        console.log("🖼️ Gallery image:", result.assets[0].uri);
+
+      if (result && !result.canceled) {
+        const image = result.assets[0];
+        const base64Image = `data:${image.type || "image/jpeg"};base64,${image.base64}`;
+
+        socket.emit("upload_image", {
+          senderId: currentUserId,
+          chatId: chatId,
+          image: base64Image,
+          fileName: image.fileName || (index === 0 ? "camera_photo.jpg" : "gallery_photo.jpg"),
+        });
       }
+    } catch (error) {
+      console.error("Error picking/taking image:", error);
+      Alert.alert("Error", "Failed to access camera or gallery.");
     }
   };
 

@@ -144,6 +144,7 @@ const ChatScreen: React.FC<ChatProps> = ({
   const [jobBudget, setJobBudget] = useState<string | null>(null);
   const [isBlockedByClient, setIsBlockedByClient] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const imageActionSheetRef = useRef<any>(null);
 
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [reportReason, setReportReason] = useState("");
@@ -252,21 +253,38 @@ const ChatScreen: React.FC<ChatProps> = ({
       ? message.deletedBySender === "yes"
       : message.deletedByReceiver === "yes";
   };
-  const handleAttachPress = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.7,
-        base64: true,
-      });
-      if (!socket) return;
-      if (!result.canceled) {
-        const image = result.assets[0];
+  const handleAttachPress = () => {
+    imageActionSheetRef.current?.show();
+  };
 
-        const base64Image = `data:${image.type || "image/jpeg"};base64,${
-          image.base64
-        }`;
+  const handleOptionPress = async (index: number) => {
+    if (!socket || !currentUserId) return;
+
+    try {
+      let result;
+      if (index === 0) {
+        // Take Photo
+        result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          quality: 0.7,
+          base64: true,
+        });
+      } else if (index === 1) {
+        // Choose from Gallery
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          quality: 0.7,
+          base64: true,
+        });
+      } else {
+        return;
+      }
+
+      if (result && !result.canceled) {
+        const image = result.assets[0];
+        const base64Image = `data:${image.type || "image/jpeg"};base64,${image.base64}`;
 
         socket.emit("upload_image", {
           senderId: currentUserId,
@@ -275,7 +293,8 @@ const ChatScreen: React.FC<ChatProps> = ({
         });
       }
     } catch (error) {
-      console.error("Error uploading image via socket:", error);
+      console.error("Error picking/taking image:", error);
+      Alert.alert("Error", "Failed to access camera or gallery.");
     }
   };
 
@@ -1776,6 +1795,13 @@ const ChatScreen: React.FC<ChatProps> = ({
           keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
           style={styles.inputContainer}
         >
+          <ActionSheet
+            ref={imageActionSheetRef}
+            title={"Attach Image"}
+            options={["Take Photo", "Choose from Gallery", "Cancel"]}
+            cancelButtonIndex={2}
+            onPress={handleOptionPress}
+          />
 
           <View style={styles.inputIconsContainer}>
             <TouchableOpacity style={styles.iconButton} onPress={handleAttachPress}>
