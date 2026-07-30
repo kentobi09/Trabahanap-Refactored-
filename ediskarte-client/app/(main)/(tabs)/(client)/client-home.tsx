@@ -1134,23 +1134,13 @@ const styles = StyleSheet.create({
   },
   detailsModalHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     alignItems: "center",
+    height: 32,
     marginBottom: 8,
   },
-  detailsModalIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#0B153C",
-    justifyContent: "center",
-    alignItems: "center",
-  },
   detailsModalClose: {
-    position: "absolute",
-    right: 0,
-    top: 0,
-    padding: 8,
+    padding: 4,
   },
   detailsModalTitle: {
     fontSize: 20,
