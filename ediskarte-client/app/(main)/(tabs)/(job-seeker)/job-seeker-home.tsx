@@ -71,6 +71,12 @@ interface JobSeeker {
 
 type TabType = "bestMatch" | "otherJobs" | "pendingJobs" | "history";
 
+function reverseCamelCase(str: string) {
+  return str.replace(/([A-Z])/g, " $1").replace(/^./, function (str) {
+    return str.toUpperCase();
+  });
+}
+
 export default function JobListingScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("bestMatch");
@@ -376,126 +382,131 @@ export default function JobListingScreen() {
         }>
           
           {displayedJobs.length > 0 ? (
-            displayedJobs.map((job) => (
-              <TouchableOpacity
-                key={job.id}
-                style={[
-                  styles.jobCard,
-                  activeTab === "pendingJobs" && styles.myJobCard
-                ]}
-                onPress={() => handleSeeMorePress(job)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.jobContent}>
-                  <View style={styles.jobHeader}>
-                    <Text style={styles.postedDate}>
-                      {new Date(job.datePosted).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </Text>
-                    <TouchableOpacity
-                      style={styles.posterRow}
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        router.push({
-                          pathname: "../../../screen/profile/view-profile/view-page-client",
-                          params: { otherParticipantId: job.client?.id || "" },
-                        });
-                      }}
-                    >
-                      <Image
-                        source={
-                          job.client?.profileImage
-                            ? { uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${job.client.profileImage}` }
-                            : require("assets/images/default-user.png")//here
-                        }
-                        style={styles.posterProfileImage}
-                      />
-                      <Text style={styles.posterName}>
-                        {job.client ? (job.client.firstName + " " + job.client.lastName) : "Unknown Client"}
+            displayedJobs.map((job) => {
+              const hasImage = job.jobImage?.[0];
+              const imageUri = hasImage
+                ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/${
+                    (job.jobImage[0] + "").replace(/\\/g, "/").split("job_request_files/")[1] ?? ''
+                  }`
+                : null;
+              return (
+                <TouchableOpacity
+                  key={job.id}
+                  style={[
+                    styles.jobCard,
+                    activeTab === "pendingJobs" && styles.myJobCard
+                  ]}
+                  onPress={() => handleSeeMorePress(job)}
+                  activeOpacity={0.7}
+                >
+                  {hasImage && (
+                    <Image
+                      source={{ uri: imageUri }}
+                      style={styles.cardJobBanner}
+                      resizeMode="cover"
+                    />
+                  )}
+                  <View style={styles.cardContentContainer}>
+                    {/* Header Row: Client Info & Category */}
+                    <View style={styles.jobHeader}>
+                      <TouchableOpacity
+                        style={styles.posterRow}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          router.push({
+                            pathname: "../../../screen/profile/view-profile/view-page-client",
+                            params: { otherParticipantId: job.client?.id || "" },
+                          });
+                        }}
+                      >
+                        <Image
+                          source={
+                            job.client?.profileImage
+                              ? { uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${job.client.profileImage.replace(/\\/g, "/")}` }
+                              : require("assets/images/default-user.png")
+                          }
+                          style={styles.posterProfileImage}
+                        />
+                        <View>
+                          <Text style={styles.posterName}>
+                            {job.client ? (job.client.firstName + " " + job.client.lastName) : "Unknown Client"}
+                          </Text>
+                          <Text style={styles.postedDate}>
+                            {new Date(job.datePosted).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+
+                      <View style={styles.categoryBadge}>
+                        <Text style={styles.categoryText}>
+                          {reverseCamelCase(job.category || "")}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Title & Description */}
+                    <View style={styles.jobMainContent}>
+                      <Text style={styles.jobTitle} numberOfLines={1} ellipsizeMode="tail">
+                        {job.jobTitle}
                       </Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  <View style={styles.jobMainContent}>
-                    <Text style={styles.jobTitle}>{job.jobTitle}</Text>
-                    <Text
-                      style={styles.jobDescription}
-                      numberOfLines={1}
-                      ellipsizeMode="tail"
-                    >
-                      {job.jobDescription.length > 32 
-                        ? job.jobDescription.substring(0, 32) + '...'
-                        : job.jobDescription}
-                    </Text>
-                  </View>
-
-                  <View style={styles.jobFooter}>
-                    <View style={styles.categoryBadge}>
-                      <Text style={styles.categoryText}>{job.category}</Text>
+                      <Text style={styles.jobDescription} numberOfLines={2}>
+                        {job.jobDescription}
+                      </Text>
                     </View>
-                    
-                    <View style={styles.detailsContainer}>
-                      <View style={styles.budgetDurationContainer}>
-                        <Text style={styles.priceText}>
-                          {job.budget ? `₱ ${job.budget}` : "Not Specified"}
-                        </Text>
-                        <Text style={styles.durationText}>
-                          {job.jobDuration ? `Duration: ${job.jobDuration}` : "Duration: Not Specified"}
-                        </Text>
-                      </View>
 
-                      <View style={styles.locationApplicantContainer}>
-                        <View style={styles.locationContainer}>
-                          <Ionicons name="location-outline" size={14} color="#666" />
-                          <Text style={styles.locationText} numberOfLines={1}>
-                            {job.jobLocation ? (job.jobLocation.length > 12
-                              ? job.jobLocation.substring(0, 12) + '...'
-                              : job.jobLocation) : "Not Specified"}
+                    {/* Metadata Grid */}
+                    <View style={styles.jobMetadataGrid}>
+                      <View style={styles.gridRow}>
+                        <View style={styles.gridItem}>
+                          <Ionicons name="cash-outline" size={16} color="#0B153C" style={{ marginRight: 6 }} />
+                          <Text style={styles.gridText} numberOfLines={1}>
+                            {job.budget ? `₱ ${job.budget}` : "Not Specified"}
                           </Text>
                         </View>
-                        <View style={styles.applicantCountContainer}>
-                          <Ionicons name="people-outline" size={14} color="#666" />
-                          <Text style={styles.applicantCountText}>
-                            {job.applicantCount} applicant{job.applicantCount >1 ? "s" : ""}
+                        <View style={styles.gridItem}>
+                          <Ionicons name="time-outline" size={16} color="#0B153C" style={{ marginRight: 6 }} />
+                          <Text style={styles.gridText} numberOfLines={1}>
+                            {job.jobDuration ? `${job.jobDuration}` : "Not Specified"}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.gridRow}>
+                        <View style={styles.gridItem}>
+                          <Ionicons name="location-outline" size={16} color="#0B153C" style={{ marginRight: 6 }} />
+                          <Text style={styles.gridText} numberOfLines={1}>
+                            {job.jobLocation || "Not Specified"}
+                          </Text>
+                        </View>
+                        <View style={styles.gridItem}>
+                          <Ionicons name="people-outline" size={16} color="#0B153C" style={{ marginRight: 6 }} />
+                          <Text style={styles.gridText} numberOfLines={1}>
+                            {job.applicantCount || 0} applicant{(job.applicantCount ?? 0) !== 1 ? "s" : ""}
                           </Text>
                         </View>
                       </View>
                     </View>
-                  </View>
-                </View>
 
-                <View style={styles.jobImageContainer}>
-                  <Image
-                    source={{ 
-                      uri: job.jobImage?.[0]
-                        ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/${
-                            (job.jobImage[0] + "").replace(/\\/g, "/").split("job_request_files/")[1] ?? ''
-                          }`
-                        : undefined
-                    }}
-                    style={styles.jobImage}
-                    resizeMode="cover"
-                  />
-                  <View style={styles.imageOverlay} />
-                </View>
-                {((activeTab === "pendingJobs" || activeTab === "history") && job.jobStatus === "completed") && (
-                  <TouchableOpacity
-                    style={styles.finishButton}
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      setSelectedJobId(job.id);
-                      setShowReviewModal(true);
-                    }}
-                  >
-                    <Text style={styles.finishButtonText}>Leave a Review</Text>
-                  </TouchableOpacity>
-                )}
-               
-              </TouchableOpacity>
-            ))
+                    {((activeTab === "pendingJobs" || activeTab === "history") && job.jobStatus === "completed") && (
+                      <TouchableOpacity
+                        style={styles.finishButton}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          setSelectedJobId(job.id);
+                          setShowReviewModal(true);
+                        }}
+                      >
+                        <Text style={styles.finishButtonText}>Leave a Review</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })
           ) : (
             <Text style = {styles.noJobs}>No jobs found.</Text>
           )}
@@ -674,12 +685,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   jobCard: {
-    flexDirection: "row",
-    backgroundColor: "#f8f9fa",
-    borderRadius: 12,
+    backgroundColor: "#fff",
+    borderRadius: 16,
     marginBottom: 16,
     overflow: "hidden",
-    height: 280,
     borderWidth: 1,
     borderColor: "#e9ecef",
     shadowColor: "#000",
@@ -691,141 +700,100 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  jobContent: {
-    flex: 3,
+  cardContentContainer: {
     padding: 16,
-    justifyContent: "space-between",
+  },
+  cardJobBanner: {
+    width: "100%",
+    height: 140,
   },
   jobHeader: {
-    marginBottom: 12,
-  },
-  jobMainContent: {
-    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   posterRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 8,
   },
   posterProfileImage: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     marginRight: 8,
     backgroundColor: "#eee",
   },
   posterName: {
     fontSize: 14,
-    fontWeight: "500",
-    color: "#333",
+    fontWeight: "600",
+    color: "#222",
+  },
+  postedDate: {
+    fontSize: 11,
+    color: "#777",
+  },
+  categoryBadge: {
+    backgroundColor: "#e8f0fe",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  categoryText: {
+    color: "#1a73e8",
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  jobMainContent: {
+    marginBottom: 14,
   },
   jobTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#000",
-    marginBottom: 8,
+    color: "#111",
+    marginBottom: 4,
   },
   jobDescription: {
-    fontSize: 14,
-    color: "#666",
-    lineHeight: 20,
-    marginBottom: 8,
-    height: 20,
+    fontSize: 13,
+    color: "#555",
+    lineHeight: 18,
   },
-  jobFooter: {
-    gap: 12,
+  jobMetadataGrid: {
+    borderTopWidth: 1,
+    borderTopColor: "#f1f3f5",
+    paddingTop: 12,
+    gap: 8,
   },
-  detailsContainer: {
-    gap: 12,
-  },
-  budgetDurationContainer: {
-    gap: 4,
-  },
-  locationApplicantContainer: {
+  gridRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
   },
-  priceText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#000",
-  },
-  durationText: {
-    fontSize: 14,
-    color: "#666",
-  },
-  locationContainer: {
+  gridItem: {
     flexDirection: "row",
     alignItems: "center",
-    flex: 1,
+    width: "48%",
   },
-  locationText: {
-    fontSize: 13,
-    color: "#666",
-    marginLeft: 4,
-    flex: 1,
-    height: 18,
-  },
-  applicantCountContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginLeft: 16,
-  },
-  applicantCountText: {
-    fontSize: 13,
-    color: "#666",
-    marginLeft: 4,
-  },
-  categoryBadge: {
-    backgroundColor: "#14213d",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    alignSelf: "flex-start",
-  },
-  categoryText: {
-    color: "#fff",
+  gridText: {
     fontSize: 12,
+    color: "#495057",
     fontWeight: "500",
-  },
-  jobImageContainer: {
     flex: 1,
-    position: "relative",
-  },
-  jobImage: {
-    width: "100%",
-    height: "100%",
-  },
-  imageOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(13, 34, 64, 0.7)",
-  },
-  postedDate: {
-    fontSize: 12,
-    color: "#666",
-    marginBottom: 4,
-    
   },
   noJobs:{
     textAlign:"center",
     marginTop:20,
-
   },
   finishButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
     backgroundColor: '#2ecc71',
-    padding: 8,
+    paddingVertical: 10,
     borderRadius: 8,
-    zIndex: 2,
+    alignItems: 'center',
+    marginTop: 12,
   },
   finishButtonText: {
     color: 'white',
     fontWeight: 'bold',
-    fontSize: 12,
+    fontSize: 14,
   },
   successModalContainer: {
     flex: 1,
