@@ -19,10 +19,13 @@ export async function AddCommunityPost(params) {
   formData.append("commentCount", params.commentCount);
 
   if (params.postImage) {
+    const filename = params.postImage.split("/").pop() || "image.jpg";
+    const ext = filename.split(".").pop() || "jpg";
+    const mimeType = mime.lookup(filename) || `image/${ext}`;
     formData.append("postImage", {
       uri: params.postImage,
-      name: params.postImage.split("/").pop(),
-      type: mime.lookup(params.postImage),
+      name: filename,
+      type: mimeType,
     });
   }
 
@@ -39,8 +42,8 @@ export async function AddCommunityPost(params) {
     console.log("Successfully created community post!", response.data);
     return response.data;
   } catch (error) {
-    // console.error("Error message:", error.message);
-    // throw error;
+    console.error("Error creating community post:", error.response?.data || error.message);
+    throw error;
   }
 }
 

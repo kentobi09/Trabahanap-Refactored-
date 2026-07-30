@@ -1,6 +1,7 @@
 import express from "express";
 import multer from "multer";
 import cryptoRandomString from "crypto-random-string";
+import fs from "fs";
 import {
   createPosting,
   userHasLiked,
@@ -22,7 +23,11 @@ import authenticateToken from "../middleware/auth.middleware.js";
 
 const storage = multer.diskStorage({
   destination: function (_req, _file, cb) {
-    cb(null, `./assets/community_images`);
+    const dir = `./assets/community_images`;
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
   },
   filename: function (_req, file, cb) {
     cb(

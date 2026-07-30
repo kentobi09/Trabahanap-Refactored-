@@ -98,6 +98,7 @@ const SocialFeedScreen = () => {
   const [data, setData] = useState<any>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
+  const [isPosting, setIsPosting] = useState<boolean>(false);
 
   // State for Edit Post Modal
   const [isEditModalVisible, setIsEditModalVisible] = useState<boolean>(false);
@@ -528,6 +529,7 @@ const SocialFeedScreen = () => {
 
   const handleAddPost = async () => {
     if (newPostText.trim() === "" && !selectedImage) return;
+    setIsPosting(true);
 
     const newPost: Post = {
       id: Date.now().toString(),
@@ -550,7 +552,23 @@ const SocialFeedScreen = () => {
         setShowSuccessModal(false);
       }, 2000);
     } catch (error) {
-      Alert.alert("Error", "Failed to create post");
+      Alert.alert("Error", "Failed to create post. Please try again.");
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
+  const handleAuthorPress = (item: Post) => {
+    if (item.clientId) {
+      router.push({
+        pathname: "/screen/profile/view-profile/view-page-client",
+        params: { otherParticipantId: item.clientId }
+      });
+    } else if (item.jobSeekerId) {
+      router.push({
+        pathname: "/screen/profile/view-profile/view-page-job-seeker",
+        params: { otherParticipantId: item.jobSeekerId }
+      });
     }
   };
 
@@ -1095,24 +1113,26 @@ const SocialFeedScreen = () => {
     return (
       <View style={styles.postContainer}>
         <View style={styles.postHeader}>
-          <Image
-            source={
-              profileImageUrl
-                ? { uri: profileImageUrl }
-                : require("assets/images/default-user.png")
-            }
-            style={styles.avatar}
-          />
-          <View style={styles.postHeaderContent}>
-            <Text style={styles.username}>{item.username}</Text>
-            <Text style={styles.time}>
-              {new Date(item.createdAt).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </Text>
-          </View>
+          <TouchableOpacity onPress={() => handleAuthorPress(item)} style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+            <Image
+              source={
+                profileImageUrl
+                  ? { uri: profileImageUrl }
+                  : require("assets/images/default-user.png")
+              }
+              style={styles.avatar}
+            />
+            <View style={styles.postHeaderContent}>
+              <Text style={styles.username}>{item.username}</Text>
+              <Text style={styles.time}>
+                {new Date(item.createdAt).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </Text>
+            </View>
+          </TouchableOpacity>
           {/* Ownership check for post edit/delete. data.id is current user's ID */}
           {data &&
             (item.clientId === data.id || item.jobSeekerId === data.id) && (
@@ -1363,15 +1383,19 @@ const SocialFeedScreen = () => {
             <Text style={styles.modalTitle}>Create Post</Text>
             <TouchableOpacity
               onPress={handleAddPost}
-              disabled={newPostText.trim() === "" && !selectedImage}
+              disabled={isPosting || (newPostText.trim() === "" && !selectedImage)}
               style={[
                 styles.postButton,
-                newPostText.trim() === "" && !selectedImage
+                isPosting || (newPostText.trim() === "" && !selectedImage)
                   ? styles.disabledButton
                   : null,
               ]}
             >
-              <Text style={styles.postButtonText}>Post</Text>
+              {isPosting ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.postButtonText}>Post</Text>
+              )}
             </TouchableOpacity>
           </View>
 
