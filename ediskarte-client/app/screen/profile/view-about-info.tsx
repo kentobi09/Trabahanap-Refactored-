@@ -217,7 +217,7 @@ const AboutInfoPage: React.FC = () => {
             />
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Phone Number</Text>
-              <Text style={styles.infoValue}>{workerInfo.phoneNumber}</Text>
+              <Text style={styles.infoValue}>{workerInfo.phoneNumber || "Not Specified"}</Text>
             </View>
           </View>
 
