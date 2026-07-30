@@ -812,6 +812,7 @@ export const getClientProfile = async (req, res) => {
         suffixName: true,
         profileImage: true,
         emailAddress: true,
+        phoneNumber: true,
         barangay: true,
         street: true,
         houseNumber: true,
@@ -833,7 +834,7 @@ export const getClientProfile = async (req, res) => {
         user.barangay || ""
       }`,
       email: user.emailAddress,
-      phoneNumber: "", // Not currently stored in the schema
+      phoneNumber: user.phoneNumber || "",
       gender: user.gender,
       birthday: user.birthday ? user.birthday.toISOString() : null,
       jobsDone: user.jobsDone || 0,

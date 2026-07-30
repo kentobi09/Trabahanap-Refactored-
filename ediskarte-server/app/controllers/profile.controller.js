@@ -227,6 +227,7 @@ export const getJobSeekerProfileByUserId = async (req, res) => {
             suffixName: true,
             profileImage: true,
             emailAddress: true,
+            phoneNumber: true,
             barangay: true,
             street: true,
             houseNumber: true,

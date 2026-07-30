@@ -83,7 +83,21 @@ const AboutInfoPage: React.FC = () => {
 
       const data = await response.json();
       console.log('Profile fetched successfully:', data);
-      setWorkerInfo(data);
+      
+      // If the response is nested (from /details endpoint which returns { user: {...} }), flatten it
+      if (data.user) {
+        const flatData = {
+          ...data,
+          ...data.user,
+          name: `${data.user.firstName} ${data.user.middleName || ""} ${data.user.lastName}`,
+          email: data.user.emailAddress,
+          address: `${data.user.houseNumber || ""} ${data.user.street || ""}, ${data.user.barangay || ""}`,
+          phoneNumber: data.user.phoneNumber || "",
+        };
+        setWorkerInfo(flatData);
+      } else {
+        setWorkerInfo(data);
+      }
       setLoading(false);
     } catch (error: any) {
       console.error("Error fetching profile:", error);
