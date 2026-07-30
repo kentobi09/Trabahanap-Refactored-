@@ -11,6 +11,7 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { safePush, safeReplace } from "../constants/navigation";
 import io, { Socket } from "socket.io-client";
 
 export default function SignInScreen() {
@@ -103,7 +104,7 @@ export default function SignInScreen() {
 
       const isJobSeeker = data.user?.userType === "job-seeker";
 
-      router.replace(
+      safeReplace(
         isJobSeeker
           ? "/(main)/(tabs)/(job-seeker)/job-seeker-home"
           : "/(main)/(tabs)/(client)/client-home"
@@ -114,11 +115,11 @@ export default function SignInScreen() {
   };
 
   const handleForgotPassword = () => {
-    router.push("/screen/forgot-password");
+    safePush("/screen/forgot-password");
   };
 
   const handleSignUp = () => {
-    router.push("/(auth)/user-page");
+    safePush("/(auth)/user-page");
   };
 
   return (

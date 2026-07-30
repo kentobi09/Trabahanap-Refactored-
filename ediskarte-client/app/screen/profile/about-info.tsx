@@ -17,6 +17,7 @@ import {
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { fetchUserProfile } from "@/api/profile-request";
+import { safePush, safeBack } from "../../constants/navigation";
 
 const AboutInfoPage: React.FC = () => {
   const router = useRouter();
@@ -26,15 +27,12 @@ const AboutInfoPage: React.FC = () => {
   });
 
   const handleBackPress = () => {
-    router.back();
+    safeBack();
   };
 
   const handleEditPress = () => {
     // Navigate to edit profile page with the current info as params
-    router.push({
-      pathname: "./edit-profile",
-      params: { ...workerInfo },
-    });
+    safePush("./edit-profile", { ...workerInfo });
   };
 
   const formatGender = (gender: string | undefined) => {

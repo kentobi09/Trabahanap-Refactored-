@@ -20,6 +20,7 @@ import {
   Entypo,
 } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { safePush, safeReplace, safeBack } from '../../../constants/navigation';
 
 // Import the achievements data
 import achievementsData from "../achievements";
@@ -87,7 +88,7 @@ const UtilityWorkerProfile: React.FC = () => {
     try {
       const token = await AsyncStorage.getItem("token");
       if (!token) {
-        router.replace("/sign_in");
+        safeReplace("/sign_in");
         return;
       }
 
@@ -264,10 +265,7 @@ const UtilityWorkerProfile: React.FC = () => {
   };
 
   const handleAboutInfoPress = () => {
-    router.push({
-      pathname: "../view-about-info",
-      params: { otherParticipantId },
-    });
+    safePush("../view-about-info", { otherParticipantId });
   };
   const formatDate = (isoString: string) => {
     const date = new Date(isoString);
@@ -335,7 +333,7 @@ const UtilityWorkerProfile: React.FC = () => {
   };
 
   const handleGoBack = () => {
-    router.back();
+    safeBack();
   };
 
   return (
@@ -521,12 +519,7 @@ const UtilityWorkerProfile: React.FC = () => {
           <Text style={styles.sectionTitle}>Recent Feedbacks</Text>
           <TouchableOpacity
             style={styles.seeAllButton}
-            onPress={() =>
-              router.push({
-                pathname: "./view-all-feedbacks",
-                params: { otherParticipantId },
-              })
-            }
+            onPress={() => safePush("./view-all-feedbacks", { otherParticipantId })}
           >
             <Text style={styles.seeAllText}>See All</Text>
             <AntDesign name="right" size={16} color="#0B153C" />

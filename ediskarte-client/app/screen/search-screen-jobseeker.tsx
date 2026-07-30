@@ -14,6 +14,7 @@ import {
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { safePush, safeReplace, safeBack } from '../constants/navigation';
 
 interface Job {
   id: string;
@@ -55,7 +56,7 @@ const SearchScreen = () => {
   ]);
 
   const handleGoBack = () => {
-    router.back();
+    safeBack();
   };
 
   const recentSearches = [
@@ -71,7 +72,7 @@ const SearchScreen = () => {
       const token = await AsyncStorage.getItem('token');
       
       if (!token) {
-        router.push('/sign_in');
+        safePush('/sign_in');
         return;
       }
 
@@ -110,7 +111,7 @@ const SearchScreen = () => {
       const token = await AsyncStorage.getItem('token');
       
       if (!token) {
-        router.push('/sign_in');
+        safePush('/sign_in');
         return;
       }
 
@@ -265,23 +266,20 @@ const SearchScreen = () => {
                 <TouchableOpacity
                   key={job.id}
                   style={styles.jobCard}
-                  onPress={() => router.push({
-                    pathname: "../../../screen/job-seeker-screen/job-details",
-                    params: {
-                      id: job.id,
-                      title: job.jobTitle,
-                      postedDate: job.datePosted,
-                      description: job.jobDescription,
-                      rate: job.budget,
-                      location: job.jobLocation,
-                      otherParticipant: job.client.id,
-                      jobImages: job.jobImage,
-                      jobDuration: job.jobDuration,
-                      clientFirstName: job.client.name.split(' ')[0],
-                      clientLastName: job.client.name.split(' ')[1],
-                      clientProfileImage: job.client.profileImage,
-                      clientId: job.client.id,
-                    }
+                  onPress={() => safePush("../../../screen/job-seeker-screen/job-details", {
+                    id: job.id,
+                    title: job.jobTitle,
+                    postedDate: job.datePosted,
+                    description: job.jobDescription,
+                    rate: job.budget,
+                    location: job.jobLocation,
+                    otherParticipant: job.client.id,
+                    jobImages: job.jobImage,
+                    jobDuration: job.jobDuration,
+                    clientFirstName: job.client.name.split(' ')[0],
+                    clientLastName: job.client.name.split(' ')[1],
+                    clientProfileImage: job.client.profileImage,
+                    clientId: job.client.id,
                   })}
                 >
                   <View style={styles.jobHeader}>

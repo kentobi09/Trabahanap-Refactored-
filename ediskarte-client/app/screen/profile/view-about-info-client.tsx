@@ -17,6 +17,7 @@ import {
 } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { safePush, safeReplace, safeBack } from "../../constants/navigation";
 
 interface WorkerInfo {
   firstName: string;
@@ -60,7 +61,7 @@ const AboutInfoPage: React.FC = () => {
     try {
       const token = await AsyncStorage.getItem("token");
       if (!token) {
-        router.replace("/sign_in");
+        safeReplace("/sign_in");
         return;
       }
 
@@ -72,34 +73,31 @@ const AboutInfoPage: React.FC = () => {
           headers: { 
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
-          },
+          }
         }
       );
 
       if (!response.ok) {
-        throw new Error('Failed to fetch profile data');
+        throw new Error("Failed to fetch profile");
       }
 
       const data = await response.json();
-      console.log('Received profile data:', data);
+      console.log('Profile fetched successfully:', data);
       setWorkerInfo(data);
-    } catch (error) {
+      setLoading(false);
+    } catch (error: any) {
       console.error("Error fetching profile:", error);
-      setError("Failed to load profile data");
-    } finally {
+      setError(error.message || "Failed to load profile details");
       setLoading(false);
     }
   };
 
   const handleBackPress = () => {
-    router.back();
+    safeBack();
   };
 
   const handleEditPress = () => {
-    router.push({
-      pathname: "./edit-profile",
-      params: { otherParticipantId: jobseekerId }
-    });
+    safePush("./edit-profile", { otherParticipantId: jobseekerId });
   };
 
   const formatGender = (gender: string | undefined) => {

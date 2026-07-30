@@ -20,6 +20,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { fetchJobListings, deleteJobListing } from "@/api/client-request";
 import decodeToken from "@/api/token-decoder";
+import { safePush, safeReplace } from "../../../constants/navigation";
 
 type TabType = "jobListings" | "history";
 
@@ -73,13 +74,11 @@ export default function JobListingScreen() {
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
 
   const handleProfilePress = () => {
-    router.push({
-      pathname: "../../../screen/profile/profile-screen" as any,
-    });
+    safePush("../../../screen/profile/profile-screen");
   };
 
   const handleSearchPress = () => {
-    router.push("/screen/search-screen");
+    safePush("/screen/search-screen");
   };
 
   const markNotificationsAsRead = async () => {
@@ -100,20 +99,15 @@ export default function JobListingScreen() {
 
   const handleNotificationPress = async () => {
     await markNotificationsAsRead();
-    router.push("/screen/notification-screen");
+    safePush("/screen/notification-screen");
   };
 
   const handleAddJobPress = () => {
-    router.push({
-      pathname: "../../../screen/client-screen/add-jobs" as any,
-    });
+    safePush("../../../screen/client-screen/add-jobs");
   };
 
   const handleEditJobPress = (jobId: string) => {
-    router.push({
-      pathname: "../../../screen/client-screen/edit-jobs" as any,
-      params: { id: jobId },
-    });
+    safePush("../../../screen/client-screen/edit-jobs", { id: jobId });
   };
 
   const handleDeleteJobPress = (jobId: string) => {
@@ -148,7 +142,7 @@ export default function JobListingScreen() {
     const dataToken = await AsyncStorage.getItem("token");
 
     if (!dataToken) {
-      router.replace("/(auth)/sign_in");
+      safeReplace("/(auth)/sign_in");
     }
   };
 

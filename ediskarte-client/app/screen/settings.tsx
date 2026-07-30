@@ -13,23 +13,24 @@ import {
 import { Ionicons, MaterialIcons, AntDesign, Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { safePush, safeReplace, safeBack } from '../constants/navigation';
 
 const SettingsScreen = () => {
   const router = useRouter();
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
   const handleGoBack = () => {
-    router.back();
+    safeBack();
   };
 
   const handlePrivacyPolicy = () => {
     // Navigate to privacy policy screen
-    router.push('/screen/privacy-policy');
+    safePush('/screen/privacy-policy');
   };
 
   const handleTermsConditions = () => {
     // Navigate to terms and conditions screen
-    router.push('/screen/terms-conditions');
+    safePush('/screen/terms-conditions');
   };
 
   const handleLogout = () => {
@@ -40,7 +41,7 @@ const SettingsScreen = () => {
     // Add token destruction logic here
     // For example:
     await AsyncStorage.removeItem('token');
-    router.replace('/(auth)/sign_in');
+    safeReplace('/(auth)/sign_in');
   };
 
   return (

@@ -20,6 +20,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
 import decodeToken from "@/api/token-decoder";
+import { safePush, safeReplace } from "../../../constants/navigation";
 
 interface JobRequest {
   id: string;
@@ -126,7 +127,7 @@ export default function JobListingScreen() {
     try {
       const token = await AsyncStorage.getItem("token");
       if (!token) {
-        router.replace("/sign_in");
+        safeReplace("/sign_in");
         return;
       }
 
@@ -192,45 +193,42 @@ export default function JobListingScreen() {
     }, []);
     
   const handleSeeMorePress = (job: JobRequest) => {
-    router.push({
-      pathname: "../../../screen/job-seeker-screen/job-details",
-      params: {
-        id: job.id,
-        title: job.jobTitle,
-        postedDate: job.datePosted,
-        description: job.jobDescription,
-        rate: job.budget,
-        offer:job.offer,
-        location: job.jobLocation,
-        otherParticipant: job.client?.id || "",
-        jobImages: job.jobImage,
-        jobDuration: job.jobDuration,
-        clientFirstName: job.client?.firstName || "",
-        clientLastName: job.client?.lastName || "",
-        clientProfileImage: job.client?.profileImage || "",
-        isMyJob: activeTab === "pendingJobs" ? "true" : "false",
-        jobStatus: job.jobStatus,
-        review: job.reviews?.[0] ? JSON.stringify({
-          rating: job.reviews[0].rating,
-          feedback: job.reviews[0].feedback,
-          reviewer: {
-            id: job.reviews[0].reviewer?.id || "",
-            firstName: job.reviews[0].reviewer?.firstName || "",
-            lastName: job.reviews[0].reviewer?.lastName || "",
-            profileImage: job.reviews[0].reviewer?.profileImage || ""
-          }
-        }) : undefined,
-        jobSeekerReview: job.reviews?.[1] ? JSON.stringify({
-          rating: job.reviews[1].rating,
-          feedback: job.reviews[1].feedback,
-          reviewer: {
-            id: job.reviews[1].reviewer?.id || "",
-            firstName: job.reviews[1].reviewer?.firstName || "",
-            lastName: job.reviews[1].reviewer?.lastName || "",
-            profileImage: job.reviews[1].reviewer?.profileImage || ""
-          }
-        }) : undefined,
-      },
+    safePush("../../../screen/job-seeker-screen/job-details", {
+      id: job.id,
+      title: job.jobTitle,
+      postedDate: job.datePosted,
+      description: job.jobDescription,
+      rate: job.budget,
+      offer:job.offer,
+      location: job.jobLocation,
+      otherParticipant: job.client?.id || "",
+      jobImages: job.jobImage,
+      jobDuration: job.jobDuration,
+      clientFirstName: job.client?.firstName || "",
+      clientLastName: job.client?.lastName || "",
+      clientProfileImage: job.client?.profileImage || "",
+      isMyJob: activeTab === "pendingJobs" ? "true" : "false",
+      jobStatus: job.jobStatus,
+      review: job.reviews?.[0] ? JSON.stringify({
+        rating: job.reviews[0].rating,
+        feedback: job.reviews[0].feedback,
+        reviewer: {
+          id: job.reviews[0].reviewer?.id || "",
+          firstName: job.reviews[0].reviewer?.firstName || "",
+          lastName: job.reviews[0].reviewer?.lastName || "",
+          profileImage: job.reviews[0].reviewer?.profileImage || ""
+        }
+      }) : undefined,
+      jobSeekerReview: job.reviews?.[1] ? JSON.stringify({
+        rating: job.reviews[1].rating,
+        feedback: job.reviews[1].feedback,
+        reviewer: {
+          id: job.reviews[1].reviewer?.id || "",
+          firstName: job.reviews[1].reviewer?.firstName || "",
+          lastName: job.reviews[1].reviewer?.lastName || "",
+          profileImage: job.reviews[1].reviewer?.profileImage || ""
+        }
+      }) : undefined,
     });
   };
 
@@ -263,7 +261,7 @@ export default function JobListingScreen() {
     .sort((a, b) => new Date(b.datePosted).getTime() - new Date(a.datePosted).getTime());
 
   const handleProfilePress = () => {
-    router.push("../../../screen/profile/profile-screen");
+    safePush("../../../screen/profile/profile-screen");
   };
   
   const markNotificationsAsRead = async () => {
@@ -291,7 +289,7 @@ export default function JobListingScreen() {
 
   const handleNotificationPress = async () => {
     await markNotificationsAsRead();
-    router.push('/screen/notification-screen-jobseeker');
+    safePush('/screen/notification-screen-jobseeker');
   };
 
   const displayedJobs = 
@@ -307,7 +305,7 @@ export default function JobListingScreen() {
       <View style={[styles.header, Platform.OS === 'ios' && styles.iosHeader]}>
         <TouchableOpacity 
           style={styles.searchBar}
-          onPress={() => router.push('/screen/search-screen-jobseeker')}
+          onPress={() => safePush('/screen/search-screen-jobseeker')}
         >
           <Ionicons name="search-outline" size={18} color="#666" />
           <Text style={styles.searchText}>Search jobs here</Text>
@@ -413,10 +411,7 @@ export default function JobListingScreen() {
                         style={styles.posterRow}
                         onPress={(e) => {
                           e.stopPropagation();
-                          router.push({
-                            pathname: "../../../screen/profile/view-profile/view-page-client",
-                            params: { otherParticipantId: job.client?.id || "" },
-                          });
+                          safePush("../../../screen/profile/view-profile/view-page-client", { otherParticipantId: job.client?.id || "" });
                         }}
                       >
                         <Image

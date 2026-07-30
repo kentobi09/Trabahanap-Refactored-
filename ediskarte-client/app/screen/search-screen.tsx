@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { searchJobSeekers } from "../../api/search-request";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { safePush, safeReplace, safeBack } from "../constants/navigation";
 
 interface JobSeeker {
   id: string;
@@ -55,7 +56,7 @@ const SearchScreen = () => {
       const token = await AsyncStorage.getItem("token");
 
       if (!token) {
-        router.push("/sign_in");
+        safePush("/sign_in");
         return;
       }
 
@@ -95,14 +96,11 @@ const SearchScreen = () => {
   // Navigate to job seeker profile
   const handleJobSeekerSelect = (jobSeekerId: string) => {
     // Navigate to the specific job seeker view page
-    router.push({
-      pathname: "/screen/profile/view-profile/view-page-job-seeker" as any,
-      params: { otherParticipantId: jobSeekerId }, // Pass ID as otherParticipantId
-    });
+    safePush("/screen/profile/view-profile/view-page-job-seeker", { otherParticipantId: jobSeekerId });
   };
 
   const handleGoBack = () => {
-    router.back();
+    safeBack();
   };
 
   // Render individual job seeker search result
@@ -139,7 +137,7 @@ const SearchScreen = () => {
       const token = await AsyncStorage.getItem("token");
 
       if (!token) {
-        router.push("/sign_in");
+        safePush("/sign_in");
         return;
       }
 

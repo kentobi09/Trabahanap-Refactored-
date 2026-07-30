@@ -23,6 +23,7 @@ import { useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchUserProfile, updateUserJobTags } from "@/api/profile-request";
 import * as ImagePicker from 'expo-image-picker';
+import { safePush, safeReplace, safeBack } from "../../constants/navigation";
 
 // Import local achievement data
 import achievementsData from "./achievements";
@@ -330,7 +331,7 @@ const UtilityWorkerProfile: React.FC = () => {
   // Navigation handlers
 
   const handleSettingsPress = () => {
-    router.push("../../settings");
+    safePush("../../settings");
   };
 
   const toggleEditSkills = () => {
@@ -338,7 +339,7 @@ const UtilityWorkerProfile: React.FC = () => {
   };
 
   const handleAboutInfoPress = () => {
-    router.push("../../about-info");
+    safePush("../../about-info");
   };
 
   const handleUploadCredential = async () => {
