@@ -266,7 +266,7 @@ const ChatScreen: React.FC<ChatProps> = ({
         // Take Photo
         result = await ImagePicker.launchCameraAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
+          allowsEditing: false,
           quality: 0.7,
           base64: true,
         });
@@ -274,7 +274,7 @@ const ChatScreen: React.FC<ChatProps> = ({
         // Choose from Gallery
         result = await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
+          allowsEditing: false,
           quality: 0.7,
           base64: true,
         });

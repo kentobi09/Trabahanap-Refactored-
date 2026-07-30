@@ -214,31 +214,8 @@ const ChatScreen: React.FC<ChatProps> = ({
     console.log("Long pressed message:", message); // Proper logging
   };
 
-  const handleAttachPress = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.7,
-        base64: true, // ⚠️ Add this to get base64 string
-      });
-      if (!socket) return;
-      if (!result.canceled) {
-        const image = result.assets[0];
-
-        const base64Image = `data:${image.type || "image/jpeg"};base64,${
-          image.base64
-        }`;
-
-        socket.emit("upload_image", {
-          senderId: currentUserId,
-          chatId: chatId,
-          image: base64Image,
-        });
-      }
-    } catch (error) {
-      console.error("Error uploading image via socket:", error);
-    }
+  const handleAttachPress = () => {
+    actionSheetRef.current?.show();
   };
 
   // 2. Handle option selected (camera or gallery)
@@ -251,7 +228,7 @@ const ChatScreen: React.FC<ChatProps> = ({
         // Take Photo
         result = await ImagePicker.launchCameraAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
+          allowsEditing: false,
           quality: 0.7,
           base64: true,
         });
@@ -259,7 +236,7 @@ const ChatScreen: React.FC<ChatProps> = ({
         // Choose from Gallery
         result = await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
+          allowsEditing: false,
           quality: 0.7,
           base64: true,
         });
