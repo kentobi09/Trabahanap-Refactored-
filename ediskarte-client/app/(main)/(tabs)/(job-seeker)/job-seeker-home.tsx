@@ -440,10 +440,10 @@ export default function JobListingScreen() {
                     <View style={styles.detailsContainer}>
                       <View style={styles.budgetDurationContainer}>
                         <Text style={styles.priceText}>
-                          {job.budget ? `₱ ${job.budget}` : ""}
+                          {job.budget ? `₱ ${job.budget}` : "Not Specified"}
                         </Text>
                         <Text style={styles.durationText}>
-                          {job.jobDuration ? `Duration: ${job.jobDuration}` : ""}
+                          {job.jobDuration ? `Duration: ${job.jobDuration}` : "Not Specified"}
                         </Text>
                       </View>
 
@@ -451,9 +451,9 @@ export default function JobListingScreen() {
                         <View style={styles.locationContainer}>
                           <Ionicons name="location-outline" size={14} color="#666" />
                           <Text style={styles.locationText} numberOfLines={1}>
-                            {job.jobLocation.length > 12
+                            {job.jobLocation ? (job.jobLocation.length > 12
                               ? job.jobLocation.substring(0, 12) + '...'
-                              : job.jobLocation}
+                              : job.jobLocation) : "Not Specified"}
                           </Text>
                         </View>
                         <View style={styles.applicantCountContainer}>

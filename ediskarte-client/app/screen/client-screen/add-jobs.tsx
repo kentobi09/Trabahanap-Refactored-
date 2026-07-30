@@ -401,8 +401,14 @@ export default function AddJobScreen() {
         <Text style={styles.label}>Duration</Text>
         <View style={styles.durationContainer}>
           <TouchableOpacity
-            style={[styles.input, styles.durationUnitButton]}
-            onPress={() => setShowDurationUnitModal(true)}
+            style={[styles.input, styles.durationUnitButton, !budget && styles.disabledInput]}
+            onPress={() => {
+              if (!budget) {
+                Alert.alert("Rate Required", "Please enter a rate first before specifying the duration.");
+                return;
+              }
+              setShowDurationUnitModal(true);
+            }}
           >
             <Text style={durationUnit ? styles.inputText : styles.placeholderText}>
               {durationUnit || "Select unit"}
@@ -412,7 +418,7 @@ export default function AddJobScreen() {
             style={[
               styles.input, 
               styles.durationInput,
-              durationUnit === "Until-finished" && styles.disabledInput
+              (durationUnit === "Until-finished" || !budget) && styles.disabledInput
             ]}
             value={duration}
             onChangeText={(text) => {
@@ -430,7 +436,7 @@ export default function AddJobScreen() {
             }}
             placeholder="Enter number"
             keyboardType="numeric"
-            editable={durationUnit !== "Until-finished"}
+            editable={!!budget && durationUnit !== "Until-finished"}
           />
         </View>
 

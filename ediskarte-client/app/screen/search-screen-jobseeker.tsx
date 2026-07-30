@@ -327,15 +327,15 @@ const SearchScreen = () => {
                   <View style={styles.jobDetails}>
                     <View style={styles.jobDetail}>
                       <Ionicons name="cash-outline" size={16} color="#666" />
-                      <Text style={styles.detailText}>₱{job.budget}</Text>
+                      <Text style={styles.detailText}>{job.budget ? `₱${job.budget}` : "Not Specified"}</Text>
                     </View>
                     <View style={styles.jobDetail}>
                       <Ionicons name="location-outline" size={16} color="#666" />
-                      <Text style={styles.detailText}>{job.jobLocation}</Text>
+                      <Text style={styles.detailText}>{job.jobLocation || "Not Specified"}</Text>
                     </View>
                     <View style={styles.jobDetail}>
                       <Ionicons name="time-outline" size={16} color="#666" />
-                      <Text style={styles.detailText}>{job.jobDuration}</Text>
+                      <Text style={styles.detailText}>{job.jobDuration || "Not Specified"}</Text>
                     </View>
                   </View>
 

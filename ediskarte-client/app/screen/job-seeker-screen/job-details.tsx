@@ -279,14 +279,14 @@ export default function JobDetailsScreen() {
                   <Ionicons name="cash-outline" size={24} color="#0D2040" />
                   <View style={styles.detailTextContainer}>
                     <Text style={styles.detailLabel}>Rate</Text>
-                    <Text style={styles.detailValue}>₱ {jobData.rate}</Text>
+                    <Text style={styles.detailValue}>{jobData.rate ? `₱ ${jobData.rate}` : "Not Specified"}</Text>
                   </View>
                 </View>
                 <View style={styles.detailItem}>
                   <Ionicons name="time-outline" size={24} color="#0D2040" />
                   <View style={styles.detailTextContainer}>
                     <Text style={styles.detailLabel}>Duration</Text>
-                    <Text style={styles.detailValue}>{jobData.jobDuration}</Text>
+                    <Text style={styles.detailValue}>{jobData.jobDuration || "Not Specified"}</Text>
                   </View>
                 </View>
               </View>
@@ -296,14 +296,14 @@ export default function JobDetailsScreen() {
                     <Ionicons name="wallet-outline" size={24} color="#0D2040" />
                     <View style={styles.detailTextContainer}>
                       <Text style={styles.detailLabel}>Final Offer</Text>
-                      <Text style={styles.detailValue}>₱ {jobData.offer}</Text>
+                      <Text style={styles.detailValue}>{jobData.offer ? `₱ ${jobData.offer}` : "Not Specified"}</Text>
                     </View>
                   </View>
                 </View>
               )}
               <View style={styles.locationContainer}>
                 <Ionicons name="location-outline" size={24} color="#0D2040" />
-                <Text style={styles.locationText}>{jobData.location}</Text>
+                <Text style={styles.locationText}>{jobData.location || "Not Specified"}</Text>
               </View>
             </View>
           </View>
