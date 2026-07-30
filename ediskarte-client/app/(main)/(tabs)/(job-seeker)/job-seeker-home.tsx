@@ -443,7 +443,7 @@ export default function JobListingScreen() {
                           {job.budget ? `₱ ${job.budget}` : "Not Specified"}
                         </Text>
                         <Text style={styles.durationText}>
-                          {job.jobDuration ? `Duration: ${job.jobDuration}` : "Not Specified"}
+                          {job.jobDuration ? `Duration: ${job.jobDuration}` : "Duration: Not Specified"}
                         </Text>
                       </View>
 
