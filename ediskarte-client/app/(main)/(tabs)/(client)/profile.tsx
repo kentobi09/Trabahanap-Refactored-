@@ -20,6 +20,7 @@ import {
   Entypo,
 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { safePush, safeReplace, safeBack } from "../../../constants/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchUserProfile, updateUserJobTags, fetchUserAchievements } from "@/api/profile-request";
 
@@ -867,11 +868,11 @@ const UtilityWorkerProfile: React.FC = () => {
 
   // Navigation handlers
   const handleEditPress = () => {
-    router.push("./");
+    safePush("./");
   };
 
   const handleSettingsPress = () => {
-    router.push("/screen/settings");
+    safePush("/screen/settings");
   };
 
   const toggleEditSkills = () => {
@@ -879,11 +880,11 @@ const UtilityWorkerProfile: React.FC = () => {
   };
 
   const handleAboutInfoPress = () => {
-    router.push("/screen/profile/about-info");
+    safePush("/screen/profile/about-info");
   };
 
   const handleGoBack = () => {
-    router.back();
+    safeBack();
   };
 
   // --- Loading and Error States ---

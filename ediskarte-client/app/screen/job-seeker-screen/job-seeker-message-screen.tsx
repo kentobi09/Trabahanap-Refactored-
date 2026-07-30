@@ -23,6 +23,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { safePush, safeReplace, safeBack } from "../../constants/navigation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import io, { Socket } from 'socket.io-client';
@@ -1499,11 +1500,7 @@ const ChatScreen: React.FC<ChatProps> = ({
         <View style={styles.headerUserInfo}>
           <TouchableOpacity
             onPress={() =>
-              router.push({
-                pathname:
-                  "../../../screen/profile/view-profile/view-page-client",
-                params: { otherParticipantId },
-              })
+              safePush("../../../screen/profile/view-profile/view-page-client", { otherParticipantId })
             }
             style={styles.profileTouchable}
           >

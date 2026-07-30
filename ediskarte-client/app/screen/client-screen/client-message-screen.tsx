@@ -32,6 +32,7 @@ import {
   useRouter,
   useGlobalSearchParams,
 } from "expo-router";
+import { safePush, safeReplace, safeBack } from "../../constants/navigation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import io, { Socket } from 'socket.io-client';
 import axios from 'axios';
@@ -860,10 +861,7 @@ const ChatScreen: React.FC<ChatProps> = ({
       icon: <MaterialIcons name="person" size={18} color="#777" />,
       label: "View Profile",
       onPress: () =>
-        router.push({
-          pathname: "/screen/profile/view-profile/view-page-job-seeker",
-          params: { otherParticipantId },
-        }),
+        safePush("/screen/profile/view-profile/view-page-job-seeker", { otherParticipantId }),
     },
     {
       icon: <Ionicons name="flag-outline" size={24} color="#FF9500" />,
@@ -1706,10 +1704,7 @@ const ChatScreen: React.FC<ChatProps> = ({
 
         <TouchableOpacity
           onPress={() =>
-            router.push({
-              pathname: "/screen/profile/view-profile/view-page-job-seeker",
-              params: { otherParticipantId,isFromChat:"true" },
-            })
+            safePush("/screen/profile/view-profile/view-page-job-seeker", { otherParticipantId,isFromChat:"true" })
           }
         >
           <View style={styles.headerUserInfo}>

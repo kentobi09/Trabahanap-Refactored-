@@ -36,10 +36,10 @@ export const safePush = (href: any, params?: any) => {
   state.lastActionTime = now;
   
   showLoading();
-  // Transition safety: auto-dismiss the overlay after 800ms
+  // Transition safety: auto-dismiss the overlay after 200ms
   setTimeout(() => {
     hideLoading();
-  }, 800);
+  }, 200);
 
   if (params) {
     router.push({ pathname: href, params });
@@ -59,7 +59,7 @@ export const safeReplace = (href: any, params?: any) => {
   showLoading();
   setTimeout(() => {
     hideLoading();
-  }, 800);
+  }, 200);
 
   if (params) {
     router.replace({ pathname: href, params });
@@ -79,7 +79,7 @@ export const safeBack = () => {
   showLoading();
   setTimeout(() => {
     hideLoading();
-  }, 500); // Back transitions are usually quicker
+  }, 200);
 
   router.back();
 };
