@@ -2041,11 +2041,11 @@ const ChatScreen: React.FC<ChatProps> = ({
               style={styles.inputContainer}
             >
               <View style={styles.attachmentButtons}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.attachButton} 
                   onPress={handleAttachPress}
                 >
-                  <MaterialIcons name="image" size={24} color="#999" />
+                  <Ionicons name="image" size={24} color="#999" />
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.attachButton} 
@@ -2055,7 +2055,7 @@ const ChatScreen: React.FC<ChatProps> = ({
                   {isUploading ? (
                     <ActivityIndicator size="small" color="#999" />
                   ) : (
-                    <MaterialIcons name="attach-file" size={24} color="#999" />
+                    <Ionicons name="attach" size={24} color="#999" />
                   )}
                 </TouchableOpacity>
               </View>
