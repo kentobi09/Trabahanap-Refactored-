@@ -36,6 +36,13 @@ import * as FileSystem from 'expo-file-system';
 import { submitReport } from "../../../api/reportService.ts";
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 import { Audio } from 'expo-av';
+
+const getFilePart = (path: string | undefined | null) => {
+  if (!path || typeof path !== 'string' || !path.includes('messages_files/')) {
+    return '';
+  }
+  return path.split('messages_files/')[1] || '';
+};
 type Message = {
   id: string;
   chatId: string;
@@ -773,7 +780,7 @@ const ChatScreen: React.FC<ChatProps> = ({
       return `http://${
         process.env.EXPO_PUBLIC_IP_ADDRESS
       }:3000/uploads/messages/${
-        msg.messageContent.split("messages_files/")[1]
+        getFilePart(msg.messageContent)
       }`;
     });
 
@@ -781,7 +788,7 @@ const ChatScreen: React.FC<ChatProps> = ({
       const imageUrl = `http://${
         process.env.EXPO_PUBLIC_IP_ADDRESS
       }:3000/uploads/messages/${
-        item.messageContent.split("messages_files/")[1]
+        getFilePart(item.messageContent)
       }`;
 
       const isDeletedForEveryone =
@@ -908,8 +915,8 @@ const ChatScreen: React.FC<ChatProps> = ({
       ) : null;
     }
     if (item.messageType === 'file') {
-      const fileUrl = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/messages/${item.messageContent.split("messages_files/")[1]}`;
-      const fileName = item.messageContent ? item.messageContent.split("messages_files/")[1] : '';
+      const fileUrl = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/messages/${getFilePart(item.messageContent)}`;
+      const fileName = getFilePart(item.messageContent);
       const fileExtension = fileName ? fileName.split('.').pop()?.toLowerCase() : '';
       
       const isDeletedForEveryone = item.deletedBySender === 'yes' && item.deletedByReceiver === 'yes';

@@ -45,6 +45,13 @@ import { submitReport } from "../../../api/reportService.ts";
 import { Audio } from 'expo-av';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+const getFilePart = (path: string | undefined | null) => {
+  if (!path || typeof path !== 'string' || !path.includes('messages_files/')) {
+    return '';
+  }
+  return path.split('messages_files/')[1] || '';
+};
+
 type Message = {
   id: string;
   chatId: string;
@@ -1075,9 +1082,9 @@ const ChatScreen: React.FC<ChatProps> = ({
         return m.messageType === "image";
       });
       const imageArray = imageMessages.map((msg) => {
-        return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/messages/${msg.messageContent.split("messages_files/")[1]}`;
+        return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/messages/${getFilePart(msg.messageContent)}`;
       });
-      const imageUrl = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/messages/${item.messageContent.split("messages_files/")[1]}`;
+      const imageUrl = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/messages/${getFilePart(item.messageContent)}`;
       const isDeletedForEveryone = item.deletedBySender === "yes" && item.deletedByReceiver === "yes";
       const isVisibleToUser = !shouldHideMessage(item, currentUserId) || isDeletedForEveryone;
       if (!isVisibleToUser) return null;
@@ -1199,8 +1206,8 @@ const ChatScreen: React.FC<ChatProps> = ({
 
     // FILE MESSAGE
     if (item.messageType === "file") {
-      const fileUrl = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/messages/${item.messageContent.split("messages_files/")[1]}`;
-      const fileName = item.messageContent ? item.messageContent.split("messages_files/")[1] : '';
+      const fileUrl = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/messages/${getFilePart(item.messageContent)}`;
+      const fileName = getFilePart(item.messageContent);
       const fileExtension = fileName ? fileName.split('.').pop()?.toLowerCase() : '';
       const isDeletedForEveryone = item.deletedBySender === 'yes' && item.deletedByReceiver === 'yes';
       const isVisibleToUser = !shouldHideMessage(item, currentUserId) || isDeletedForEveryone;

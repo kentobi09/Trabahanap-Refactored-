@@ -963,13 +963,15 @@ export function initializeSocketIO(httpServer) {
         });
       }
     });
+
     socket.on('delete-message', async ({ messageId, chatId, deletionType, isSender }) => {
       try {
-        console.log(isSender);
+        const db = await getNativeDb();
+        let messageIdObj;
+        try { messageIdObj = new ObjectId(messageId); } catch(e) { messageIdObj = messageId; }
+
         // 1. Verify message exists
-        const message = await prisma.message.findUnique({
-          where: { id: messageId }
-        });
+        const message = await db.collection("messages").findOne({ _id: messageIdObj });
         if (!message) throw new Error('Message not found');
     
         // 2. Prepare update data
@@ -982,17 +984,15 @@ export function initializeSocketIO(httpServer) {
         }
     
         // 3. Update message in database
-        await prisma.message.update({
-          where: { id: messageId },
-          data: updateData
-        });
+        await db.collection("messages").updateOne(
+          { _id: messageIdObj },
+          { $set: updateData }
+        );
     
         // 4. Broadcast to all chat participants
-
         io.to(chatId).emit('message-deleted', {
           messageId,
           updates: updateData,
-          // newContent: 'This message was deleted'
         });
     
       } catch (error) {
@@ -1003,19 +1003,20 @@ export function initializeSocketIO(httpServer) {
     socket.on('delete_chat', async ({ chatId, userRole }) => {
       try {
         const userId = socket.user.id;
+        const db = await getNativeDb();
     
         const updateData =
           userRole === 'job-seeker'
             ? { deletedByJobSeeker: true }
             : { deletedByClient: true };
     
-        await prisma.participant.updateMany({
-          where: {
+        await db.collection("participants").updateMany(
+          {
             chatId,
             ...(userRole === 'job-seeker' ? { jobSeekerId: userId } : { userId }),
           },
-          data: updateData,
-        });
+          { $set: updateData }
+        );
     
         socket.emit('chat_deleted_success', { chatId });
       } catch (error) {

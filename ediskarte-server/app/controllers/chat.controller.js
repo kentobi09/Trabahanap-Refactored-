@@ -865,14 +865,12 @@ export const blockUser = async (req, res) => {
       return res.status(400).json({ message: "Cannot block yourself" });
     }
 
+    const db = await getNativeDb();
+
     // Check if already blocked
-    const existingBlock = await prisma.blockedUser.findUnique({
-      where: {
-        blockerId_blockedId: {
-          blockerId,
-          blockedId,
-        },
-      },
+    const existingBlock = await db.collection("BlockedUser").findOne({
+      blockerId,
+      blockedId,
     });
 
     if (existingBlock) {
@@ -880,15 +878,16 @@ export const blockUser = async (req, res) => {
     }
 
     // Create block
-    const block = await prisma.blockedUser.create({
-      data: {
-        blockerId,
-        blockedId,
-        reason,
-      },
-    });
+    const blockDoc = {
+      blockerId,
+      blockedId,
+      reason: reason || null,
+      blockedAt: new Date(),
+    };
 
-    res.status(201).json(block);
+    await db.collection("BlockedUser").insertOne(blockDoc);
+
+    res.status(201).json(blockDoc);
   } catch (error) {
     console.error("Error blocking user:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -899,14 +898,11 @@ export const unblockUser = async (req, res) => {
   try {
     const { blockedId } = req.params;
     const blockerId = req.user.id;
+    const db = await getNativeDb();
 
-    const block = await prisma.blockedUser.delete({
-      where: {
-        blockerId_blockedId: {
-          blockerId,
-          blockedId,
-        },
-      },
+    await db.collection("BlockedUser").deleteOne({
+      blockerId,
+      blockedId,
     });
 
     res.status(200).json({ message: "User unblocked successfully" });
@@ -919,22 +915,31 @@ export const unblockUser = async (req, res) => {
 export const getBlockedUsers = async (req, res) => {
   try {
     const blockerId = req.user.id;
+    const db = await getNativeDb();
 
-    const blockedUsers = await prisma.blockedUser.findMany({
-      where: { blockerId },
-      include: {
-        blocked: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            profileImage: true,
-          },
-        },
-      },
-    });
+    const blockedUsers = await db.collection("BlockedUser").find({ blockerId }).toArray();
+    
+    // For each blocked user, find the user details
+    const result = [];
+    for (const block of blockedUsers) {
+      const user = await prisma.user.findUnique({
+        where: { id: block.blockedId },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          profileImage: true,
+        }
+      });
+      if (user) {
+        result.push({
+          id: block._id.toString(),
+          blocked: user
+        });
+      }
+    }
 
-    res.status(200).json(blockedUsers);
+    res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching blocked users:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -950,13 +955,11 @@ export const isBlocked = async (req, res) => {
       return res.status(200).json({ isBlocked: false });
     }
 
-    const block = await prisma.blockedUser.findUnique({
-      where: {
-        blockerId_blockedId: {
-          blockerId,
-          blockedId: userId,
-        },
-      },
+    const db = await getNativeDb();
+
+    const block = await db.collection("BlockedUser").findOne({
+      blockerId,
+      blockedId: userId,
     });
 
     res.status(200).json({ isBlocked: !!block });
@@ -1000,13 +1003,9 @@ export const getJobRequestBudget = async (req, res) => {
 export const getUsersWhoBlockedMe = async (req, res) => {
   try {
     const userId = req.params.id;
+    const db = await getNativeDb();
 
-    const blockedByUsers = await prisma.blockedUser.findMany({
-      where: { blockedId: userId },
-      select: {
-        blockerId: true,
-      },
-    });
+    const blockedByUsers = await db.collection("BlockedUser").find({ blockedId: userId }).toArray();
 
     // Extract just the blocker IDs from the results
     const blockerIds = blockedByUsers.map((block) => block.blockerId);
@@ -1019,18 +1018,24 @@ export const getUsersWhoBlockedMe = async (req, res) => {
 };
 
 export const reportValidation = async (req, res) => {
-  console.log(req.body);
-  const { reason, reportedObjectId, reporter } = req.body;
+  try {
+    console.log(req.body);
+    const { reason, reportedObjectId, reporter } = req.body;
+    const db = await getNativeDb();
 
-  const reportValidation = await prisma.reportValidation.create({
-    data: {
+    await db.collection("report_validation").insertOne({
       reason,
       reportedObjectId,
       reporter,
-    },
-  });
+      status: "pending",
+      dateReported: new Date(),
+    });
 
-  res.status(200).json({ message: "Report validated successfully" });
+    res.status(200).json({ message: "Report validated successfully" });
+  } catch (error) {
+    console.error("Error in reportValidation:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 export const checkAppliedStatus = async (req, res) => {
