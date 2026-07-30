@@ -101,16 +101,25 @@ export async function fetchCommunityPosts() {
     const postsWithUsernames = postsWithComments.map((post) => {
       const userId = post.clientId || post.jobSeekerId;
       const userDetails = usernames[userId];
-      const fullName = userDetails
+      let fullName = userDetails
         ? `${userDetails.firstName} ${
             userDetails.middleName ? userDetails.middleName[0] + "." : ""
           } ${userDetails.lastName}`.trim()
         : "Unknown User";
 
+      if (fullName === "Unknown User" && post.author && post.author.name) {
+        fullName = post.author.name;
+      }
+
+      let profileImage = userDetails?.profileImage || null;
+      if (!profileImage && post.author && post.author.profilePicture) {
+        profileImage = post.author.profilePicture;
+      }
+
       return {
         ...post,
         username: fullName,
-        profileImage: userDetails?.profileImage || null,
+        profileImage: profileImage,
       };
     });
     console.log("Successfully processed all community posts.");
