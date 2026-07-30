@@ -296,7 +296,7 @@ export default function JobListingScreen() {
             onPress={() => handleTabPress("history")}
           >
             <Text style={[styles.tabText, activeTab === "history" && styles.activeTab]}>
-              History
+              Completed Jobs
             </Text>
             {activeTab === "history" && <View style={styles.activeIndicator} />}
           </TouchableOpacity>
@@ -322,76 +322,94 @@ export default function JobListingScreen() {
           <ActivityIndicator size="large" />
         ) : activeTab === "history" ? (
           completedJobs && completedJobs.length > 0 ? (
-            completedJobs.map((job: JobDetails) => (
-              <TouchableOpacity
-                key={job.id}
-                style={styles.jobCard}
-                onPress={() => {
-                  setSelectedJob(job);
-                  setViewModalVisible(true);
-                }}
-              >
-                <View style={styles.jobHeader}>
-                  <Text style={styles.jobTitle} numberOfLines={1} ellipsizeMode="tail">
-                    {job.jobTitle}
-                  </Text>
-                </View>
-
-                <Text style={styles.jobDescription}>{job.jobDescription}</Text>
-
-                {job.jobSeeker && (
-                  <View style={styles.historyFooter}>
-                    <View style={styles.jobSeekerInfo}>
-                      <Image
-                        source={
-                          job.jobSeeker.profileImage
-                            ? { uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${job.jobSeeker.profileImage}` }
-                            : require("assets/images/default-user.png")
-                        }
-                        style={styles.jobSeekerImage}
-                      />
-                      <Text style={styles.jobSeekerName}>
-                        {job.jobSeeker.firstName} {job.jobSeeker.lastName}
+            completedJobs.map((job: JobDetails) => {
+              const hasImage = job.jobImage?.[0];
+              const imageUri = hasImage
+                ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/${
+                    (job.jobImage[0] + "").replace(/\\/g, "/").split("job_request_files/")[1] ?? ''
+                  }`
+                : null;
+              return (
+                <TouchableOpacity
+                  key={job.id}
+                  style={styles.jobCard}
+                  onPress={() => {
+                    setSelectedJob(job);
+                    setViewModalVisible(true);
+                  }}
+                >
+                  <View style={{ flex: 1, marginRight: hasImage ? 12 : 0 }}>
+                    <View style={styles.jobHeader}>
+                      <Text style={styles.jobTitle} numberOfLines={1} ellipsizeMode="tail">
+                        {job.jobTitle}
                       </Text>
                     </View>
-                    {job.averageRating > 0 && (
-                      <View style={styles.ratingContainer}>
-                        <Text style={styles.ratingStars}>
-                          {"⭐".repeat(Math.round(job.averageRating))}
-                        </Text>
-                        <Text style={styles.reviewCount}>
-                          ({job.reviews.length} {job.reviews.length === 1 ? 'review' : 'reviews'})
-                        </Text>
+
+                    <Text style={styles.jobDescription} numberOfLines={2}>{job.jobDescription}</Text>
+
+                    {job.jobSeeker && (
+                      <View style={styles.historyFooter}>
+                        <View style={styles.jobSeekerInfo}>
+                          <Image
+                            source={
+                              job.jobSeeker.profileImage
+                                ? { uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${job.jobSeeker.profileImage.replace(/\\/g, "/")}` }
+                                : require("assets/images/default-user.png")
+                            }
+                            style={styles.jobSeekerImage}
+                          />
+                          <Text style={styles.jobSeekerName}>
+                            {job.jobSeeker.firstName} {job.jobSeeker.lastName}
+                          </Text>
+                        </View>
+                        {job.averageRating > 0 && (
+                          <View style={styles.ratingContainer}>
+                            <Text style={styles.ratingStars}>
+                              {"⭐".repeat(Math.round(job.averageRating))}
+                            </Text>
+                            <Text style={styles.reviewCount}>
+                              ({job.reviews.length} {job.reviews.length === 1 ? 'review' : 'reviews'})
+                            </Text>
+                          </View>
+                        )}
                       </View>
                     )}
+
+                    <View style={[styles.jobFooter, { marginTop: 12, borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 12 }]}>
+                      <View style={[styles.categoryBadge, {
+                        backgroundColor: job.category === "plumbing" ? "#9b59b6" : "#3498db"
+                      }]}>
+                        <Text style={styles.categoryText}>
+                          {reverseCamelCase(job.category)}
+                        </Text>
+                      </View>
+
+                      <Text style={[styles.statusText, {
+                        color: "#2ecc71"
+                      }]}>
+                        {job.jobStatus.charAt(0).toUpperCase() + job.jobStatus.slice(1)}
+                      </Text>
+
+                      <Text style={styles.dateText}>
+                        {new Date(job.completedAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </Text>
+                    </View>
                   </View>
-                )}
 
-                <View style={[styles.jobFooter, { marginTop: 12, borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 12 }]}>
-                  <View style={[styles.categoryBadge, {
-                    backgroundColor: job.category === "plumbing" ? "#9b59b6" : "#3498db"
-                  }]}>
-                    <Text style={styles.categoryText}>
-                      {reverseCamelCase(job.category)}
-                    </Text>
-                  </View>
-
-                  <Text style={[styles.statusText, {
-                    color: "#2ecc71"
-                  }]}>
-                    {job.jobStatus.charAt(0).toUpperCase() + job.jobStatus.slice(1)}
-                  </Text>
-
-                  <Text style={styles.dateText}>
-                    {new Date(job.completedAt).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))
+                  {hasImage && (
+                    <Image
+                      source={{ uri: imageUri }}
+                      style={styles.cardJobImage}
+                      resizeMode="cover"
+                    />
+                  )}
+                </TouchableOpacity>
+              );
+            })
           ) : (
             <View style={styles.emptyStateContainer}>
               <Text style={styles.emptyStateText}>No completed jobs yet</Text>
@@ -413,78 +431,103 @@ export default function JobListingScreen() {
               }
               return new Date(b.datePosted).getTime() - new Date(a.datePosted).getTime();
             })
-            .map((job: JobDetails) => (
-              <TouchableOpacity
-                key={job.id}
-                style={styles.jobCard}
-                onPress={() => {
-                  setSelectedJob(job);
-                  setViewModalVisible(true);
-                }}
-              >
-                <View style={styles.jobHeader}>
-                  <Text style={styles.jobTitle} numberOfLines={1} ellipsizeMode="tail">
-                    {job.jobTitle}
-                  </Text>
+            .map((job: JobDetails) => {
+              const hasImage = job.jobImage?.[0];
+              const imageUri = hasImage
+                ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/${
+                    (job.jobImage[0] + "").replace(/\\/g, "/").split("job_request_files/")[1] ?? ''
+                  }`
+                : null;
+              return (
+                <TouchableOpacity
+                  key={job.id}
+                  style={styles.jobCard}
+                  onPress={() => {
+                    setSelectedJob(job);
+                    setViewModalVisible(true);
+                  }}
+                >
+                  <View style={{ flex: 1, marginRight: hasImage ? 12 : 0 }}>
+                    <View style={styles.jobHeader}>
+                      <Text style={styles.jobTitle} numberOfLines={1} ellipsizeMode="tail">
+                        {job.jobTitle}
+                      </Text>
 
-                  <View style={styles.actionsContainer}>
-                    {job.jobStatus.toLowerCase() !== "pending" && (
-                      <>
-                        <TouchableOpacity
-                          onPress={() => handleEditJobPress(job.id)}
-                          style={styles.actionButton}
-                        >
-                          <Feather name="edit" size={18} color="#000" />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={() => handleDeleteJobPress(job.id)}
-                          style={styles.actionButton}
-                        >
-                          <Feather name="trash-2" size={18} color="#ff4444" />
-                        </TouchableOpacity>
-                      </>
-                    )}
-                    {job.jobStatus.toLowerCase() === "pending" && (
-                      <TouchableOpacity
-                        onPress={() => {
-                          setSelectedJobId(job.id);
-                          setShowConfirmModal(true);
-                        }}
-                        style={styles.actionButton}
-                      >
-                        <Feather name="check-circle" size={22} color="#2ecc71" />
-                      </TouchableOpacity>
-                    )}
+                      <View style={styles.actionsContainer}>
+                        {job.jobStatus.toLowerCase() !== "pending" && (
+                          <>
+                            <TouchableOpacity
+                              onPress={(e) => {
+                                e.stopPropagation();
+                                handleEditJobPress(job.id);
+                              }}
+                              style={styles.actionButton}
+                            >
+                              <Feather name="edit" size={18} color="#000" />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              onPress={(e) => {
+                                e.stopPropagation();
+                                handleDeleteJobPress(job.id);
+                              }}
+                              style={styles.actionButton}
+                            >
+                              <Feather name="trash-2" size={18} color="#ff4444" />
+                            </TouchableOpacity>
+                          </>
+                        )}
+                        {job.jobStatus.toLowerCase() === "pending" && (
+                          <TouchableOpacity
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              setSelectedJobId(job.id);
+                              setShowConfirmModal(true);
+                            }}
+                            style={styles.actionButton}
+                          >
+                            <Feather name="check-circle" size={22} color="#2ecc71" />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+
+                    <Text style={styles.jobDescription} numberOfLines={2}>{job.jobDescription}</Text>
+
+                    <View style={styles.jobFooter}>
+                      <View style={[styles.categoryBadge, {
+                        backgroundColor: job.category === "plumbing" ? "#9b59b6" : "#3498db"
+                      }]}>
+                        <Text style={styles.categoryText}>
+                          {reverseCamelCase(job.category)}
+                        </Text>
+                      </View>
+
+                      <Text style={[styles.statusText, {
+                        color: job.jobStatus === "Open" ? "#f39c12" : "#2ecc71"
+                      }]}>
+                        {job.jobStatus.charAt(0).toUpperCase() + job.jobStatus.slice(1)}
+                      </Text>
+
+                      <Text style={styles.dateText}>
+                        {new Date(job.datePosted).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </Text>
+                    </View>
                   </View>
-                </View>
 
-                <Text style={styles.jobDescription}>{job.jobDescription}</Text>
-
-                <View style={styles.jobFooter}>
-                  <View style={[styles.categoryBadge, {
-                    backgroundColor: job.category === "plumbing" ? "#9b59b6" : "#3498db"
-                  }]}>
-                    <Text style={styles.categoryText}>
-                      {reverseCamelCase(job.category)}
-                    </Text>
-                  </View>
-
-                  <Text style={[styles.statusText, {
-                    color: job.jobStatus === "Open" ? "#f39c12" : "#2ecc71"
-                  }]}>
-                    {job.jobStatus.charAt(0).toUpperCase() + job.jobStatus.slice(1)}
-                  </Text>
-
-                  <Text style={styles.dateText}>
-                    {new Date(job.datePosted).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))
+                  {hasImage && (
+                    <Image
+                      source={{ uri: imageUri }}
+                      style={styles.cardJobImage}
+                      resizeMode="cover"
+                    />
+                  )}
+                </TouchableOpacity>
+              );
+            })
         ) : (
           <View style={styles.emptyStateContainer}>
             <Text style={styles.emptyStateText}>
@@ -648,11 +691,11 @@ export default function JobListingScreen() {
         onRequestClose={() => setViewModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.detailsModalContent}>
+          <View style={[styles.detailsModalContent, { maxHeight: "80%", width: "90%", paddingBottom: 16 }]}>
             {/* Header */}
             <View style={styles.detailsModalHeader}>
               <View style={styles.detailsModalIconCircle}>
-                <Feather name="file-text" size={28} color="#fff" />
+                <Feather name="file-text" size={24} color="#fff" />
               </View>
               <TouchableOpacity
                 style={styles.detailsModalClose}
@@ -661,130 +704,172 @@ export default function JobListingScreen() {
                 <Feather name="x" size={24} color="#333" />
               </TouchableOpacity>
             </View>
-            {/* Title */}
-            <Text style={styles.detailsModalTitle}>
-              {selectedJob?.jobTitle}
-            </Text>
-            {/* Divider */}
-            <View style={styles.detailsDivider} />
-            {/* Info Rows */}
-            <View style={styles.detailsRow}>
-              <Feather name="align-left" size={18} color="#0B153C" style={{ marginRight: 8 }} />
-              <Text style={styles.detailsLabel}>Description:</Text>
-            </View>
-            <Text style={styles.detailsValue}>{selectedJob?.jobDescription}</Text>
 
-            <View style={styles.detailsRow}>
-              <Feather name="tag" size={18} color="#0B153C" style={{ marginRight: 8 }} />
-              <Text style={styles.detailsLabel}>Category:</Text>
-              <Text style={styles.detailsValue}>{reverseCamelCase(selectedJob?.category || "")}</Text>
-            </View>
-
-            <View style={styles.detailsRow}>
-              <Feather name="map-pin" size={18} color="#0B153C" style={{ marginRight: 8 }} />
-              <Text style={styles.detailsLabel}>Location:</Text>
-              <Text style={styles.detailsValue}>{selectedJob?.jobLocation}</Text>
-            </View>
-
-            <View style={styles.detailsRow}>
-              <Feather name="credit-card" size={18} color="#0B153C" style={{ marginRight: 8 }} />
-              <Text style={styles.detailsLabel}>Rate:</Text>
-              <Text style={styles.detailsValue}>
-                {selectedJob?.budget ? `₱${selectedJob.budget}` : "N/A"}
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
+              {/* Title */}
+              <Text style={styles.detailsModalTitle}>
+                {selectedJob?.jobTitle}
               </Text>
-            </View>
 
-            <View style={styles.detailsRow}>
-              <Feather name="clock" size={18} color="#0B153C" style={{ marginRight: 8 }} />
-              <Text style={styles.detailsLabel}>Duration:</Text>
-              <Text style={styles.detailsValue}>
-                {selectedJob?.jobDuration ? `${selectedJob.jobDuration}` : "Not specified"}
-              </Text>
-            </View>
+              {/* Job Image inside Modal */}
+              {selectedJob?.jobImage?.[0] && (
+                <View style={styles.modalJobImageContainer}>
+                  <Image
+                    source={{
+                      uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/${
+                        (selectedJob.jobImage[0] + "").replace(/\\/g, "/").split("job_request_files/")[1] ?? ''
+                      }`
+                    }}
+                    style={styles.modalJobImage}
+                    resizeMode="cover"
+                  />
+                </View>
+              )}
 
-            {activeTab === "history" && (
-              <View style={styles.detailsRow}>
-                <Feather name="dollar-sign" size={18} color="#0B153C" style={{ marginRight: 8 }} />
-                <Text style={styles.detailsLabel}>Final Offer:</Text>
-                <Text style={styles.detailsValue}>
-                  {selectedJob?.offer ? `₱${selectedJob.offer}` : "Not specified"}
-                </Text>
-              </View>
-            )}
+              {/* Divider */}
+              <View style={styles.detailsDivider} />
 
-            <View style={styles.detailsRow}>
-              <Feather name="calendar" size={18} color="#0B153C" style={{ marginRight: 8 }} />
-              <Text style={styles.detailsLabel}>Date Posted:</Text>
-              <Text style={styles.detailsValue}>
-                {selectedJob &&
-                  new Date(selectedJob.datePosted).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-              </Text>
-            </View>
+              {/* Info Rows */}
+              <View style={styles.detailsInfoContainer}>
+                <View style={styles.detailsRow}>
+                  <Feather name="align-left" size={18} color="#0B153C" style={{ marginRight: 8 }} />
+                  <Text style={styles.detailsLabel}>Description:</Text>
+                </View>
+                <Text style={styles.detailsValueBlock}>{selectedJob?.jobDescription}</Text>
 
-            <View style={styles.detailsRow}>
-              <Feather name="info" size={18} color="#0B153C" style={{ marginRight: 8 }} />
-              <Text style={styles.detailsLabel}>Status:</Text>
-              <Text
-                style={[
-                  styles.detailsValue,
-                  {
-                    color:
-                      selectedJob?.jobStatus === "Open"
-                        ? "#f39c12"
-                        : selectedJob?.jobStatus === "Pending"
-                        ? "#3498db"
-                        : "#2ecc71",
-                    fontWeight: "bold",
-                  },
-                ]}
-              >
-                {selectedJob?.jobStatus}
-              </Text>
-            </View>
-
-            <View style={styles.detailsRow}>
-              <Feather name="users" size={18} color="#0B153C" style={{ marginRight: 8 }} />
-              <Text style={styles.detailsLabel}>Applicants:</Text>
-              <Text style={styles.detailsValue}>
-                {selectedJob?.applicantCount || 0}
-              </Text>
-            </View>
-
-            {/* Add this section for reviews without the subtitle */}
-            {selectedJob?.reviews && selectedJob.reviews.length > 0 && (
-              <View style={styles.reviewsSection}>
-                {selectedJob.reviews.map((review, index) => (
-                  <View key={index} style={styles.reviewItem}>
-                    <Text style={styles.reviewTitle}>
-                      {index === 0 ? "Your Review" : "Job-Seeker's Review"}
-                    </Text>
-                    <View style={styles.reviewHeader}>
-                      <Image
-                        source={
-                          review.reviewer.profileImage
-                            ? { uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${review.reviewer.profileImage}` }
-                            : require("assets/images/default-user.png")
-                        }
-                        style={styles.reviewerImage}
-                      />
-                      <View style={styles.reviewerInfo}>
-                        <Text style={styles.reviewerName}>
-                          {`${review.reviewer.firstName} ${review.reviewer.lastName}`}
-                        </Text>
-                        <Text style={styles.ratingStars}>
-                          {"⭐".repeat(Math.round(review.rating))}
-                        </Text>
-                      </View>
+                <View style={styles.detailsGrid}>
+                  <View style={styles.detailsGridItem}>
+                    <Feather name="tag" size={16} color="#0B153C" style={{ marginRight: 6 }} />
+                    <View>
+                      <Text style={styles.detailsGridLabel}>Category</Text>
+                      <Text style={styles.detailsGridValue}>{reverseCamelCase(selectedJob?.category || "")}</Text>
                     </View>
-                    <Text style={styles.reviewFeedback}>{review.feedback}</Text>
                   </View>
-                ))}
+
+                  <View style={styles.detailsGridItem}>
+                    <Feather name="credit-card" size={16} color="#0B153C" style={{ marginRight: 6 }} />
+                    <View>
+                      <Text style={styles.detailsGridLabel}>Rate</Text>
+                      <Text style={styles.detailsGridValue}>
+                        {selectedJob?.budget ? `₱${selectedJob.budget}` : "N/A"}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.detailsGrid}>
+                  <View style={styles.detailsGridItem}>
+                    <Feather name="clock" size={16} color="#0B153C" style={{ marginRight: 6 }} />
+                    <View>
+                      <Text style={styles.detailsGridLabel}>Duration</Text>
+                      <Text style={styles.detailsGridValue}>
+                        {selectedJob?.jobDuration ? `${selectedJob.jobDuration}` : "Not specified"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.detailsGridItem}>
+                    <Feather name="calendar" size={16} color="#0B153C" style={{ marginRight: 6 }} />
+                    <View>
+                      <Text style={styles.detailsGridLabel}>Posted On</Text>
+                      <Text style={styles.detailsGridValue}>
+                        {selectedJob &&
+                          new Date(selectedJob.datePosted).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.detailsGrid}>
+                  <View style={styles.detailsGridItem}>
+                    <Feather name="info" size={16} color="#0B153C" style={{ marginRight: 6 }} />
+                    <View>
+                      <Text style={styles.detailsGridLabel}>Status</Text>
+                      <Text
+                        style={[
+                          styles.detailsGridValue,
+                          {
+                            color:
+                              selectedJob?.jobStatus === "Open"
+                                ? "#f39c12"
+                                : selectedJob?.jobStatus === "Pending"
+                                ? "#3498db"
+                                : "#2ecc71",
+                            fontWeight: "bold",
+                          },
+                        ]}
+                      >
+                        {selectedJob?.jobStatus}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.detailsGridItem}>
+                    <Feather name="users" size={16} color="#0B153C" style={{ marginRight: 6 }} />
+                    <View>
+                      <Text style={styles.detailsGridLabel}>Applicants</Text>
+                      <Text style={styles.detailsGridValue}>
+                        {selectedJob?.applicantCount || 0}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.detailsRow}>
+                  <Feather name="map-pin" size={18} color="#0B153C" style={{ marginRight: 8 }} />
+                  <Text style={styles.detailsLabel}>Location:</Text>
+                </View>
+                <Text style={styles.detailsValueBlock}>{selectedJob?.jobLocation}</Text>
+
+                {activeTab === "history" && (
+                  <View style={[styles.detailsRow, { marginTop: 12 }]}>
+                    <Feather name="dollar-sign" size={18} color="#0B153C" style={{ marginRight: 8 }} />
+                    <Text style={styles.detailsLabel}>Final Offer:</Text>
+                    <Text style={styles.detailsValue}>
+                      {selectedJob?.offer ? `₱${selectedJob.offer}` : "Not specified"}
+                    </Text>
+                  </View>
+                )}
               </View>
-            )}
+
+              {/* Reviews section */}
+              {selectedJob?.reviews && selectedJob.reviews.length > 0 && (
+                <View style={styles.reviewsSection}>
+                  <View style={styles.detailsDivider} />
+                  <Text style={[styles.detailsLabel, { fontSize: 16, marginBottom: 12 }]}>Feedbacks</Text>
+                  {selectedJob.reviews.map((review, index) => (
+                    <View key={index} style={styles.reviewItem}>
+                      <Text style={styles.reviewTitle}>
+                        {index === 0 ? "Your Review" : "Job-Seeker's Review"}
+                      </Text>
+                      <View style={styles.reviewHeader}>
+                        <Image
+                          source={
+                            review.reviewer.profileImage
+                              ? { uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${review.reviewer.profileImage.replace(/\\/g, "/")}` }
+                              : require("assets/images/default-user.png")
+                          }
+                          style={styles.reviewerImage}
+                        />
+                        <View style={styles.reviewerInfo}>
+                          <Text style={styles.reviewerName}>
+                            {`${review.reviewer.firstName} ${review.reviewer.lastName}`}
+                          </Text>
+                          <Text style={styles.ratingStars}>
+                            {"⭐".repeat(Math.round(review.rating))}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={styles.reviewFeedback}>{review.feedback}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -847,6 +932,58 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  cardJobImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginLeft: 12,
+  },
+  modalJobImageContainer: {
+    width: "100%",
+    height: 180,
+    borderRadius: 12,
+    overflow: "hidden",
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  modalJobImage: {
+    width: "100%",
+    height: "100%",
+  },
+  detailsInfoContainer: {
+    marginTop: 8,
+  },
+  detailsValueBlock: {
+    fontSize: 15,
+    color: "#555",
+    marginTop: 4,
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  detailsGrid: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  detailsGridItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "48%",
+    backgroundColor: "#f8f9fa",
+    padding: 8,
+    borderRadius: 8,
+  },
+  detailsGridLabel: {
+    fontSize: 12,
+    color: "#666",
+  },
+  detailsGridValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#222",
   },
   jobHeader: {
     flexDirection: "row",
