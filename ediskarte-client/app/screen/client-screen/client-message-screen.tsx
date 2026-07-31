@@ -34,7 +34,8 @@ import {
 } from "expo-router";
 import { safePush, safeReplace, safeBack } from "../../constants/navigation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import io, { Socket } from 'socket.io-client';
+import { Socket } from 'socket.io-client';
+import { getSocket } from '../../services/socket';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 import ActionSheet from 'react-native-actionsheet';
@@ -383,7 +384,8 @@ const ChatScreen: React.FC<ChatProps> = ({
   // Initialize with mock conversation
 
   useEffect(() => {
-    // Initialize Socket.IO connection
+    const activeSocket = getSocket();
+
     const initSocket = async () => {
       const token = await AsyncStorage.getItem("token");
       if (!token) {
@@ -392,50 +394,32 @@ const ChatScreen: React.FC<ChatProps> = ({
         return;
       }
 
-      // First, fetch initial messages via REST API
       await fetchInitialMessages(token);
 
-      const newSocket = io(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000`,
-        {
-          auth: {
-            token: token,
-          },
-        }
-      );
       if (currentUserId) {
         console.log('Re-registering user:', currentUserId);
-        newSocket.emit("register_user", currentUserId);
+        activeSocket.emit("register_user", currentUserId);
       }
 
-      newSocket.on("connect", () => {
-        console.log('Socket connected with ID:', newSocket.id);
-      });
-      newSocket.on("client_offer_notification", (data) => {
+      activeSocket.off("client_offer_notification");
+      activeSocket.on("client_offer_notification", (data) => {
         console.log("📩 Offer Receiveds :", data);
         setOfferAmount(data.offerAmount);
         setOfferStatus(data.status);
         setOfferModalVisible(true);
       });
 
-      // Listen for new messages
-      newSocket.on("receive_message", (message: Message) => {
+      activeSocket.off("receive_message");
+      activeSocket.on("receive_message", (message: Message) => {
         setMessages((prevMessages) => {
-          // Prevent duplicate messages
           const isDuplicate = prevMessages.some((msg) => msg.id === message.id);
           return isDuplicate ? prevMessages : [message, ...prevMessages];
         });
       });
 
-      setSocket(newSocket);
-
-      // Cleanup socket on component unmount
-      return () => {
-        newSocket.disconnect();
-      };
+      setSocket(activeSocket);
     };
 
-    // Fetch Current User ID
     const getCurrentUser = async () => {
       try {
         const storedUser = await AsyncStorage.getItem("currentUserId");
@@ -451,6 +435,11 @@ const ChatScreen: React.FC<ChatProps> = ({
 
     getCurrentUser();
     initSocket();
+
+    return () => {
+      activeSocket.off("client_offer_notification");
+      activeSocket.off("receive_message");
+    };
   }, [chatId, currentUserId]);
 
   useEffect(() => {
@@ -2954,3 +2943,5 @@ callMessageSubtext: {
 });
 
 export default ChatScreen;
+
+

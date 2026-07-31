@@ -26,7 +26,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { safePush, safeReplace, safeBack } from "../../constants/navigation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import io, { Socket } from 'socket.io-client';
+import { Socket } from 'socket.io-client';
+import { getSocket } from '../../services/socket';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 import ActionSheet from 'react-native-actionsheet';
@@ -460,6 +461,8 @@ const ChatScreen: React.FC<ChatProps> = ({
   };
 
   useEffect(() => {
+    const activeSocket = getSocket();
+
     const initSocket = async () => {
       const token = await AsyncStorage.getItem("token");
       const userId = await AsyncStorage.getItem("currentUserId");
@@ -471,36 +474,20 @@ const ChatScreen: React.FC<ChatProps> = ({
 
       await fetchInitialMessages(token);
 
-      const newSocket = io(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000`,
-        {
-          auth: {
-            token: token,
-          },
-        }
-      );
-
       if (userId) {
         console.log('Re-registering user:', userId);
-        newSocket.emit("register_user", userId);
+        activeSocket.emit("register_user", userId);
       }
 
-      newSocket.on("connect", () => {
-        console.log('Socket connected with ID:', newSocket.id);
-      });
-
-      newSocket.on("receive_message", (message: Message) => {
+      activeSocket.off("receive_message");
+      activeSocket.on("receive_message", (message: Message) => {
         setMessages((prevMessages) => {
           const isDuplicate = prevMessages.some((msg) => msg.id === message.id);
           return isDuplicate ? prevMessages : [message, ...prevMessages];
         });
       });
 
-      setSocket(newSocket);
-
-      return () => {
-        newSocket.disconnect();
-      };
+      setSocket(activeSocket);
     };
 
     const getCurrentUser = async () => {
@@ -518,6 +505,10 @@ const ChatScreen: React.FC<ChatProps> = ({
 
     getCurrentUser();
     initSocket();
+
+    return () => {
+      activeSocket.off("receive_message");
+    };
   }, [chatId, currentUserId]);
 
   useEffect(() => {
@@ -2564,3 +2555,5 @@ const styles = StyleSheet.create({
 });
 
 export default ChatScreen;
+
+
