@@ -361,6 +361,7 @@ const AgoraCallRoom = () => {
         >
           <RtcSurfaceView
             style={styles.selfViewVideo}
+            zOrderMediaOverlay={true}
             canvas={{
               uid: 0,
               renderMode: 1,
@@ -439,6 +440,19 @@ const AgoraCallRoom = () => {
               color="#fff"
             />
           </TouchableOpacity>
+
+          {currentCallType === 'video' && isCameraOn && (
+            <TouchableOpacity
+              style={styles.controlButton}
+              onPress={switchCamera}
+            >
+              <Ionicons
+                name="camera-reverse"
+                size={24}
+                color="#fff"
+              />
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity
             style={[styles.controlButton, styles.endCallButton]}
@@ -609,4 +623,6 @@ const styles = StyleSheet.create({
 });
 
 export default AgoraCallRoom;
+
+
 
