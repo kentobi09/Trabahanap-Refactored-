@@ -9,7 +9,8 @@ import {
   Platform,
   Modal,
   FlatList,
-  ActivityIndicator
+  ActivityIndicator,
+  Dimensions
 } from 'react-native';
 import { AntDesign, MaterialCommunityIcons, Ionicons, FontAwesome5, Entypo } from '@expo/vector-icons';
 import { useRouter,useLocalSearchParams } from 'expo-router';
@@ -59,6 +60,7 @@ const UtilityWorkerProfile: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const { otherParticipantId } = useLocalSearchParams();
   const [worker, setWorker] = useState<WorkerData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -125,7 +127,7 @@ const UtilityWorkerProfile: React.FC = () => {
       const combinedData = {
         ...profileData,
         profileImage: profileData.profileImage 
-          ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${profileData.profileImage}`
+          ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${profileData.profileImage.replace(/\\/g, "/")}`
           : '',
         feedbacks: reviewsData || [],
         joinedAt: profileData.joinedAt || '',
@@ -279,11 +281,18 @@ const UtilityWorkerProfile: React.FC = () => {
 
       {/* Header card is always visible */}
       <View style={styles.header}>
-        <Image 
-        
-          source={{ uri: worker.profileImage }} 
-          style={styles.profileImage} 
-        />
+        <TouchableOpacity
+          onPress={() => {
+            if (worker?.profileImage) {
+              setPreviewImage(worker.profileImage);
+            }
+          }}
+        >
+          <Image 
+            source={{ uri: worker.profileImage }} 
+            style={styles.profileImage} 
+          />
+        </TouchableOpacity>
         <View style={styles.headerInfo}>
           <View style={styles.nameContainer}>
             <Text style={styles.name}>{worker.name}</Text>
@@ -396,6 +405,24 @@ const UtilityWorkerProfile: React.FC = () => {
             )}
           </View>
         </View>
+      </Modal>
+      <Modal
+        visible={!!previewImage}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setPreviewImage(null)}
+      >
+        <TouchableOpacity 
+          style={styles.imagePreviewModalContainer}
+          activeOpacity={1}
+          onPress={() => setPreviewImage(null)}
+        >
+          <Image 
+            source={{ uri: previewImage || '' }} 
+            style={styles.imagePreviewModalImage}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
       </Modal>
     </ScrollView>
   );
@@ -753,6 +780,16 @@ const styles = StyleSheet.create({
   },
   unverifiedBadge: {
     backgroundColor: '#F5F5F5',
+  },
+  imagePreviewModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePreviewModalImage: {
+    width: Dimensions.get("window").width,
+    height: Dimensions.get("window").width,
   },
 });
 

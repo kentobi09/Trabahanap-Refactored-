@@ -11,6 +11,7 @@ import {
   FlatList,
   ActivityIndicator,
   Alert,
+  Dimensions,
 } from "react-native";
 import {
   AntDesign,
@@ -217,6 +218,7 @@ const UtilityWorkerProfile: React.FC = () => {
   }>({});
   const [displayedSkills, setDisplayedSkills] = useState<string[]>([]);
   const [editingCredentials, setEditingCredentials] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const {
     data: worker,
@@ -397,14 +399,22 @@ const UtilityWorkerProfile: React.FC = () => {
       </View>
 
       <View style={styles.header}>
-        <Image
-          source={{
-            uri: worker.profileImage
-              ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${worker.profileImage}`
-              : require("assets/images/default-user.png"),
+        <TouchableOpacity
+          onPress={() => {
+            if (worker?.profileImage) {
+              setPreviewImage(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${worker.profileImage.replace(/\\/g, "/")}`);
+            }
           }}
-          style={styles.profileImage}
-        />
+        >
+          <Image
+            source={{
+              uri: worker.profileImage
+                ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${worker.profileImage.replace(/\\/g, "/")}`
+                : require("assets/images/default-user.png"),
+            }}
+            style={styles.profileImage}
+          />
+        </TouchableOpacity>
         <View style={styles.headerInfo}>
           <Text style={styles.name}>
             {worker.firstName} {worker.middleName} {worker.lastName}{" "}
@@ -699,6 +709,24 @@ const UtilityWorkerProfile: React.FC = () => {
           </Modal>
         </>
       )}
+      <Modal
+        visible={!!previewImage}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setPreviewImage(null)}
+      >
+        <TouchableOpacity 
+          style={styles.imagePreviewModalContainer}
+          activeOpacity={1}
+          onPress={() => setPreviewImage(null)}
+        >
+          <Image 
+            source={{ uri: previewImage || '' }} 
+            style={styles.imagePreviewModalImage}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      </Modal>
     </ScrollView>
   );
 };
@@ -1109,6 +1137,16 @@ const styles = StyleSheet.create({
     color: '#FF3B30',
     fontWeight: '600',
     marginLeft: 8,
+  },
+  imagePreviewModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePreviewModalImage: {
+    width: Dimensions.get("window").width,
+    height: Dimensions.get("window").width,
   },
 });
 

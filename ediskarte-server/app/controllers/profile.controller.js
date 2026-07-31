@@ -164,6 +164,15 @@ export const updateUserProfile = async (req, res) => {
         { $set: userUpdateFields }
       );
 
+      // If rate is provided, update it in the jobseekers collection
+      if (req.body.rate !== undefined) {
+        const rateVal = req.body.rate === "" || req.body.rate === null ? null : parseFloat(req.body.rate);
+        await db.collection("jobseekers").updateOne(
+          { _id: seekerDoc._id },
+          { $set: { rate: rateVal } }
+        );
+      }
+
       const updatedSeeker = await db.collection("jobseekers").findOne({ _id: seekerDoc._id });
       return res.status(200).json({ id: updatedSeeker._id.toString(), ...updatedSeeker });
     }

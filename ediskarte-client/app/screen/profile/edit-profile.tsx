@@ -66,6 +66,7 @@ const EditProfilePage: React.FC = () => {
     street: "",
     barangay: "",
     profileImage: "",
+    rate: "",
   });
 
   const [selectedImageFile, setSelectedImageFile] =
@@ -87,6 +88,7 @@ const EditProfilePage: React.FC = () => {
         street: userData.street || "",
         barangay: userData.barangay || "",
         profileImage: userData.profileImage || "", // Initial image from server
+        rate: userData.rate !== undefined && userData.rate !== null ? String(userData.rate) : "",
       });
       setSelectedImageFile(null); // Clear selected file on initial load
     }
@@ -522,6 +524,19 @@ const EditProfilePage: React.FC = () => {
               <Text style={styles.errorText}>{errors.barangay}</Text>
             ) : null}
           </View>
+
+          {userData?.userType === "job-seeker" && (
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldLabel}>Rate (PHP / hr)</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.rate}
+                onChangeText={(value) => handleInputChange("rate", value)}
+                placeholder="Enter your hourly rate (e.g. 500)"
+                keyboardType="numeric"
+              />
+            </View>
+          )}
         </View>
       </ScrollView>
 
