@@ -928,29 +928,56 @@ export const searchJobSeekers = async (req, res) => {
 
 export const getNotifications = async (req, res) => {
   try {
-    const userId = req.user.id; // Assumes authentication middleware sets req.user
-    const userType = req.user.userType; // e.g., "client" or "job-seeker"
-    console.log(userId, userType,userId);
-    // Build the where clause based on user type
-    let whereClause = {};
+    const userId = req.user.id;
+    const userType = req.user.userType;
+    console.log(userId, userType);
+
+    const db = await getNativeDb();
+    const query = {};
+
     if (userType === "client") {
-      whereClause.clientId = userId;
+      query.$or = [
+        { clientId: userId },
+        { clientId: new ObjectId(userId) }
+      ];
     } else if (userType === "job-seeker") {
-      // Find the jobSeekerId for this user
-
-        whereClause.jobSeekerId = userId;
-
+      const jobSeeker = await prisma.jobSeeker.findUnique({
+        where: { userId: userId }
+      });
+      const seekerId = jobSeeker ? jobSeeker.id : null;
+      
+      const orConditions = [
+        { jobSeekerId: userId },
+        { jobSeekerId: new ObjectId(userId) }
+      ];
+      if (seekerId) {
+        orConditions.push(
+          { jobSeekerId: seekerId },
+          { jobSeekerId: new ObjectId(seekerId) }
+        );
+      }
+      query.$or = orConditions;
     } else {
       return res.status(400).json({ error: "Invalid user type." });
     }
 
-    // Fetch notifications
-    const notifications = await prisma.notification.findMany({
-      where: whereClause,
-      orderBy: { createdAt: "desc" },
-    });
-    console.log(notifications);
-    res.json({ notifications });
+    const notifications = await db.collection("notifications")
+      .find(query)
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    const formattedNotifications = notifications.map(n => ({
+      id: n._id.toString(),
+      clientId: n.clientId ? n.clientId.toString() : null,
+      jobSeekerId: n.jobSeekerId ? n.jobSeekerId.toString() : null,
+      notificationType: n.notificationType,
+      notificationTitle: n.notificationTitle,
+      notificationMessage: n.notificationMessage,
+      isRead: n.isRead,
+      createdAt: n.createdAt
+    }));
+
+    res.json({ notifications: formattedNotifications });
   } catch (error) {
     console.error("Error fetching notifications:", error);
     res.status(500).json({ error: "Failed to fetch notifications" });
@@ -963,19 +990,34 @@ export const markNotificationsAsRead = async (req, res) => {
     const userType = req.user.userType;
 
     const db = await getNativeDb();
-
-    // Build the query filter matching getNotifications structure
     const filter = { isRead: false };
 
     if (userType === "client") {
-      filter.clientId = userId;
+      filter.$or = [
+        { clientId: userId },
+        { clientId: new ObjectId(userId) }
+      ];
     } else if (userType === "job-seeker") {
-      filter.jobSeekerId = userId;
+      const jobSeeker = await prisma.jobSeeker.findUnique({
+        where: { userId: userId }
+      });
+      const seekerId = jobSeeker ? jobSeeker.id : null;
+      
+      const orConditions = [
+        { jobSeekerId: userId },
+        { jobSeekerId: new ObjectId(userId) }
+      ];
+      if (seekerId) {
+        orConditions.push(
+          { jobSeekerId: seekerId },
+          { jobSeekerId: new ObjectId(seekerId) }
+        );
+      }
+      filter.$or = orConditions;
     } else {
       return res.status(400).json({ error: "Invalid user type." });
     }
 
-    // Update using native MongoDB to bypass replica set transaction requirement
     const result = await db.collection("notifications").updateMany(
       filter,
       { $set: { isRead: true } }
@@ -996,22 +1038,36 @@ export const hasUnreadNotifications = async (req, res) => {
     const userId = req.user.id;
     const userType = req.user.userType;
 
-    // Build the where clause matching getNotifications structure
-    let whereClause = { isRead: false };
+    const db = await getNativeDb();
+    const query = { isRead: false };
 
     if (userType === "client") {
-      whereClause.clientId = userId;
+      query.$or = [
+        { clientId: userId },
+        { clientId: new ObjectId(userId) }
+      ];
     } else if (userType === "job-seeker") {
-      whereClause.jobSeekerId = userId;
+      const jobSeeker = await prisma.jobSeeker.findUnique({
+        where: { userId: userId }
+      });
+      const seekerId = jobSeeker ? jobSeeker.id : null;
+      
+      const orConditions = [
+        { jobSeekerId: userId },
+        { jobSeekerId: new ObjectId(userId) }
+      ];
+      if (seekerId) {
+        orConditions.push(
+          { jobSeekerId: seekerId },
+          { jobSeekerId: new ObjectId(seekerId) }
+        );
+      }
+      query.$or = orConditions;
     } else {
       return res.status(400).json({ error: "Invalid user type." });
     }
 
-    // Count unread notifications using Prisma (read-only queries do not need replica sets)
-    const count = await prisma.notification.count({
-      where: whereClause,
-    });
-
+    const count = await db.collection("notifications").countDocuments(query);
     res.json({ hasUnread: count > 0 });
   } catch (error) {
     console.error("Error checking unread notifications:", error);

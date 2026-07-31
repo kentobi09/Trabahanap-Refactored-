@@ -20,6 +20,7 @@ async function getNativeDb() {
 
 const onlineUsers = new Map(); // userId -> { socketId, lastSeen, userInfo }
 const activeCalls = new Map(); // chatId -> { callerId, calleeId, status }
+let ioInstance;
 
 export function initializeSocketIO(httpServer) {
   const io = new Server(httpServer, {
@@ -28,6 +29,7 @@ export function initializeSocketIO(httpServer) {
       methods: ["GET", "POST"]
     }
   });
+  ioInstance = io;
 
   // Socket.IO middleware for authentication
   io.use(async (socket, next) => {
@@ -1492,7 +1494,30 @@ async function createNotification({ recipient, type, title, message, relatedIds 
   };
   if (recipient.jobSeekerId) data.jobSeekerId = recipient.jobSeekerId;
   try {
-    await prisma.notification.create({ data });
+    const createdNotification = await prisma.notification.create({ data });
+    if (ioInstance) {
+      let finalUserId = targetUserId;
+      if (!onlineUsers.has(finalUserId)) {
+        const jobSeeker = await prisma.jobSeeker.findUnique({
+          where: { id: targetUserId }
+        });
+        if (jobSeeker) {
+          finalUserId = jobSeeker.userId;
+        }
+      }
+      const recipientSocket = onlineUsers.get(finalUserId);
+      if (recipientSocket) {
+        ioInstance.to(recipientSocket.socketId).emit("new_notification", {
+          id: createdNotification.id,
+          notificationType: type,
+          notificationTitle: title,
+          notificationMessage: message,
+          relatedIds,
+          isRead: false,
+          createdAt: createdNotification.createdAt || new Date()
+        });
+      }
+    }
   } catch (e) {
     console.warn("Socket notification creation skipped:", e.message);
   }
