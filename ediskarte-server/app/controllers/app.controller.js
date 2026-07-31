@@ -974,6 +974,7 @@ export const getNotifications = async (req, res) => {
       notificationTitle: n.notificationTitle,
       notificationMessage: n.notificationMessage,
       isRead: n.isRead,
+      relatedIds: n.relatedIds || [],
       createdAt: n.createdAt
     }));
 
