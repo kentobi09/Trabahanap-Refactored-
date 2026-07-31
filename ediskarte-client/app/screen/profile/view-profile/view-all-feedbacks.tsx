@@ -136,6 +136,7 @@ const ViewAllFeedbacks: React.FC = () => {
             clientFirstName: job.client?.firstName || "",
             clientLastName: job.client?.lastName || "",
             clientProfileImage: job.client?.profileImage || "",
+            hideApplyButton: "true",
           },
         });
       }}
@@ -165,7 +166,7 @@ const ViewAllFeedbacks: React.FC = () => {
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
         <Text style={styles.feedbackDate}>{formatDate(item.date)}</Text>
         {item.jobRequest && (
-          <Text style={styles.viewProofText}>Tap to view details (Proof) →</Text>
+          <Text style={styles.viewProofText}>Tap to view job details →</Text>
         )}
       </View>
     </TouchableOpacity>

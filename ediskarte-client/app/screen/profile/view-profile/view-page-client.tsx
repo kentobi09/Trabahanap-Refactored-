@@ -458,11 +458,12 @@ const UtilityWorkerProfile: React.FC = () => {
                           clientFirstName: job.client?.firstName || "",
                           clientLastName: job.client?.lastName || "",
                           clientProfileImage: job.client?.profileImage || "",
+                          hideApplyButton: "true",
                         },
                       });
                     }}
                   >
-                    <Text style={styles.viewJobButtonText}>View Job Details (Proof)</Text>
+                    <Text style={styles.viewJobButtonText}>View Job Details</Text>
                     <AntDesign name="arrowright" size={16} color="#FFF" style={{ marginLeft: 6 }} />
                   </TouchableOpacity>
                 )}

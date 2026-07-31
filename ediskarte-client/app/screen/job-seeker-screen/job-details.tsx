@@ -347,7 +347,8 @@ export default function JobDetailsScreen() {
         {jobData.isMyJob !== "true" && 
          jobData.jobStatus !== "pending" && 
          jobData.jobStatus !== "completed" && 
-         jobData.jobStatus !== "reviewed" && (
+         jobData.jobStatus !== "reviewed" && 
+         params.hideApplyButton !== "true" && (
            <TouchableOpacity 
              style={[styles.applyButton, hasApplied && styles.appliedButton]} 
              onPress={hasApplied ? undefined : handleApplyNow}
