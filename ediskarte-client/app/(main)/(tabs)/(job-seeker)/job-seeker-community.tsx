@@ -19,6 +19,7 @@ import {
   ViewStyle,
   TextStyle,
   ImageStyle,
+  Dimensions,
 } from "react-native";
 import { Ionicons, MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -42,7 +43,6 @@ import {
 import decodeToken from "@/api/token-decoder";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-// Simplified types
 type Comment = {
   id: string;
   username: string;
@@ -53,6 +53,8 @@ type Comment = {
   isUpvoted?: boolean;
   userId?: string;
   likeCount?: number;
+  clientId?: string | null;
+  jobSeekerId?: string | null;
 };
 
 type Post = {
@@ -70,6 +72,12 @@ type Post = {
   upvotes?: number;
   comments?: number;
   commentsList?: Comment[];
+  author?: {
+    id: string;
+    name: string;
+    profilePicture: string | null;
+    userType: string;
+  };
 };
 
 type AddCommentMutation = {
@@ -165,6 +173,8 @@ type Styles = {
   modalScrollView: ViewStyle;
   editingCommentInput: TextStyle;
   commentActionGroup: ViewStyle;
+  imagePreviewModalContainer: ViewStyle;
+  imagePreviewModalImage: ImageStyle;
 };
 
 const SocialFeedScreen = () => {
@@ -188,6 +198,7 @@ const SocialFeedScreen = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isPosting, setIsPosting] = useState<boolean>(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const [isEditModalVisible, setIsEditModalVisible] = useState<boolean>(false);
   const [editingPostDetails, setEditingPostDetails] = useState<Post | null>(
@@ -534,7 +545,7 @@ const SocialFeedScreen = () => {
     }
   };
 
-  const handleAuthorPress = (item: Post) => {
+  const handleAuthorPress = (item: Post | Comment) => {
     if (item.clientId) {
       router.push({
         pathname: "/screen/profile/view-profile/view-page-client",
@@ -980,18 +991,26 @@ const SocialFeedScreen = () => {
         key={comment.id}
         style={[styles.commentContainer, isReply && styles.replyContainer]}
       >
-        <Image
-          source={
-            comment.avatar
-              ? { uri: comment.avatar }
-              : require("assets/images/default-user.png")
-          }
-          style={styles.commentAvatar}
-        />
+        <TouchableOpacity
+          onPress={() => {
+            if (comment.avatar) setPreviewImage(comment.avatar);
+          }}
+        >
+          <Image
+            source={
+              comment.avatar
+                ? { uri: comment.avatar }
+                : require("assets/images/default-user.png")
+            }
+            style={styles.commentAvatar}
+          />
+        </TouchableOpacity>
         <View style={styles.commentContent}>
           <View style={styles.commentBubble}>
             <View style={styles.commentHeader}>
-              <Text style={styles.commentUsername}>{comment.username}</Text>
+              <TouchableOpacity onPress={() => handleAuthorPress(comment)}>
+                <Text style={styles.commentUsername}>{comment.username}</Text>
+              </TouchableOpacity>
               {data &&
                 comment.userId === data.id &&
                 editingCommentId !== comment.id && (
@@ -1163,7 +1182,11 @@ const SocialFeedScreen = () => {
     return (
       <View style={styles.postContainer}>
         <View style={styles.postHeader}>
-          <TouchableOpacity onPress={() => handleAuthorPress(item)} style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+          <TouchableOpacity
+            onPress={() => {
+              if (profileImageUrl) setPreviewImage(profileImageUrl);
+            }}
+          >
             <Image
               source={
                 profileImageUrl
@@ -1172,18 +1195,20 @@ const SocialFeedScreen = () => {
               }
               style={styles.avatar}
             />
-            <View style={styles.postHeaderContent}>
-              <Text style={styles.username}>{item.username}</Text>
-              <Text style={styles.time}>
-                {new Date(item.createdAt).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </Text>
-            </View>
           </TouchableOpacity>
-          {data && item.jobSeekerId === data.id && (
+          <View style={styles.postHeaderContent}>
+            <TouchableOpacity onPress={() => handleAuthorPress(item)}>
+              <Text style={styles.username}>{item.username}</Text>
+            </TouchableOpacity>
+            <Text style={styles.time}>
+              {new Date(item.createdAt).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </Text>
+          </View>
+          {data && item.author?.id === data.id && (
             <View style={styles.postActions}>
               <TouchableOpacity
                 style={styles.postActionButton}
@@ -1204,11 +1229,13 @@ const SocialFeedScreen = () => {
         <Text style={styles.content}>{item.postContent}</Text>
 
         {imageUrl && (
-          <Image
-            source={{ uri: imageUrl }}
-            style={styles.postImage}
-            resizeMode="cover"
-          />
+          <TouchableOpacity onPress={() => setPreviewImage(imageUrl)}>
+            <Image
+              source={{ uri: imageUrl }}
+              style={styles.postImage}
+              resizeMode="cover"
+            />
+          </TouchableOpacity>
         )}
 
         <View style={styles.stats}>
@@ -1675,6 +1702,25 @@ const SocialFeedScreen = () => {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        visible={!!previewImage}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setPreviewImage(null)}
+      >
+        <TouchableOpacity 
+          style={styles.imagePreviewModalContainer}
+          activeOpacity={1}
+          onPress={() => setPreviewImage(null)}
+        >
+          <Image 
+            source={{ uri: previewImage || '' }} 
+            style={styles.imagePreviewModalImage}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -1683,6 +1729,16 @@ const styles = StyleSheet.create<Styles>({
   container: {
     flex: 1,
     backgroundColor: "#f3f6f8",
+  },
+  imagePreviewModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePreviewModalImage: {
+    width: Dimensions.get("window").width,
+    height: Dimensions.get("window").width,
   },
   androidContainer: {
     marginTop: Platform.OS === "android" ? StatusBar.currentHeight || 25 : 0,

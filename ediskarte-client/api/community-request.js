@@ -267,23 +267,29 @@ export async function addComment(postId, comment) {
 }
 
 function transformCommentData(comment) {
-  const userData = comment.client || comment.jobSeeker?.user;
+  let formattedUsername = "Unknown User";
+  let profileImage = null;
+  let userId = null;
 
-  const profileImage = userData?.profileImage;
-  const firstName = userData?.firstName || "Unknown";
-  const middleName = userData?.middleName || "";
-  const lastName = userData?.lastName || "User";
-
-  const formattedUsername = `${firstName} ${
-    middleName ? middleName[0] + "." : ""
-  } ${lastName}`.trim();
+  if (comment.author) {
+    formattedUsername = comment.author.name || "Unknown User";
+    profileImage = comment.author.profilePicture || null;
+    userId = comment.author.id || null;
+  } else {
+    const userData = comment.client || comment.jobSeeker?.user;
+    const firstName = userData?.firstName || "Unknown";
+    const lastName = userData?.lastName || "User";
+    formattedUsername = `${firstName} ${lastName}`.trim();
+    profileImage = userData?.profileImage || null;
+    userId = comment.client?.id || comment.jobSeeker?.id || null;
+  }
 
   const avatarUrl = profileImage
-    ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${profileImage}`
+    ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${profileImage.replace(/\\/g, "/")}`
     : null;
 
   return {
-    id: comment.id,
+    id: comment.id || comment._id?.toString(),
     username: formattedUsername,
     avatar: avatarUrl,
     text: comment.comment,
@@ -295,7 +301,9 @@ function transformCommentData(comment) {
     replies: (comment.replies || []).map(transformCommentData),
     isUpvoted: comment.isUpvoted || false,
     likeCount: comment.likeCount || 0,
-    userId: comment.client?.id || comment.jobSeeker?.id,
+    userId: userId,
+    clientId: comment.clientId || null,
+    jobSeekerId: comment.jobSeekerId || null,
   };
 }
 
