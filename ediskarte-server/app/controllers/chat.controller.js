@@ -584,6 +584,7 @@ export const getUserProfile = async (req, res) => {
             birthday: true,
             jobsDone: true,
             joinedAt: true,
+            verificationStatus: true,
           },
         },
         achievement: {
@@ -626,6 +627,7 @@ export const getUserProfile = async (req, res) => {
               birthday: true,
               jobsDone: true,
               joinedAt: true,
+              verificationStatus: true,
             },
           },
           achievement: {
@@ -733,6 +735,9 @@ export const getUserProfile = async (req, res) => {
       joinedAt: jobSeeker.user.joinedAt
         ? jobSeeker.user.joinedAt.toISOString()
         : null,
+      rate: jobSeeker.rate,
+      hourlyRate: jobSeeker.hourlyRate,
+      isVerified: jobSeeker.user.verificationStatus === "verified",
       credentials: jobSeeker.credentials || [],
     };
 
