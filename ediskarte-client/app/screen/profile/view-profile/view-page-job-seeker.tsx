@@ -659,7 +659,8 @@ const UtilityWorkerProfile: React.FC = () => {
                 </Text>
                 <Text style={styles.feedbackDetailComment}>
                   {selectedFeedback.comment}
-                </Text>                 {selectedFeedback.jobRequest && (
+                </Text>
+                {selectedFeedback.jobRequest && (
                   <TouchableOpacity
                     style={styles.viewJobButton}
                     onPress={() => {
