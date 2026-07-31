@@ -255,7 +255,7 @@ export default function JobListingScreen() {
       <View style={[styles.header, Platform.OS === "ios" && styles.iosHeader]}>
         <TouchableOpacity style={styles.searchBar} onPress={handleSearchPress}>
           <Ionicons name="search-outline" size={18} color="#666" />
-          <Text style={styles.searchText}>Search jobs here</Text>
+          <Text style={styles.searchText}>Search workers here</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

@@ -856,11 +856,26 @@ export const searchJobSeekers = async (req, res) => {
       });
     }
 
-    // Format results to match the frontend expectations
-    const formattedJobSeekers = filteredJobSeekers.map((user) => {
-      // Since we don't have access to reviews directly, we'll set a default rating for now
-      // In a real implementation, you'd want to query reviews separately if needed
+    // Manual Pagination on the filtered users first
+    const totalJobSeekers = filteredJobSeekers.length;
+    const paginatedUsers = filteredJobSeekers.slice(
+      (pageNum - 1) * limitNum,
+      pageNum * limitNum
+    );
+
+    const db = await getNativeDb();
+    // Format results to match the frontend expectations and load ratings dynamically
+    const paginatedJobSeekers = await Promise.all(paginatedUsers.map(async (user) => {
       let rating = null;
+      if (user.jobSeeker) {
+        let seekerIdObj;
+        try { seekerIdObj = new ObjectId(user.jobSeeker.id); } catch (e) { seekerIdObj = user.jobSeeker.id; }
+        const userReviews = await db.collection("reviews").find({ reviewedId: seekerIdObj }).toArray();
+        if (userReviews.length > 0) {
+          const sum = userReviews.reduce((acc, rev) => acc + (rev.rating || 0), 0);
+          rating = parseFloat((sum / userReviews.length).toFixed(1));
+        }
+      }
 
       // Get primary category (first tag) if available
       const category =
@@ -877,14 +892,7 @@ export const searchJobSeekers = async (req, res) => {
         category: category,
         rating: rating,
       };
-    });
-
-    // Manual Pagination on the formatted results
-    const totalJobSeekers = formattedJobSeekers.length;
-    const paginatedJobSeekers = formattedJobSeekers.slice(
-      (pageNum - 1) * limitNum,
-      pageNum * limitNum
-    );
+    }));
 
     // Get top categories for filters (count occurrences of each tag)
     const tagCounts = {};

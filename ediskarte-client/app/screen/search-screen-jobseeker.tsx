@@ -285,13 +285,11 @@ const SearchScreen = () => {
                   <View style={styles.jobHeader}>
                     <View style={styles.clientInfo}>
                       <Image
-                        source={{
-                          uri: job.client.profileImage
-                            ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${
-                                job.client.profileImage.split("profiles/")[1]
-                              }`
-                            : 'https://via.placeholder.com/40'
-                        }}
+                        source={
+                          job.client.profileImage
+                            ? { uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${job.client.profileImage.replace(/\\/g, "/")}` }
+                            : require('assets/images/client-user.png')
+                        }
                         style={styles.clientImage}
                         defaultSource={require('assets/images/client-user.png')}
                       />

@@ -113,7 +113,7 @@ const SearchScreen = () => {
         source={
           item.profileImage
             ? {
-                uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item.profileImage}`,
+                uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item.profileImage.replace(/\\/g, "/")}`,
               }
             : require("../../assets/images/default-user.png")
         }
