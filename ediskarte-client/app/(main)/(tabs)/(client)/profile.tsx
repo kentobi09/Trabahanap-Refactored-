@@ -11,6 +11,7 @@ import {
   FlatList,
   ActivityIndicator,
   Alert,
+  Dimensions,
 } from "react-native";
 import {
   AntDesign,
@@ -47,6 +48,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8f9fa",
     padding: 16,
     paddingTop: Platform.OS === "ios" ? 60 : 40,
+  },
+  imagePreviewModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePreviewModalImage: {
+    width: Dimensions.get("window").width,
+    height: Dimensions.get("window").width,
   },
   backButton: {
     marginBottom: 16,
@@ -699,6 +710,7 @@ const UtilityWorkerProfile: React.FC = () => {
     [key: string]: boolean;
   }>({});
   const [displayedSkills, setDisplayedSkills] = useState<string[]>([]);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   
   // State for achievements
   const [achievements, setAchievements] = useState<any[]>([]);
@@ -973,14 +985,22 @@ const UtilityWorkerProfile: React.FC = () => {
       </View>
 
       <View style={styles.header}>
-        <Image
-          source={{
-            uri: worker.profileImage
-              ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${worker.profileImage}`
-              : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+        <TouchableOpacity
+          onPress={() => {
+            if (worker?.profileImage) {
+              setPreviewImage(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${worker.profileImage.replace(/\\/g, "/")}`);
+            }
           }}
-          style={styles.profileImage}
-        />
+        >
+          <Image
+            source={{
+              uri: worker.profileImage
+                ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${worker.profileImage.replace(/\\/g, "/")}`
+                : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+            }}
+            style={styles.profileImage}
+          />
+        </TouchableOpacity>
         <View style={styles.headerInfo}>
           <Text style={styles.name}>
             {worker.firstName} {worker.middleName} {worker.lastName}{" "}
@@ -1172,6 +1192,24 @@ const UtilityWorkerProfile: React.FC = () => {
             />
           </View>
         </View>
+      </Modal>
+      <Modal
+        visible={!!previewImage}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setPreviewImage(null)}
+      >
+        <TouchableOpacity 
+          style={styles.imagePreviewModalContainer}
+          activeOpacity={1}
+          onPress={() => setPreviewImage(null)}
+        >
+          <Image 
+            source={{ uri: previewImage || '' }} 
+            style={styles.imagePreviewModalImage}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
       </Modal>
     </ScrollView>
   );

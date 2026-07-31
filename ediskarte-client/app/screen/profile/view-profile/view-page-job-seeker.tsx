@@ -156,15 +156,18 @@ const UtilityWorkerProfile: React.FC = () => {
       // Combine profile data with job tags and reviews
       const combinedData = {
         ...profileData,
+        ...(profileData.user || {}),
+        name: profileData.user ? `${profileData.user.firstName} ${profileData.user.middleName || ""} ${profileData.user.lastName}`.trim() : "",
+        address: profileData.user ? `${profileData.user.houseNumber || ""} ${profileData.user.street || ""} ${profileData.user.barangay || ""}`.trim() : "",
         skills: tagsData.jobTags || [],
-        profileImage: profileData.profileImage
-          ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${profileData.profileImage.replace(/\\/g, "/")}`
+        profileImage: profileData.user?.profileImage
+          ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${profileData.user.profileImage.replace(/\\/g, "/")}`
           : "",
         feedbacks: reviewsData || [],
-        jobsDone: profileData.jobsDone,
-        dateJoined: profileData.joinedAt,
+        jobsDone: profileData.user?.jobsDone || 0,
+        dateJoined: profileData.user?.joinedAt || "",
         rate: profileData.rate,
-        isVerified: profileData.isVerified,
+        isVerified: profileData.user?.verificationStatus === "verified",
         credentials: profileData.credentials || [],
       };
 

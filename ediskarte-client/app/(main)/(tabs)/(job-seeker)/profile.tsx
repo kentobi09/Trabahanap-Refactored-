@@ -609,14 +609,22 @@ const UtilityWorkerProfile: React.FC = () => {
       </View>
 
       <View style={styles.header}>
-        <Image
-          source={{
-            uri: worker.profileImage
-              ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${worker.profileImage}`
-              : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+        <TouchableOpacity
+          onPress={() => {
+            if (worker?.profileImage) {
+              handleImagePreview(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${worker.profileImage.replace(/\\/g, "/")}`);
+            }
           }}
-          style={styles.profileImage}
-        />
+        >
+          <Image
+            source={{
+              uri: worker.profileImage
+                ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${worker.profileImage.replace(/\\/g, "/")}`
+                : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+            }}
+            style={styles.profileImage}
+          />
+        </TouchableOpacity>
         <View style={styles.headerInfo}>
           <Text style={styles.name}>
             {worker.firstName} {worker.middleName} {worker.lastName}{" "}
