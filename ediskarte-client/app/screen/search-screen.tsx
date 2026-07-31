@@ -142,7 +142,7 @@ const SearchScreen = () => {
       }
 
       const response = await fetch(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/jobs/top-categories`,
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/search/jobseekers?limit=1`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
