@@ -26,6 +26,9 @@ interface Feedback {
   comment: string;
   date: string;
   anonymousName: string;
+  avatar?: string;
+  jobRequest?: any;
+  jobTitle?: string;
 }
 
 interface WorkerData {
@@ -361,15 +364,31 @@ const UtilityWorkerProfile: React.FC = () => {
             style={styles.feedbackCard}
             onPress={() => handleFeedbackPress(feedback)}
           >
-            <View style={styles.feedbackHeader}>
-              {/* <Text style={styles.feedbackAnonymousName}>{'Anonymous Job Seeker'}</Text> */}
-              <Text style={styles.feedbackAnonymousName}>{feedback.anonymousName || 'Anonymous Job Seeker'}</Text>
-              {renderFeedbackStars(feedback.rating)}
+            <View style={styles.feedbackReviewerRow}>
+              <Image
+                source={{
+                  uri: feedback.avatar
+                    ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${feedback.avatar.replace(/\\/g, "/")}`
+                    : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"
+                }}
+                style={styles.feedbackAvatar}
+              />
+              <View style={styles.feedbackReviewerInfo}>
+                <View style={styles.feedbackHeader}>
+                  <Text style={styles.feedbackAnonymousName}>{feedback.anonymousName || 'Anonymous Job Seeker'}</Text>
+                  {renderFeedbackStars(feedback.rating)}
+                </View>
+                {feedback.jobTitle ? (
+                  <Text style={styles.feedbackJobTitle} numberOfLines={1}>
+                    Job: {feedback.jobTitle}
+                  </Text>
+                ) : null}
+              </View>
             </View>
             <Text style={styles.feedbackComment} numberOfLines={2}>
               {feedback.comment}
             </Text>
-              <Text style={styles.feedbackDate}>{formatDate(feedback.date)}</Text>
+            <Text style={styles.feedbackDate}>{formatDate(feedback.date)}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -395,12 +414,58 @@ const UtilityWorkerProfile: React.FC = () => {
             
             {selectedFeedback && (
               <View style={styles.feedbackDetailContainer}>
-                <View style={styles.feedbackDetailHeader}>
-                  <Text style={styles.feedbackDetailName}>{selectedFeedback.anonymousName}</Text>
-                  {renderFeedbackStars(selectedFeedback.rating)}
+                <View style={styles.feedbackReviewerRow}>
+                  <Image
+                    source={{
+                      uri: selectedFeedback.avatar
+                        ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${selectedFeedback.avatar.replace(/\\/g, "/")}`
+                        : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"
+                    }}
+                    style={styles.feedbackAvatar}
+                  />
+                  <View style={styles.feedbackReviewerInfo}>
+                    <View style={styles.feedbackDetailHeader}>
+                      <Text style={styles.feedbackDetailName}>{selectedFeedback.anonymousName}</Text>
+                      {renderFeedbackStars(selectedFeedback.rating)}
+                    </View>
+                    {selectedFeedback.jobTitle ? (
+                      <Text style={styles.feedbackJobTitle} numberOfLines={1}>
+                        Job: {selectedFeedback.jobTitle}
+                      </Text>
+                    ) : null}
+                  </View>
                 </View>
                 <Text style={styles.feedbackDetailDate}>{formatDate(selectedFeedback.date)}</Text>
                 <Text style={styles.feedbackDetailComment}>{selectedFeedback.comment}</Text>
+                {selectedFeedback.jobRequest && (
+                  <TouchableOpacity
+                    style={styles.viewJobButton}
+                    onPress={() => {
+                      setFeedbackModalVisible(false);
+                      const job = selectedFeedback.jobRequest;
+                      router.push({
+                        pathname: '/screen/job-seeker-screen/job-details',
+                        params: {
+                          id: job.id,
+                          title: job.jobTitle,
+                          postedDate: job.verifiedAt || job.createdAt || new Date().toISOString(),
+                          description: job.jobDescription,
+                          rate: job.budget,
+                          location: job.jobLocation,
+                          otherParticipant: job.client?.id || "",
+                          jobImages: job.jobImage ? (Array.isArray(job.jobImage) ? job.jobImage.join(',') : job.jobImage) : "",
+                          jobDuration: job.jobDuration,
+                          clientFirstName: job.client?.firstName || "",
+                          clientLastName: job.client?.lastName || "",
+                          clientProfileImage: job.client?.profileImage || "",
+                        },
+                      });
+                    }}
+                  >
+                    <Text style={styles.viewJobButtonText}>View Job Details (Proof)</Text>
+                    <AntDesign name="arrowright" size={16} color="#FFF" style={{ marginLeft: 6 }} />
+                  </TouchableOpacity>
+                )}
               </View>
             )}
           </View>
@@ -790,6 +855,42 @@ const styles = StyleSheet.create({
   imagePreviewModalImage: {
     width: Dimensions.get("window").width,
     height: Dimensions.get("window").width,
+  },
+  feedbackReviewerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  feedbackAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+    backgroundColor: "#F1F5F9",
+  },
+  feedbackReviewerInfo: {
+    flex: 1,
+  },
+  feedbackJobTitle: {
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 2,
+    fontWeight: "500",
+  },
+  viewJobButton: {
+    backgroundColor: "#0B153C",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  viewJobButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
 

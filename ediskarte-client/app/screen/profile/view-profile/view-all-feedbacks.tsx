@@ -7,7 +7,8 @@ import {
   TouchableOpacity, 
   Platform,
   FlatList,
-  ActivityIndicator
+  ActivityIndicator,
+  Image
 } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -19,6 +20,9 @@ interface Feedback {
   comment: string;
   date: string;
   anonymousName: string;
+  avatar?: string;
+  jobRequest?: any;
+  jobTitle?: string;
 }
 
 const ViewAllFeedbacks: React.FC = () => {
@@ -110,14 +114,61 @@ const ViewAllFeedbacks: React.FC = () => {
   };
 
   const renderFeedbackItem = ({ item }: { item: Feedback }) => (
-    <View style={styles.feedbackCard}>
-      <View style={styles.feedbackHeader}>
-        <Text style={styles.feedbackAnonymousName}>{item.anonymousName}</Text>
-        {renderFeedbackStars(item.rating)}
+    <TouchableOpacity 
+      style={styles.feedbackCard}
+      disabled={!item.jobRequest}
+      activeOpacity={0.7}
+      onPress={() => {
+        if (!item.jobRequest) return;
+        const job = item.jobRequest;
+        router.push({
+          pathname: '/screen/job-seeker-screen/job-details',
+          params: {
+            id: job.id,
+            title: job.jobTitle,
+            postedDate: job.verifiedAt || job.createdAt || new Date().toISOString(),
+            description: job.jobDescription,
+            rate: job.budget,
+            location: job.jobLocation,
+            otherParticipant: job.client?.id || "",
+            jobImages: job.jobImage ? (Array.isArray(job.jobImage) ? job.jobImage.join(',') : job.jobImage) : "",
+            jobDuration: job.jobDuration,
+            clientFirstName: job.client?.firstName || "",
+            clientLastName: job.client?.lastName || "",
+            clientProfileImage: job.client?.profileImage || "",
+          },
+        });
+      }}
+    >
+      <View style={styles.feedbackReviewerRow}>
+        <Image
+          source={{
+            uri: item.avatar
+              ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item.avatar.replace(/\\/g, "/")}`
+              : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"
+          }}
+          style={styles.feedbackAvatar}
+        />
+        <View style={styles.feedbackReviewerInfo}>
+          <View style={styles.feedbackHeader}>
+            <Text style={styles.feedbackAnonymousName}>{item.anonymousName}</Text>
+            {renderFeedbackStars(item.rating)}
+          </View>
+          {item.jobTitle ? (
+            <Text style={styles.feedbackJobTitle} numberOfLines={1}>
+              Job: {item.jobTitle}
+            </Text>
+          ) : null}
+        </View>
       </View>
       <Text style={styles.feedbackComment}>{item.comment}</Text>
-      <Text style={styles.feedbackDate}>{formatDate(item.date)}</Text>
-    </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+        <Text style={styles.feedbackDate}>{formatDate(item.date)}</Text>
+        {item.jobRequest && (
+          <Text style={styles.viewProofText}>Tap to view details (Proof) →</Text>
+        )}
+      </View>
+    </TouchableOpacity>
   );
 
   if (loading) {
@@ -273,6 +324,32 @@ const styles = StyleSheet.create({
   feedbackDate: {
     fontSize: 12,
     color: '#999',
+  },
+  feedbackReviewerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  feedbackAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+    backgroundColor: '#F1F5F9',
+  },
+  feedbackReviewerInfo: {
+    flex: 1,
+  },
+  feedbackJobTitle: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  viewProofText: {
+    fontSize: 11,
+    color: '#0B153C',
+    fontWeight: '600',
   },
 });
 

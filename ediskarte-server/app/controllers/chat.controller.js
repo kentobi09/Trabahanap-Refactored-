@@ -667,9 +667,32 @@ export const getUserProfile = async (req, res) => {
         rating: true,
         feedback: true,
         createdAt: true,
+        reviewer: {
+          select: {
+            firstName: true,
+            lastName: true,
+            profileImage: true,
+          },
+        },
         jobRequest: {
           select: {
+            id: true,
+            jobTitle: true,
+            jobDescription: true,
+            category: true,
+            jobLocation: true,
+            budget: true,
+            jobImage: true,
+            jobDuration: true,
             verifiedAt: true,
+            client: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                profileImage: true,
+              }
+            }
           },
         },
       },
@@ -700,7 +723,10 @@ export const getUserProfile = async (req, res) => {
         rating: review.rating || 0,
         comment: review.feedback,
         date: (review.jobRequest?.verifiedAt || review.createdAt).toISOString(),
-        anonymousName: "Anonymous Client",
+        jobTitle: review.jobRequest?.jobTitle || "",
+        anonymousName: review.reviewer ? `${review.reviewer.firstName} ${review.reviewer.lastName}` : "Anonymous Client",
+        avatar: review.reviewer?.profileImage || "",
+        jobRequest: review.jobRequest || null,
       }));
 
     // Calculate years of experience (assuming it's based on first job completion)
@@ -776,15 +802,30 @@ export const getReviews = async (req, res) => {
           select: {
             firstName: true,
             lastName: true,
+            profileImage: true,
           },
         },
-
-        // jobRequest: {
-        //   select: {
-        //     jobTitle: true,
-        //     verifiedAt: true
-        //   }
-        // }
+        jobRequest: {
+          select: {
+            id: true,
+            jobTitle: true,
+            jobDescription: true,
+            category: true,
+            jobLocation: true,
+            budget: true,
+            jobImage: true,
+            jobDuration: true,
+            verifiedAt: true,
+            client: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                profileImage: true,
+              }
+            }
+          }
+        }
       }
 
     });
@@ -798,7 +839,9 @@ export const getReviews = async (req, res) => {
         comment: review.feedback,
         date: (review.jobRequest?.verifiedAt || review.createdAt).toISOString(),
         jobTitle: review.jobRequest?.jobTitle || "",
-        anonymousName: `${review.reviewer.firstName} ${review.reviewer.lastName}`, // Use actual name
+        anonymousName: `${review.reviewer.firstName} ${review.reviewer.lastName}`,
+        avatar: review.reviewer.profileImage || "",
+        jobRequest: review.jobRequest || null,
       }));
 
     return res.status(200).json(feedbacks);
