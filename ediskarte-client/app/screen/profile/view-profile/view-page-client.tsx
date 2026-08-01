@@ -585,12 +585,15 @@ const styles = StyleSheet.create({
   nameContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     marginBottom: 4,
   },
   name: {
     fontSize: 22,
     fontWeight: 'bold',
     color: '#333',
+    flexShrink: 1,
+    marginRight: 4,
   },
   addressContainer: {
     flexDirection: 'row',

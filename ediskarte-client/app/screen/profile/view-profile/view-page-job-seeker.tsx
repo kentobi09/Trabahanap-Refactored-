@@ -417,13 +417,15 @@ const UtilityWorkerProfile: React.FC = () => {
           </View>
           <View style={styles.divider} />
           <View style={styles.infoItem}>
-            <AntDesign name="calendar" size={20} color="#0B153C" />
-            <Text style={styles.dateJoinedText}>
-              {worker.dateJoined ? formatDate(worker.dateJoined) : "N/A"}
-            </Text>
-            <Text style={styles.infoLabel}>Joined</Text>
+            <AntDesign name="star" size={20} color="#0B153C" />
+            <Text style={styles.infoValue}>{averageRating.toFixed(1)}</Text>
+            <Text style={styles.infoLabel}>Rating</Text>
           </View>
-          <View style={styles.divider} />
+        </View>
+        
+        <View style={styles.horizontalDivider} />
+        
+        <View style={styles.infoRow}>
           <View style={styles.infoItem}>
             <FontAwesome5 name="money-bill-wave" size={20} color="#0B153C" />
             <Text style={styles.infoValue}>
@@ -433,9 +435,11 @@ const UtilityWorkerProfile: React.FC = () => {
           </View>
           <View style={styles.divider} />
           <View style={styles.infoItem}>
-            <AntDesign name="star" size={20} color="#0B153C" />
-            <Text style={styles.infoValue}>{averageRating.toFixed(1)}</Text>
-            <Text style={styles.infoLabel}>Rating</Text>
+            <AntDesign name="calendar" size={20} color="#0B153C" />
+            <Text style={styles.dateJoinedText}>
+              {worker.dateJoined ? formatDate(worker.dateJoined) : "N/A"}
+            </Text>
+            <Text style={styles.infoLabel}>Joined</Text>
           </View>
         </View>
       </View>
@@ -866,12 +870,15 @@ const styles = StyleSheet.create({
   nameContainer: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
     marginBottom: 4,
   },
   name: {
     fontSize: 22,
     fontWeight: "bold",
     color: "#333",
+    flexShrink: 1,
+    marginRight: 4,
   },
   addressContainer: {
     flexDirection: "row",
@@ -1359,6 +1366,11 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
+  },
+  horizontalDivider: {
+    height: 1,
+    backgroundColor: '#e0e0e0',
+    marginVertical: 12,
   },
 });
 
