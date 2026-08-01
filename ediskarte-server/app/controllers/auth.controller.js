@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
-import { MongoClient, ObjectId } from "mongodb";
+import { MongoClient, ObjectId, DBRef } from "mongodb";
 import otpGenerator from "otp-generator";
 import nodemailer from "nodemailer";
 
@@ -63,6 +63,7 @@ export const login = async (req, res) => {
 
     const db = await getNativeDb();
     const userId = new ObjectId();
+    const achievementId = new ObjectId();
 
     const userData = {
       _id: userId,
@@ -89,6 +90,12 @@ export const login = async (req, res) => {
       verificationStatus: applicant.verificationStatus || "pending",
     };
 
+    if (applicant.userType === "job-seeker") {
+      userData.achievements = [
+        new DBRef("achievements", achievementId)
+      ];
+    }
+
     // Insert user document via native MongoClient to bypass transactions
     await db.collection("users").insertOne(userData);
 
@@ -104,7 +111,6 @@ export const login = async (req, res) => {
       });
 
       const jobSeekerId = new ObjectId();
-      const achievementId = new ObjectId();
       const milestoneId = new ObjectId();
 
       // Insert job seeker document
@@ -122,6 +128,7 @@ export const login = async (req, res) => {
       await db.collection("achievements").insertOne({
         _id: achievementId,
         jobSeekerId: jobSeekerId,
+        userId: userId,
         achievementName: "Created First Account",
         jobRequired: "None",
         requiredJobCount: 0,
