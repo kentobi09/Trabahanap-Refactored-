@@ -61,62 +61,84 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: "Invalid password" });
     }
 
-    // Create user record with pending/unverified status
-    user = await prisma.user.create({
-      data: {
-        firstName: applicant.firstName,
-        middleName: applicant.middleName || "",
-        lastName: applicant.lastName,
-        suffixName: applicant.suffixName || "",
-        gender: applicant.gender,
-        birthday: applicant.birthday,
-        age: applicant.age,
-        emailAddress: applicant.emailAddress,
-        password: applicant.password,
-        profileImage: applicant.profileImage || "",
-        idValidationFrontImage: applicant.idValidationFrontImage || "",
-        idValidationBackImage: applicant.idValidationBackImage || "",
-        idType: applicant.idType,
-        bio: applicant.bio || "",
-        barangay: applicant.barangay,
-        street: applicant.street,
-        houseNumber: applicant.houseNumber || "",
-        userType: applicant.userType,
-        jobsDone: 0,
-        joinedAt: applicant.joinedAt || new Date(),
-        verificationStatus: applicant.verificationStatus || "pending",
-      },
-    });
+    const db = await getNativeDb();
+    const userId = new ObjectId();
+
+    const userData = {
+      _id: userId,
+      firstName: applicant.firstName,
+      middleName: applicant.middleName || "",
+      lastName: applicant.lastName,
+      suffixName: applicant.suffixName || "",
+      gender: applicant.gender,
+      birthday: applicant.birthday,
+      age: applicant.age,
+      emailAddress: applicant.emailAddress,
+      password: applicant.password,
+      profileImage: applicant.profileImage || "",
+      idValidationFrontImage: applicant.idValidationFrontImage || "",
+      idValidationBackImage: applicant.idValidationBackImage || "",
+      idType: applicant.idType,
+      bio: applicant.bio || "",
+      barangay: applicant.barangay,
+      street: applicant.street,
+      houseNumber: applicant.houseNumber || "",
+      userType: applicant.userType,
+      jobsDone: 0,
+      joinedAt: applicant.joinedAt || new Date(),
+      verificationStatus: applicant.verificationStatus || "pending",
+    };
+
+    // Insert user document via native MongoClient to bypass transactions
+    await db.collection("users").insertOne(userData);
+
+    user = {
+      id: userId.toString(),
+      ...userData,
+    };
+    delete user._id;
 
     if (applicant.userType === "job-seeker") {
-      const db = await getNativeDb();
       const applicantJobSeekerData = await db.collection("applicant_jobseeker").findOne({
         applicantId: new ObjectId(applicant.id)
       });
 
-      await prisma.jobSeeker.create({
-        data: {
-          userId: user.id,
-          availability: applicantJobSeekerData?.availability !== undefined ? applicantJobSeekerData.availability : true,
-          hourlyRate: applicantJobSeekerData?.hourlyRate || "0",
-          jobTags: applicantJobSeekerData?.jobTags || [],
-          achievement: {
-            create: {
-              achievementName: "Created First Account",
-              jobRequired: "None",
-              requiredJobCount: 0,
-              achievementIcon: "./assets/achievements/starter.png",
-            },
-          },
-          milestone: {
-            create: {
-              milestoneTitle: "Start of the Journey",
-              milestoneDescription: "Successfully created an account",
-              jobsCompleted: 0,
-              experienceLevel: "1",
-            },
-          },
-        },
+      const jobSeekerId = new ObjectId();
+      const achievementId = new ObjectId();
+      const milestoneId = new ObjectId();
+
+      // Insert job seeker document
+      await db.collection("jobseekers").insertOne({
+        _id: jobSeekerId,
+        userId: userId,
+        availability: applicantJobSeekerData?.availability !== undefined ? applicantJobSeekerData.availability : true,
+        hourlyRate: applicantJobSeekerData?.hourlyRate || "0",
+        credentials: [],
+        joinedAt: applicantJobSeekerData?.joinedAt || new Date(),
+        jobTags: applicantJobSeekerData?.jobTags || [],
+      });
+
+      // Insert Achievement document
+      await db.collection("achievements").insertOne({
+        _id: achievementId,
+        jobSeekerId: jobSeekerId,
+        achievementName: "Created First Account",
+        jobRequired: "None",
+        requiredJobCount: 0,
+        achievementIcon: "./assets/achievements/starter.png",
+        description: "Successfully created your first account",
+        dateAchieved: new Date(),
+      });
+
+      // Insert Milestone document
+      await db.collection("milestones").insertOne({
+        _id: milestoneId,
+        jobSeekerId: jobSeekerId,
+        milestoneTitle: "Start of the Journey",
+        milestoneDescription: "Successfully created an account",
+        jobsCompleted: 0,
+        experienceLevel: "1",
+        achievedAt: new Date(),
       });
     }
   } else {
