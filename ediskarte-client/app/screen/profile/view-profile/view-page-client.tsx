@@ -64,6 +64,7 @@ const UtilityWorkerProfile: React.FC = () => {
   const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [showRoleTooltip, setShowRoleTooltip] = useState(false);
   const { otherParticipantId } = useLocalSearchParams();
   const [worker, setWorker] = useState<WorkerData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -306,6 +307,17 @@ const UtilityWorkerProfile: React.FC = () => {
                 color={worker.isVerified ? "#4CAF50" : "#9E9E9E"} 
               />
             </View>
+            <TouchableOpacity 
+              style={styles.roleBadgeTouch}
+              onPress={() => setShowRoleTooltip(true)}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons 
+                name="storefront" 
+                size={20} 
+                color="#8B5CF6" 
+              />
+            </TouchableOpacity>
           </View>
           <View style={styles.addressContainer}>
             <Ionicons name="location-outline" size={16} color="#666" />
@@ -327,7 +339,7 @@ const UtilityWorkerProfile: React.FC = () => {
           <View style={styles.infoItem}>
             <FontAwesome5 name="toolbox" size={20} color="#0B153C" />
             <Text style={styles.infoValue}>{worker.jobsDone}</Text>
-            <Text style={styles.infoLabel}>Jobs Completed</Text>
+            <Text style={styles.infoLabel}>Completed Postings</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoItem}>
@@ -488,6 +500,36 @@ const UtilityWorkerProfile: React.FC = () => {
             style={styles.imagePreviewModalImage}
             resizeMode="contain"
           />
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Role Tooltip Modal */}
+      <Modal
+        transparent={true}
+        visible={showRoleTooltip}
+        animationType="fade"
+        onRequestClose={() => setShowRoleTooltip(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowRoleTooltip(false)}
+        >
+          <View style={styles.tooltipCard}>
+            <View style={styles.tooltipHeader}>
+              <MaterialCommunityIcons name="storefront" size={24} color="#8B5CF6" />
+              <Text style={styles.tooltipTitle}>Client</Text>
+            </View>
+            <Text style={styles.tooltipDesc}>
+              This user is registered as a Client. Clients can post jobs, send job offers, and hire Job Seekers on eDiskarte.
+            </Text>
+            <TouchableOpacity 
+              style={[styles.tooltipCloseButton, { backgroundColor: '#8B5CF6' }]} 
+              onPress={() => setShowRoleTooltip(false)}
+            >
+              <Text style={styles.tooltipCloseText}>Got it</Text>
+            </TouchableOpacity>
+          </View>
         </TouchableOpacity>
       </Modal>
     </ScrollView>
@@ -892,6 +934,64 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "600",
+  },
+  roleBadgeTouch: {
+    marginLeft: 6,
+    backgroundColor: '#F3E8FF',
+    borderRadius: 12,
+    padding: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  tooltipCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    width: '85%',
+    maxWidth: 320,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  tooltipHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  tooltipTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginLeft: 8,
+  },
+  tooltipDesc: {
+    fontSize: 14,
+    color: '#475569',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  tooltipCloseButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    width: '100%',
+    alignItems: 'center',
+  },
+  tooltipCloseText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 
