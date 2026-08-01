@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import otpGenerator from "otp-generator";
 import nodemailer from "nodemailer";
 
@@ -42,18 +42,88 @@ transporter.verify(function (error, success) {
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
-  const user = await prisma.user.findFirst({
+  let user = await prisma.user.findFirst({
     where: { emailAddress: email },
   });
 
   if (!user) {
-    return res.status(401).json({ error: "User not found or pending verification" });
-  }
+    // Check applicants table
+    const applicant = await prisma.applicants.findFirst({
+      where: { emailAddress: email },
+    });
 
-  const passwordMatch = bcrypt.compareSync(password, user.password);
+    if (!applicant) {
+      return res.status(401).json({ error: "User not found or pending verification" });
+    }
 
-  if (!passwordMatch) {
-    return res.status(401).json({ error: "Invalid password" });
+    const passwordMatch = bcrypt.compareSync(password, applicant.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
+
+    // Create user record with pending/unverified status
+    user = await prisma.user.create({
+      data: {
+        firstName: applicant.firstName,
+        middleName: applicant.middleName || "",
+        lastName: applicant.lastName,
+        suffixName: applicant.suffixName || "",
+        gender: applicant.gender,
+        birthday: applicant.birthday,
+        age: applicant.age,
+        emailAddress: applicant.emailAddress,
+        password: applicant.password,
+        profileImage: applicant.profileImage || "",
+        idValidationFrontImage: applicant.idValidationFrontImage || "",
+        idValidationBackImage: applicant.idValidationBackImage || "",
+        idType: applicant.idType,
+        bio: applicant.bio || "",
+        barangay: applicant.barangay,
+        street: applicant.street,
+        houseNumber: applicant.houseNumber || "",
+        userType: applicant.userType,
+        jobsDone: 0,
+        joinedAt: applicant.joinedAt || new Date(),
+        verificationStatus: applicant.verificationStatus || "pending",
+      },
+    });
+
+    if (applicant.userType === "job-seeker") {
+      const db = await getNativeDb();
+      const applicantJobSeekerData = await db.collection("applicant_jobseeker").findOne({
+        applicantId: new ObjectId(applicant.id)
+      });
+
+      await prisma.jobSeeker.create({
+        data: {
+          userId: user.id,
+          availability: applicantJobSeekerData?.availability !== undefined ? applicantJobSeekerData.availability : true,
+          hourlyRate: applicantJobSeekerData?.hourlyRate || "0",
+          jobTags: applicantJobSeekerData?.jobTags || [],
+          achievement: {
+            create: {
+              achievementName: "Created First Account",
+              jobRequired: "None",
+              requiredJobCount: 0,
+              achievementIcon: "./assets/achievements/starter.png",
+            },
+          },
+          milestone: {
+            create: {
+              milestoneTitle: "Start of the Journey",
+              milestoneDescription: "Successfully created an account",
+              jobsCompleted: 0,
+              experienceLevel: "1",
+            },
+          },
+        },
+      });
+    }
+  } else {
+    const passwordMatch = bcrypt.compareSync(password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
   }
 
   const token = jwt.sign(
