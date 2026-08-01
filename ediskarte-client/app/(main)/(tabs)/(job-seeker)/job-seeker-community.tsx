@@ -24,6 +24,7 @@ import {
 import { Ionicons, MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   AddCommunityPost,
   fetchCommunityPosts,
@@ -199,6 +200,21 @@ const SocialFeedScreen = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isPosting, setIsPosting] = useState<boolean>(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isVerified, setIsVerified] = useState<boolean>(true);
+
+  const checkVerificationAction = async (): Promise<boolean> => {
+    const status = await AsyncStorage.getItem("verificationStatus");
+    const verified = status === "verified";
+    setIsVerified(verified);
+    if (!verified) {
+      Alert.alert(
+        "Verification Required",
+        "Your account is currently pending verification. You can browse postings and community discussions, but you must be verified by an admin to interact, post, comment, or like."
+      );
+      return false;
+    }
+    return true;
+  };
 
   const [isEditModalVisible, setIsEditModalVisible] = useState<boolean>(false);
   const [editingPostDetails, setEditingPostDetails] = useState<Post | null>(
@@ -574,6 +590,7 @@ const SocialFeedScreen = () => {
   };
 
   const toggleUpvote = async (postId: string) => {
+    if (!(await checkVerificationAction())) return;
     try {
       const post = posts.find((p) => p.id === postId);
       if (!post) return;
@@ -756,11 +773,12 @@ const SocialFeedScreen = () => {
     initializeLikes();
   }, [comments, selectedPost]);
 
-  const toggleCommentLike = (
+  const toggleCommentLike = async (
     postId: string,
     commentId: string,
     isCurrentlyLiked: boolean
   ) => {
+    if (!(await checkVerificationAction())) return;
     // Prevent rapid toggling (debounce)
     const now = Date.now();
     const lastToggle = lastToggleTime[commentId] || 0;
@@ -838,6 +856,7 @@ const SocialFeedScreen = () => {
   };
 
   const handleAddComment = async (postId: string) => {
+    if (!(await checkVerificationAction())) return;
     if (newCommentText.trim() === "") return;
 
     const newComment: Comment = {
@@ -1299,7 +1318,11 @@ const SocialFeedScreen = () => {
 
       <TouchableOpacity
         style={styles.createPostTrigger}
-        onPress={() => setShowCreatePost(true)}
+        onPress={async () => {
+          if (await checkVerificationAction()) {
+            setShowCreatePost(true);
+          }
+        }}
       >
         <Image
           source={
