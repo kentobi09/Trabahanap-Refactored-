@@ -368,32 +368,22 @@ const UtilityWorkerProfile: React.FC = () => {
         </TouchableOpacity>
         <View style={styles.headerInfo}>
           <View style={styles.nameContainer}>
-            <Text style={styles.name}>{worker.name}</Text>
-            <View style={styles.badgesWrapper}>
-              <View
-                style={[
-                  styles.verifiedBadge,
-                  !worker.isVerified && styles.unverifiedBadge,
-                ]}
-              >
-                <Ionicons
-                  name="checkmark-circle"
-                  size={20}
-                  color={worker.isVerified ? "#4CAF50" : "#9E9E9E"}
-                />
-              </View>
-              <TouchableOpacity 
-                style={styles.roleBadgeTouch}
+            <Text style={styles.name}>
+              {worker.name}
+              {"  "}
+              <Ionicons
+                name="checkmark-circle"
+                size={20}
+                color={worker.isVerified ? "#4CAF50" : "#9E9E9E"}
+              />
+              {"  "}
+              <MaterialCommunityIcons 
+                name="account-hard-hat" 
+                size={20} 
+                color="#3B82F6" 
                 onPress={() => setShowRoleTooltip(true)}
-                activeOpacity={0.7}
-              >
-                <MaterialCommunityIcons 
-                  name="account-hard-hat" 
-                  size={20} 
-                  color="#3B82F6" 
-                />
-              </TouchableOpacity>
-            </View>
+              />
+            </Text>
           </View>
           <View style={styles.addressContainer}>
             <Ionicons name="location-outline" size={16} color="#666" />
