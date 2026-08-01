@@ -414,7 +414,7 @@ const AgoraCallRoom = () => {
           >
             <Ionicons
               name={isMuted ? 'mic-off' : 'mic'}
-              size={24}
+              size={20}
               color="#fff"
             />
           </TouchableOpacity>
@@ -425,7 +425,7 @@ const AgoraCallRoom = () => {
           >
             <Ionicons
               name={isSpeakerOn ? 'volume-high' : 'volume-low'}
-              size={24}
+              size={20}
               color="#fff"
             />
           </TouchableOpacity>
@@ -436,7 +436,7 @@ const AgoraCallRoom = () => {
           >
             <Ionicons
               name={isCameraOn ? 'videocam' : 'videocam-off'}
-              size={24}
+              size={20}
               color="#fff"
             />
           </TouchableOpacity>
@@ -448,7 +448,7 @@ const AgoraCallRoom = () => {
             >
               <Ionicons
                 name="camera-reverse"
-                size={24}
+                size={20}
                 color="#fff"
               />
             </TouchableOpacity>
@@ -458,7 +458,7 @@ const AgoraCallRoom = () => {
             style={[styles.controlButton, styles.endCallButton]}
             onPress={() => handleEndCall(true)}
           >
-            <Ionicons name="call" size={24} color="#fff" style={styles.endCallIcon} />
+            <Ionicons name="call" size={20} color="#fff" style={styles.endCallIcon} />
           </TouchableOpacity>
         </View>
       </View>
@@ -559,13 +559,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   controlButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 12,
+    marginHorizontal: 8,
   },
   controlButtonActive: {
     backgroundColor: 'rgba(255, 255, 255, 0.35)',
@@ -623,6 +623,8 @@ const styles = StyleSheet.create({
 });
 
 export default AgoraCallRoom;
+
+
 
 
 
