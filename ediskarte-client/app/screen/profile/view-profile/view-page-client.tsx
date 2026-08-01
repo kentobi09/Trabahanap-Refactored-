@@ -300,24 +300,26 @@ const UtilityWorkerProfile: React.FC = () => {
         <View style={styles.headerInfo}>
           <View style={styles.nameContainer}>
             <Text style={styles.name}>{worker.name}</Text>
-            <View style={[styles.verifiedBadge, !worker.isVerified && styles.unverifiedBadge]}>
-              <Ionicons 
-                name="checkmark-circle" 
-                size={20} 
-                color={worker.isVerified ? "#4CAF50" : "#9E9E9E"} 
-              />
+            <View style={styles.badgesWrapper}>
+              <View style={[styles.verifiedBadge, !worker.isVerified && styles.unverifiedBadge]}>
+                <Ionicons 
+                  name="checkmark-circle" 
+                  size={20} 
+                  color={worker.isVerified ? "#4CAF50" : "#9E9E9E"} 
+                />
+              </View>
+              <TouchableOpacity 
+                style={styles.roleBadgeTouch}
+                onPress={() => setShowRoleTooltip(true)}
+                activeOpacity={0.7}
+              >
+                <MaterialCommunityIcons 
+                  name="storefront" 
+                  size={20} 
+                  color="#8B5CF6" 
+                />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity 
-              style={styles.roleBadgeTouch}
-              onPress={() => setShowRoleTooltip(true)}
-              activeOpacity={0.7}
-            >
-              <MaterialCommunityIcons 
-                name="storefront" 
-                size={20} 
-                color="#8B5CF6" 
-              />
-            </TouchableOpacity>
           </View>
           <View style={styles.addressContainer}>
             <Ionicons name="location-outline" size={16} color="#666" />
@@ -881,8 +883,12 @@ const styles = StyleSheet.create({
   emptyAchievementCard: {
     opacity: 0.7,
   },
-  verifiedBadge: {
+  badgesWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginLeft: 6,
+  },
+  verifiedBadge: {
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#E8F5E9',
