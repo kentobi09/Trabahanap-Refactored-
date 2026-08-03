@@ -89,6 +89,6 @@ cd C:\ediskarte\ediskarte-client\android
 # Build/rebuilding the app
 .\gradlew assembleRelease
 ```
-
+## Docker run
 
 
