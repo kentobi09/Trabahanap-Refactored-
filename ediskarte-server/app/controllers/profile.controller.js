@@ -38,6 +38,7 @@ export const getUserProfile = async (req, res) => {
           houseNumber: true,
           gender: true,
           birthday: true,
+          verificationStatus: true,
         },
       });
 
@@ -67,6 +68,7 @@ export const getUserProfile = async (req, res) => {
               houseNumber: true,
               gender: true,
               birthday: true,
+              verificationStatus: true,
             },
           },
           achievement: true,

@@ -83,6 +83,7 @@ export default function SignInScreen() {
       await AsyncStorage.setItem("token", data.token);
       await AsyncStorage.setItem("currentUserId", data.user.id);
       await AsyncStorage.setItem("userType", data.user.userType);
+      await AsyncStorage.setItem("verificationStatus", data.user.verificationStatus || "");
 
       setCurrentUserId(data.user.id);
       setMessage("Login successful!");

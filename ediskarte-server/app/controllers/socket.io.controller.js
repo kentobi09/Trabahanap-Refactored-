@@ -194,8 +194,14 @@ export function initializeSocketIO(httpServer) {
 
     socket.on("send_message", async (messageData) => {
       try {
-        const { chatId, messageContent, messageType } = messageData;
-        const userId = socket.user.id;
+        const { chatId, messageContent, messageType, senderId } = messageData;
+        
+        let actualSenderId = socket.user.id;
+        if (messageType === "call" && senderId) {
+          actualSenderId = senderId;
+        }
+        
+        const userId = actualSenderId;
     
         // 🔍 Check if the sender is a Job Seeker
         const jobSeeker = await prisma.jobSeeker.findUnique({
@@ -204,7 +210,6 @@ export function initializeSocketIO(httpServer) {
         });
         
         const senderType = jobSeeker ? "jobSeeker" : "client";
-        const actualSenderId = userId;
     
         // 🔍 Fetch chat and participants
         const chat = await prisma.chat.findUnique({

@@ -12,6 +12,7 @@ import {
   FlatList,
   Platform,
   Modal,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -80,6 +81,14 @@ export default function JobDetailsScreen() {
 
   const handleApplyNow = async () => {
     try {
+      const status = await AsyncStorage.getItem("verificationStatus");
+      if (status !== "verified") {
+        Alert.alert(
+          "Verification Required",
+          "Your account is currently pending verification. You can browse job listings, but you must be verified by an admin to apply."
+        );
+        return;
+      }
       const token = await AsyncStorage.getItem("token");
       if (!token) {
         console.warn("No token found, redirecting to sign-in...");

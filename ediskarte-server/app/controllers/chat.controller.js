@@ -874,6 +874,7 @@ export const getClientProfile = async (req, res) => {
         birthday: true,
         jobsDone: true,
         joinedAt: true,
+        verificationStatus: true,
       },
     });
 
@@ -894,6 +895,7 @@ export const getClientProfile = async (req, res) => {
       birthday: user.birthday ? user.birthday.toISOString() : null,
       jobsDone: user.jobsDone || 0,
       joinedAt: user.joinedAt ? user.joinedAt.toISOString() : null,
+      isVerified: user.verificationStatus === "verified",
     };
 
     return res.status(200).json(response);

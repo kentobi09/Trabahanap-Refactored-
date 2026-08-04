@@ -61,6 +61,33 @@ const ChatScreen: React.FC = () => {
   const [filteredSearchedChats, setFilteredSearchedChats] = useState<Chat[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [navigatingChatId, setNavigatingChatId] = useState<string | null>(null);
+  const [isVerified, setIsVerified] = useState<boolean>(true);
+
+  useEffect(() => {
+    const checkVerification = async () => {
+      const status = await AsyncStorage.getItem("verificationStatus");
+      setIsVerified(status === "verified");
+      
+      try {
+        const userId = await AsyncStorage.getItem('currentUserId');
+        const token = await AsyncStorage.getItem('token');
+        if (userId && token) {
+          const res = await fetch(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/profile/${userId}?userType=job-seeker`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const latestStatus = data.verificationStatus || "";
+            await AsyncStorage.setItem("verificationStatus", latestStatus);
+            setIsVerified(latestStatus === "verified");
+          }
+        }
+      } catch (err) {
+        console.error("Error updating verification status in chats:", err);
+      }
+    };
+    checkVerification();
+  }, []);
 
   const handleDeleteChat = (chatId: string) => {
     if(!socket) return;
@@ -416,6 +443,23 @@ const ChatScreen: React.FC = () => {
     </View>
   );
 
+  if (!isVerified) {
+    return (
+      <SafeAreaView style={styles.lockContainer}>
+        <StatusBar barStyle="dark-content" />
+        <View style={styles.lockContent}>
+          <View style={styles.lockIconContainer}>
+            <Ionicons name="lock-closed" size={48} color="#8B5CF6" />
+          </View>
+          <Text style={styles.lockTitle}>Messages Locked</Text>
+          <Text style={styles.lockDescription}>
+            Your account is currently pending verification. You can browse postings and community discussions, but you will be able to start conversations and send messages once verified by an admin.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -644,6 +688,43 @@ const styles = StyleSheet.create({
   },
   navigationLoading: {
     marginLeft: 8,
+  },
+  lockContainer: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  lockContent: {
+    paddingHorizontal: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockIconContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#F3E8FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  lockTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 12,
+  },
+  lockDescription: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });
 
