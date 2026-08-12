@@ -108,7 +108,11 @@ type Styles = {
   postHeader: ViewStyle;
   postHeaderContent: ViewStyle;
   postActions: ViewStyle;
-  postActionButton: ViewStyle;
+  postActionButton?: ViewStyle;
+  editPillButton: ViewStyle;
+  editPillText: TextStyle;
+  deletePillButton: ViewStyle;
+  deletePillText: TextStyle;
   avatar: ImageStyle;
   smallAvatar: ImageStyle;
   username: TextStyle;
@@ -1230,16 +1234,18 @@ const SocialFeedScreen = () => {
           {data && item.author?.id === data.id && (
             <View style={styles.postActions}>
               <TouchableOpacity
-                style={styles.postActionButton}
+                style={styles.editPillButton}
                 onPress={() => handleOpenEditModal(item)}
               >
-                <Ionicons name="create-outline" size={20} color="#2563EB" />
+                <Ionicons name="create-outline" size={14} color="#2563EB" />
+                <Text style={styles.editPillText}>Edit</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.postActionButton}
+                style={styles.deletePillButton}
                 onPress={() => handleDeletePost(item.id)}
               >
-                <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                <Ionicons name="trash-outline" size={14} color="#EF4444" />
+                <Text style={styles.deletePillText}>Delete</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -1846,9 +1852,34 @@ const styles = StyleSheet.create<Styles>({
     flexDirection: "row",
     alignItems: "center",
   },
-  postActionButton: {
-    padding: 5,
-    marginLeft: 10,
+  editPillButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#DBEAFE",
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    marginRight: 6,
+  },
+  editPillText: {
+    color: "#2563EB",
+    fontSize: 12,
+    fontWeight: "700",
+    marginLeft: 4,
+  },
+  deletePillButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FEE2E2",
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+  },
+  deletePillText: {
+    color: "#EF4444",
+    fontSize: 12,
+    fontWeight: "700",
+    marginLeft: 4,
   },
   avatar: {
     width: 40,

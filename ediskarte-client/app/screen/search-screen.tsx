@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   FlatList,
+  StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -193,17 +194,19 @@ const SearchScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <View style={styles.mainContainer}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B153C" />
+      <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
         <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-          <Ionicons name="arrow-back-outline" size={24} color="#333" />
+          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
         </TouchableOpacity>
 
         <View style={styles.searchContainer}>
-          <Ionicons name="search-outline" size={20} color="#666" />
+          <Ionicons name="search-outline" size={18} color="#E2E8F0" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search job seekers"
+            placeholder="Search jobseekers here..."
+            placeholderTextColor="rgba(255, 255, 255, 0.7)"
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoFocus={true}
@@ -213,7 +216,7 @@ const SearchScreen = () => {
               onPress={() => setSearchQuery("")}
               style={styles.clearButton}
             >
-              <Ionicons name="close-circle" size={20} color="#666" />
+              <Ionicons name="close-circle" size={18} color="#CBD5E1" />
             </TouchableOpacity>
           )}
         </View>
@@ -305,76 +308,83 @@ const SearchScreen = () => {
           ) : null // If it's initial state and searchResults is empty, ListHeaderComponent handles it.
         }
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F8FAFC",
   },
-  header: {
+  topHeader: {
+    backgroundColor: "#0B153C",
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    paddingTop: Platform.OS === "android" ? 45 : 15,
+    paddingVertical: 12,
+    paddingTop: Platform.OS === "android" ? 44 : 10,
+  },
+  iosHeader: {
+    paddingTop: Platform.OS === "ios" ? 10 : 10,
   },
   backButton: {
-    padding: 8,
+    marginRight: 10,
+    padding: 4,
   },
   searchContainer: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    marginLeft: 12,
-    height: 45,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.25)",
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
     marginLeft: 8,
-    color: "#333",
+    color: "#FFFFFF",
   },
   clearButton: {
     padding: 4,
   },
   content: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F8FAFC",
   },
   filtersContainer: {
     flexDirection: "row",
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: "#E2E8F0",
   },
   filterTab: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: "#f5f5f5",
-    marginRight: 10,
+    backgroundColor: "#F1F5F9",
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
   selectedFilterTab: {
-    backgroundColor: "#007BFF",
+    backgroundColor: "#F59E0B",
+    borderColor: "#F59E0B",
   },
   filterText: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#64748B",
   },
   selectedFilterText: {
-    color: "#fff",
-    fontWeight: "500",
+    color: "#0B153C",
+    fontWeight: "700",
   },
   loader: {
     marginTop: 20,

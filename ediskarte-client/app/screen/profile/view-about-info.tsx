@@ -91,7 +91,13 @@ const AboutInfoPage: React.FC = () => {
           ...data.user,
           name: `${data.user.firstName} ${data.user.middleName || ""} ${data.user.lastName}`,
           email: data.user.emailAddress,
-          address: `${data.user.houseNumber || ""} ${data.user.street || ""}, ${data.user.barangay || ""}`,
+          address: [
+            data.user.houseNumber,
+            data.user.street,
+            data.user.barangay,
+            data.user.municipality,
+            data.user.province
+          ].filter((p: any) => p && String(p).trim()).join(", ") || "Not Specified",
           phoneNumber: data.user.phoneNumber || "",
         };
         setWorkerInfo(flatData);

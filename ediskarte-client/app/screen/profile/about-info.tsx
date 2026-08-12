@@ -9,10 +9,8 @@ import {
   Image,
 } from "react-native";
 import {
-  AntDesign,
   Ionicons,
   MaterialCommunityIcons,
-  Feather,
 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
@@ -31,7 +29,6 @@ const AboutInfoPage: React.FC = () => {
   };
 
   const handleEditPress = () => {
-    // Navigate to edit profile page with the current info as params
     safePush("./edit-profile", { ...workerInfo });
   };
 
@@ -48,6 +45,20 @@ const AboutInfoPage: React.FC = () => {
       day: "numeric",
       year: "numeric",
     });
+  };
+
+  const formatAddress = (info: any) => {
+    if (!info) return "Not Specified";
+    if (typeof info.address === "string" && info.address.trim() && info.address.replace(/[\s,]/g, "").length > 0) {
+      return info.address;
+    }
+    if (info.address && typeof info.address === "object") {
+      const parts = [info.address.houseNumber, info.address.street, info.address.barangay, info.address.municipality, info.address.province].filter((p: any) => p && String(p).trim());
+      if (parts.length > 0) return parts.join(", ");
+    }
+    const topParts = [info.houseNumber, info.street, info.barangay, info.municipality, info.province].filter((p: any) => p && String(p).trim());
+    if (topParts.length > 0) return topParts.join(", ");
+    return "Not Specified";
   };
 
   return (
@@ -67,7 +78,9 @@ const AboutInfoPage: React.FC = () => {
         <View style={styles.profileCard}>
           <Image
             source={{
-              uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${workerInfo?.profileImage}`,
+              uri: workerInfo?.profileImage
+                ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${workerInfo.profileImage}`
+                : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
             }}
             style={styles.profileImage}
           />
@@ -162,10 +175,7 @@ const AboutInfoPage: React.FC = () => {
             </View>
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Address</Text>
-              <Text style={styles.infoValue}>
-                {workerInfo?.address?.barangay}, {workerInfo?.address?.municipality},{" "}
-                {workerInfo?.address?.province}
-              </Text>
+              <Text style={styles.infoValue}>{formatAddress(workerInfo)}</Text>
             </View>
           </View>
         </View>
@@ -199,9 +209,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#FFFFFF",
   },
-  container: {
-    flex: 1,
-  },
   editButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -215,6 +222,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
     marginLeft: 4,
+  },
+  container: {
+    flex: 1,
   },
   profileCard: {
     alignItems: "center",

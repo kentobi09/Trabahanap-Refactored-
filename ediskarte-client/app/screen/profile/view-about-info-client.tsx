@@ -7,34 +7,29 @@ import {
   TouchableOpacity,
   Platform,
   Image,
-  ActivityIndicator
+  ActivityIndicator,
 } from "react-native";
 import {
-  AntDesign,
   Ionicons,
   MaterialCommunityIcons,
-  Feather,
 } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { safePush, safeReplace, safeBack } from "../../constants/navigation";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { safePush, safeBack, safeReplace } from "../../constants/navigation";
 
 interface WorkerInfo {
-  firstName: string;
-  middleName: string;
-  lastName: string;
-  suffixName: string;
-  profileImage: string;
-  emailAddress: string;
-  phoneNumber: string;
-  houseNumber: string;
-  street: string;
-  barangay: string;
-  gender: string;
-  birthday: string;
+  name: string;
   email: string;
-  address: string;
-  name:string;
+  phoneNumber?: string;
+  address?: any;
+  houseNumber?: string;
+  street?: string;
+  barangay?: string;
+  municipality?: string;
+  province?: string;
+  profileImage?: string;
+  gender?: string;
+  birthday?: string;
 }
 
 const AboutInfoPage: React.FC = () => {
@@ -65,10 +60,8 @@ const AboutInfoPage: React.FC = () => {
         return;
       }
 
-      console.log('Fetching profile for ID:', jobseekerId);
-      
       const response = await fetch(
-      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/clients/${jobseekerId}/profile`,
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/profile/${jobseekerId}/details`,
         {
           headers: { 
             Authorization: `Bearer ${token}`,
@@ -82,8 +75,19 @@ const AboutInfoPage: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log('Profile fetched successfully:', data);
-      setWorkerInfo(data);
+      
+      if (data.user) {
+        const flatData = {
+          ...data,
+          ...data.user,
+          name: `${data.user.firstName} ${data.user.middleName || ""} ${data.user.lastName}`,
+          email: data.user.emailAddress,
+          phoneNumber: data.user.phoneNumber || "",
+        };
+        setWorkerInfo(flatData);
+      } else {
+        setWorkerInfo(data);
+      }
       setLoading(false);
     } catch (error: any) {
       console.error("Error fetching profile:", error);
@@ -96,23 +100,18 @@ const AboutInfoPage: React.FC = () => {
     safeBack();
   };
 
-  const handleEditPress = () => {
-    safePush("./edit-profile", { otherParticipantId: jobseekerId });
-  };
-
-  const formatGender = (gender: string | undefined) => {
-    if (!gender) return "";
-    return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
-  };
-
-  const formatBirthday = (birthday: string | undefined) => {
-    if (!birthday) return "";
-    const date = new Date(birthday);
-    return date.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
+  const formatAddress = (info: any) => {
+    if (!info) return "Not Specified";
+    if (typeof info.address === "string" && info.address.trim() && info.address.replace(/[\s,]/g, "").length > 0) {
+      return info.address;
+    }
+    if (info.address && typeof info.address === "object") {
+      const parts = [info.address.houseNumber, info.address.street, info.address.barangay, info.address.municipality, info.address.province].filter((p: any) => p && String(p).trim());
+      if (parts.length > 0) return parts.join(", ");
+    }
+    const topParts = [info.houseNumber, info.street, info.barangay, info.municipality, info.province].filter((p: any) => p && String(p).trim());
+    if (topParts.length > 0) return topParts.join(", ");
+    return "Not Specified";
   };
 
   if (loading) {
@@ -160,13 +159,12 @@ const AboutInfoPage: React.FC = () => {
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
-
         <View style={styles.profileSection}>
           <Image
             source={{
               uri: workerInfo.profileImage 
                 ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${workerInfo.profileImage}`
-                : 'https://via.placeholder.com/100'
+                : 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'
             }}
             style={styles.profileImage}
           />
@@ -214,14 +212,10 @@ const AboutInfoPage: React.FC = () => {
             />
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Address</Text>
-              <Text style={styles.infoValue}>
-                {workerInfo.address}
-              </Text>
+              <Text style={styles.infoValue}>{formatAddress(workerInfo)}</Text>
             </View>
           </View>
         </View>
-
-
       </ScrollView>
     </View>
   );

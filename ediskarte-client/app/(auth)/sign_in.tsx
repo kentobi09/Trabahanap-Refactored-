@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   SafeAreaView,
+  Image,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
@@ -125,12 +126,21 @@ export default function SignInScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="auto" />
+      <StatusBar style="light" backgroundColor="#0B153C" />
+
+      <View style={styles.headerBackground}>
+        <Image
+          source={require("assets/images/ediskarte-logo.png")}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
+        <Text style={styles.brandTitle}>eDiskarte</Text>
+        <Text style={styles.brandSubtitle}>Empowering Local Service & Opportunities</Text>
+      </View>
 
       <View style={styles.formContainer}>
         <Text style={styles.title}>Sign In</Text>
-
-        <Text style={styles.subtitle}>Enter Email and Password</Text>
+        <Text style={styles.subtitle}>Enter your details to access your account</Text>
 
         <View style={styles.inputContainer}>
           <TextInput
@@ -211,64 +221,101 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F8FAFC",
+  },
+  headerBackground: {
+    backgroundColor: "#0B153C",
+    paddingTop: 36,
+    paddingBottom: 28,
+    alignItems: "center",
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+  },
+  logoImage: {
+    width: 72,
+    height: 72,
+    marginBottom: 8,
+  },
+  brandTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
+  },
+  brandSubtitle: {
+    fontSize: 12,
+    color: "#94A3B8",
+    marginTop: 2,
+    fontWeight: "500",
   },
   formContainer: {
     flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 40,
+    paddingHorizontal: 28,
+    paddingTop: 24,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "bold",
+    color: "#0F172A",
     textAlign: "center",
-    marginBottom: 10,
+    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 13,
+    color: "#64748B",
     textAlign: "center",
-    marginBottom: 40,
+    marginBottom: 24,
   },
   inputContainer: {
-    marginBottom: 30,
+    marginBottom: 20,
   },
   input: {
-    paddingVertical: 8,
-    fontSize: 16,
+    fontSize: 15,
+    color: "#0F172A",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
   },
   inputLine: {
-    height: 1,
-    backgroundColor: "#000",
-    width: "100%",
-    marginBottom: 5,
+    display: "none",
   },
   inputLabel: {
-    fontSize: 14,
-    marginTop: 10,
-    fontWeight: "bold",
-    color: "#000",
+    fontSize: 13,
+    marginBottom: 6,
+    fontWeight: "700",
+    color: "#0F172A",
   },
   passwordLabelContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginTop: 6,
   },
   forgotText: {
-    color: "#2196F3",
-    fontSize: 14,
+    color: "#2563EB",
+    fontSize: 13,
+    fontWeight: "600",
   },
   loginButton: {
-    backgroundColor: "#0A1747",
-    paddingVertical: 15,
-    borderRadius: 6,
+    backgroundColor: "#F59E0B",
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: "center",
     marginBottom: 20,
-    marginTop: 20,
+    marginTop: 12,
+    shadowColor: "#F59E0B",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
   },
   loginButtonText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "500",
+    color: "#0B153C",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   signUpContainer: {
     flexDirection: "row",
@@ -276,28 +323,32 @@ const styles = StyleSheet.create({
   },
   noAccountText: {
     fontSize: 14,
+    color: "#64748B",
   },
   signUpText: {
     fontSize: 14,
-    color: "#2196F3",
+    color: "#D97706",
+    fontWeight: "700",
   },
   passwordInputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    position: "relative",
+    justifyContent: "center",
   },
   passwordInput: {
-    flex: 1,
+    paddingRight: 44,
   },
   eyeIcon: {
-    padding: 8,
+    position: "absolute",
+    right: 12,
   },
   errorMessage: {
-    color: "red",
+    color: "#EF4444",
     textAlign: "center",
     marginBottom: 10,
     fontSize: 14,
+    fontWeight: "500",
   },
   successMessage: {
-    color: "green",
+    color: "#10B981",
   },
 });
