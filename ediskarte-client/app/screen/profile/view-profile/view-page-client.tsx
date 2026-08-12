@@ -301,12 +301,16 @@ const UtilityWorkerProfile: React.FC = () => {
           <View style={styles.nameContainer}>
             <Text style={styles.name}>
               {worker.name}
-              {"  "}
-              <Ionicons 
-                name="checkmark-circle" 
-                size={20} 
-                color={worker.isVerified ? "#4CAF50" : "#9E9E9E"} 
-              />
+              {worker.isVerified && (
+                <>
+                  {"  "}
+                  <Ionicons 
+                    name="checkmark-circle" 
+                    size={20} 
+                    color="#4CAF50" 
+                  />
+                </>
+              )}
               {"  "}
               <MaterialCommunityIcons 
                 name="storefront" 

@@ -237,6 +237,7 @@ const UtilityWorkerProfile: React.FC = () => {
   } | null>(null);
   const [hasReplacedImage, setHasReplacedImage] = useState(false);
   const [selectedCredentialIndex, setSelectedCredentialIndex] = useState(0);
+  const [showRoleTooltip, setShowRoleTooltip] = useState(false);
 
   const {
     data: worker,
@@ -629,18 +630,23 @@ const UtilityWorkerProfile: React.FC = () => {
           <Text style={styles.name}>
             {worker.firstName} {worker.middleName} {worker.lastName}{" "}
             {worker.suffixName}
-            <View
-              style={[
-                styles.verifiedBadge,
-                !worker.isVerified && styles.unverifiedBadge,
-              ]}
-            >
-              <Ionicons
-                name="checkmark-circle"
-                size={20}
-                color={worker.isVerified ? "#4CAF50" : "#9E9E9E"}
-              />
-            </View>
+            {worker.isVerified && (
+              <>
+                {"  "}
+                <Ionicons
+                  name="checkmark-circle"
+                  size={20}
+                  color="#4CAF50"
+                />
+              </>
+            )}
+            {"  "}
+            <MaterialCommunityIcons
+              name="account-hard-hat"
+              size={20}
+              color="#3B82F6"
+              onPress={() => setShowRoleTooltip(true)}
+            />
           </Text>
           <View style={styles.addressContainer}>
             <Ionicons name="location-outline" size={16} color="#666" />
@@ -1138,6 +1144,36 @@ const UtilityWorkerProfile: React.FC = () => {
               )}
             </View>
           </Modal>
+
+          {/* Role Explanation Modal */}
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={showRoleTooltip}
+            onRequestClose={() => setShowRoleTooltip(false)}
+          >
+            <TouchableOpacity 
+              style={styles.modalOverlay} 
+              activeOpacity={1} 
+              onPress={() => setShowRoleTooltip(false)}
+            >
+              <View style={styles.tooltipCard}>
+                <View style={styles.tooltipHeader}>
+                  <MaterialCommunityIcons name="account-hard-hat" size={28} color="#3B82F6" />
+                  <Text style={styles.tooltipTitle}>Job Seeker Account</Text>
+                </View>
+                <Text style={styles.tooltipText}>
+                  This user is registered as a Job Seeker. Job Seekers can search for jobs, submit applications, and complete work offers on eDiskarte.
+                </Text>
+                <TouchableOpacity 
+                  style={styles.tooltipCloseButton}
+                  onPress={() => setShowRoleTooltip(false)}
+                >
+                  <Text style={styles.tooltipCloseText}>Got it</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </Modal>
         </>
       )}
     </ScrollView>
@@ -1145,6 +1181,50 @@ const UtilityWorkerProfile: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  tooltipCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  tooltipHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 10,
+  },
+  tooltipTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#0F172A',
+  },
+  tooltipText: {
+    fontSize: 14,
+    color: '#475569',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  tooltipCloseButton: {
+    backgroundColor: '#0F172A',
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  tooltipCloseText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
   uploadingOverlay: {
     position: "absolute",
     top: 0,
