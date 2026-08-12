@@ -18,8 +18,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 type NotificationType =
   | 'application'
   | 'job_match'
+  | 'chat_request'
   | 'chat_rejected'
   | 'chat_approved'
+  | 'offer_made'
   | 'offer_accepted'
   | 'offer_rejected'
   | 'review_jobseeker'
@@ -69,8 +71,10 @@ const NotificationScreen = () => {
           id: n.id,
           type:
             n.notificationType === 'job-match' ? 'job_match'
+            : n.notificationType === 'chat-request' ? 'chat_request'
             : n.notificationType === 'chat-rejected' ? 'chat_rejected'
             : n.notificationType === 'chat-approved' ? 'chat_approved'
+            : n.notificationType === 'offer_made' || n.notificationType === 'offer' ? 'offer_made'
             : n.notificationType === 'offer_accepted' ? 'offer_accepted'
             : n.notificationType === 'offer_rejected' ? 'offer_rejected'
             : n.notificationType === 'review-jobseeker' ? 'review_jobseeker'
@@ -86,8 +90,10 @@ const NotificationScreen = () => {
         const filtered = mappedNotifications.filter(
           (n: any) =>
             n.type === 'job_match' ||
+            n.type === 'chat_request' ||
             n.type === 'chat_rejected' ||
             n.type === 'chat_approved' ||
+            n.type === 'offer_made' ||
             n.type === 'offer_accepted' ||
             n.type === 'offer_rejected' ||
             n.type === 'review_jobseeker'
@@ -112,8 +118,10 @@ const NotificationScreen = () => {
 
     try {
       if (
+        notification.type === 'chat_request' ||
         notification.type === 'chat_rejected' ||
         notification.type === 'chat_approved' ||
+        notification.type === 'offer_made' ||
         notification.type === 'offer_accepted' ||
         notification.type === 'offer_rejected'
       ) {
@@ -169,9 +177,11 @@ const NotificationScreen = () => {
 
   const renderNotificationItem = ({ item }: { item: Notification }) => {
     const getIcon = (type: Notification['type']) => {
-      if (type === 'chat_rejected' || type === 'offer_rejected') {
+      if (type === 'chat_request') {
+        return <MaterialIcons name="person-add" size={24} color="#1877F2" />;
+      } else if (type === 'chat_rejected' || type === 'offer_rejected') {
         return <MaterialIcons name="cancel" size={24} color="#e74c3c" />;
-      } else if (type === 'chat_approved' || type === 'offer_accepted') {
+      } else if (type === 'chat_approved' || type === 'offer_accepted' || type === 'offer_made') {
         return <MaterialIcons name="check-circle" size={24} color="#2ecc71" />;
       } else if (type === 'job_match') {
         return <MaterialIcons name="work" size={24} color="#1877F2" />;

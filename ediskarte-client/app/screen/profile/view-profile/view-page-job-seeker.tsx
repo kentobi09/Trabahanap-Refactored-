@@ -370,12 +370,16 @@ const UtilityWorkerProfile: React.FC = () => {
           <View style={styles.nameContainer}>
             <Text style={styles.name}>
               {worker.name}
-              {"  "}
-              <Ionicons
-                name="checkmark-circle"
-                size={20}
-                color={worker.isVerified ? "#4CAF50" : "#9E9E9E"}
-              />
+              {worker.isVerified && (
+                <>
+                  {"  "}
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color="#4CAF50"
+                  />
+                </>
+              )}
               {"  "}
               <MaterialCommunityIcons 
                 name="account-hard-hat" 
@@ -487,55 +491,53 @@ const UtilityWorkerProfile: React.FC = () => {
       </View>
 
       <View style={styles.section}>
-        {isFromChat == "true" && (
-          <>
-            <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>Credentials & Certificates</Text>
-            </View>
-            <View style={styles.credentialsContainer}>
-              {worker.credentials && worker.credentials.length > 0 ? (
-                <>
-                  <FlatList
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    data={worker.credentials}
-                    keyExtractor={(_, index) => index.toString()}
-                    renderItem={({ item, index }) => (
-                      <TouchableOpacity 
-                        style={styles.credentialItem}
-                        onPress={() => {
-                          setSelectedCredentialIndex(index);
-                          setCredentialsModalVisible(true);
-                        }}
-                      >
-                        <Image
-                          source={{
-                            uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item}`,
-                          }}
-                          style={styles.credentialImage}
-                        />
-                      </TouchableOpacity>
-                    )}
-                    contentContainerStyle={styles.credentialsList}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Credentials & Certificates</Text>
+        </View>
+        <View style={styles.credentialsContainer}>
+          {worker.credentials && worker.credentials.length > 0 ? (
+            <>
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                data={worker.credentials}
+                keyExtractor={(_, index) => index.toString()}
+                renderItem={({ item, index }) => (
+                  <TouchableOpacity 
+                    style={styles.credentialItem}
+                    onPress={() => {
+                      setSelectedCredentialIndex(index);
+                      setCredentialsModalVisible(true);
+                    }}
+                  >
+                    <Image
+                      source={{
+                        uri: typeof item === "string" && item.startsWith("http")
+                          ? item
+                          : `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${String(item).replace(/\\/g, "/")}`,
+                      }}
+                      style={styles.credentialImage}
+                    />
+                  </TouchableOpacity>
+                )}
+                contentContainerStyle={styles.credentialsList}
+              />
+              <View style={styles.paginationContainer}>
+                {worker.credentials.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.paginationDot,
+                      index === selectedCredentialIndex && styles.paginationDotActive,
+                    ]}
                   />
-                  <View style={styles.paginationContainer}>
-                    {worker.credentials.map((_, index) => (
-                      <View
-                        key={index}
-                        style={[
-                          styles.paginationDot,
-                          index === selectedCredentialIndex && styles.paginationDotActive,
-                        ]}
-                      />
-                    ))}
-                  </View>
-                </>
-              ) : (
-                <Text style={styles.noDataText}>No credentials or certificates uploaded yet.</Text>
-              )}
-            </View>
-          </>
-        )}
+                ))}
+              </View>
+            </>
+          ) : (
+            <Text style={styles.noDataText}>No credentials or certificates uploaded yet.</Text>
+          )}
+        </View>
       </View>
 
       <View style={styles.section}>
@@ -728,7 +730,9 @@ const UtilityWorkerProfile: React.FC = () => {
             renderItem={({ item }) => (
               <Image
                 source={{
-                  uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item}`,
+                  uri: typeof item === "string" && item.startsWith("http")
+                    ? item
+                    : `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${String(item).replace(/\\/g, "/")}`,
                 }}
                 style={styles.fullScreenImage}
                 resizeMode="contain"

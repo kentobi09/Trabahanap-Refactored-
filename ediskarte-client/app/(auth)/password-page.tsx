@@ -22,7 +22,7 @@ export default function PasswordScreen() {
     confirmPassword: "",
   });
 
-  const getPasswordStrength = useMemo(() => {
+  const getPasswordStrength = useMemo<{ strength: number; color: string; text: string; bars: number }>(() => {
     if (!password) return { strength: 0, color: '#ccc', text: '', bars: 0 };
     
     let strength = 0;
@@ -61,6 +61,9 @@ export default function PasswordScreen() {
       hasError = true;
     } else if (password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
+      hasError = true;
+    } else if (getPasswordStrength.text === "Weak" || getPasswordStrength.bars < 2) {
+      newErrors.password = "Password is too weak. Please include uppercase, lowercase, numbers, or symbols.";
       hasError = true;
     }
 

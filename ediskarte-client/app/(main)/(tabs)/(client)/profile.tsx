@@ -59,6 +59,57 @@ const styles = StyleSheet.create({
     width: Dimensions.get("window").width,
     height: Dimensions.get("window").width,
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  tooltipCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  tooltipHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 10,
+  },
+  tooltipTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#0F172A',
+  },
+  tooltipText: {
+    fontSize: 14,
+    color: '#475569',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  tooltipCloseButton: {
+    backgroundColor: '#0F172A',
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  tooltipCloseText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
   backButton: {
     marginBottom: 16,
     padding: 8,
@@ -711,6 +762,7 @@ const UtilityWorkerProfile: React.FC = () => {
   }>({});
   const [displayedSkills, setDisplayedSkills] = useState<string[]>([]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [showRoleTooltip, setShowRoleTooltip] = useState(false);
   
   // State for achievements
   const [achievements, setAchievements] = useState<any[]>([]);
@@ -1005,18 +1057,23 @@ const UtilityWorkerProfile: React.FC = () => {
           <Text style={styles.name}>
             {worker.firstName} {worker.middleName} {worker.lastName}{" "}
             {worker.suffixName}
-            <View
-              style={[
-                styles.verifiedBadge,
-                !worker.isVerified && styles.unverifiedBadge,
-              ]}
-            >
-              <Ionicons
-                name="checkmark-circle"
-                size={20}
-                color={worker.isVerified ? "#4CAF50" : "#9E9E9E"}
-              />
-            </View>
+            {worker.isVerified && (
+              <>
+                {"  "}
+                <Ionicons
+                  name="checkmark-circle"
+                  size={20}
+                  color="#4CAF50"
+                />
+              </>
+            )}
+            {"  "}
+            <MaterialCommunityIcons
+              name="storefront"
+              size={20}
+              color="#8B5CF6"
+              onPress={() => setShowRoleTooltip(true)}
+            />
           </Text>
           <View style={styles.addressContainer}>
             <Ionicons name="location-outline" size={16} color="#666" />
@@ -1193,6 +1250,37 @@ const UtilityWorkerProfile: React.FC = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Role Explanation Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showRoleTooltip}
+        onRequestClose={() => setShowRoleTooltip(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowRoleTooltip(false)}
+        >
+          <View style={styles.tooltipCard}>
+            <View style={styles.tooltipHeader}>
+              <MaterialCommunityIcons name="storefront" size={28} color="#8B5CF6" />
+              <Text style={styles.tooltipTitle}>Client Account</Text>
+            </View>
+            <Text style={styles.tooltipText}>
+              This user is registered as a Client. Clients can post jobs, send job offers, and hire Job Seekers on eDiskarte.
+            </Text>
+            <TouchableOpacity 
+              style={styles.tooltipCloseButton}
+              onPress={() => setShowRoleTooltip(false)}
+            >
+              <Text style={styles.tooltipCloseText}>Got it</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       <Modal
         visible={!!previewImage}
         transparent={true}
