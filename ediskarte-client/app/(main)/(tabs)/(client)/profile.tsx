@@ -1057,7 +1057,7 @@ const UtilityWorkerProfile: React.FC = () => {
           <Text style={styles.name}>
             {worker.firstName} {worker.middleName} {worker.lastName}{" "}
             {worker.suffixName}
-            {worker.isVerified && (
+            {(worker.isVerified || worker.verificationStatus === "verified") && (
               <>
                 {"  "}
                 <Ionicons
