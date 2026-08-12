@@ -1012,7 +1012,7 @@ const SocialFeedScreen = () => {
                       style={styles.commentActionButton}
                       onPress={() => handleStartEditComment(comment)}
                     >
-                      <Ionicons name="create-outline" size={16} color="#666" />
+                      <Ionicons name="create-outline" size={18} color="#2563EB" />
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.commentActionButton}
@@ -1020,7 +1020,7 @@ const SocialFeedScreen = () => {
                         handleConfirmDeleteComment(postId, comment.id)
                       }
                     >
-                      <Ionicons name="trash-outline" size={16} color="#666" />
+                      <Ionicons name="trash-outline" size={18} color="#EF4444" />
                     </TouchableOpacity>
                   </View>
                 )}
@@ -1183,13 +1183,13 @@ const SocialFeedScreen = () => {
                   style={styles.postActionButton}
                   onPress={() => handleOpenEditModal(item)}
                 >
-                  <Ionicons name="create-outline" size={20} color="#666" />
+                  <Ionicons name="create-outline" size={20} color="#2563EB" />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.postActionButton}
                   onPress={() => handleDeletePost(item.id)}
                 >
-                  <Ionicons name="trash-outline" size={20} color="#666" />
+                  <Ionicons name="trash-outline" size={20} color="#EF4444" />
                 </TouchableOpacity>
               </View>
             )}
@@ -1342,12 +1342,9 @@ const SocialFeedScreen = () => {
 
   return (
     <SafeAreaView
-      style={[
-        styles.container,
-        Platform.OS === "android" && styles.androidContainer,
-      ]}
+      style={styles.container}
     >
-      <StatusBar backgroundColor="#fff" barStyle="dark-content" />
+      <StatusBar backgroundColor="#0B153C" barStyle="light-content" />
 
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Community</Text>
@@ -1789,11 +1786,9 @@ const styles = StyleSheet.create({
     width: Dimensions.get("window").width,
     height: Dimensions.get("window").width,
   },
-  androidContainer: {
-    marginTop: Platform.OS === "android" ? StatusBar.currentHeight || 25 : 0,
-  },
+  androidContainer: {},
   header: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 14,
     paddingTop: Platform.OS === "android" ? 44 : 10,
     backgroundColor: "#0B153C",
@@ -1855,20 +1850,15 @@ const styles = StyleSheet.create({
   },
   feedContainer: {
     paddingBottom: 20,
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
   },
   postContainer: {
     backgroundColor: "#FFFFFF",
-    marginBottom: 16,
+    marginBottom: 8,
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
     borderColor: "#E2E8F0",
-    shadowColor: "#0B153C",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
   },
   postHeader: {
     flexDirection: "row",

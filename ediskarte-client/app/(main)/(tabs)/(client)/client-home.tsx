@@ -377,9 +377,7 @@ export default function JobListingScreen() {
                     )}
 
                     <View style={[styles.jobFooter, { marginTop: 12, borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 12 }]}>
-                      <View style={[styles.categoryBadge, {
-                        backgroundColor: job.category === "plumbing" ? "#9b59b6" : "#3498db"
-                      }]}>
+                      <View style={styles.categoryBadge}>
                         <Text style={styles.categoryText}>
                           {reverseCamelCase(job.category)}
                         </Text>
@@ -494,9 +492,7 @@ export default function JobListingScreen() {
                     <Text style={styles.jobDescription} numberOfLines={2}>{job.jobDescription}</Text>
 
                     <View style={styles.jobFooter}>
-                      <View style={[styles.categoryBadge, {
-                        backgroundColor: job.category === "plumbing" ? "#9b59b6" : "#3498db"
-                      }]}>
+                      <View style={styles.categoryBadge}>
                         <Text style={styles.categoryText}>
                           {reverseCamelCase(job.category)}
                         </Text>
@@ -962,14 +958,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   categoryBadge: {
+    backgroundColor: "#FEF3C7",
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingVertical: 5,
+    borderRadius: 14,
   },
   categoryText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "500",
+    color: "#D97706",
+    fontSize: 11,
+    fontWeight: "700",
   },
   statusText: {
     fontSize: 14,

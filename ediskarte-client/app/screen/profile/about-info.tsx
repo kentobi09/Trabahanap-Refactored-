@@ -52,21 +52,19 @@ const AboutInfoPage: React.FC = () => {
 
   return (
     <View style={styles.mainContainer}>
-      <ScrollView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-            <AntDesign name="arrowleft" size={24} color="#0B153C" />
-          </TouchableOpacity>
-          <View style={styles.titleContainer}>
-            <Text style={styles.headerTitle}>     About</Text>
-          </View>
-          <TouchableOpacity style={styles.editButton} onPress={handleEditPress}>
-            <Feather name="edit-2" size={16} color="#fff" />
-            <Text style={styles.editButtonText}>Edit</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
+          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+        <Text style={styles.topHeaderTitle}>About Info</Text>
+        <TouchableOpacity style={styles.editButton} onPress={handleEditPress}>
+          <Ionicons name="create-outline" size={18} color="#0B153C" />
+          <Text style={styles.editButtonText}>Edit</Text>
+        </TouchableOpacity>
+      </View>
 
-        <View style={styles.profileSection}>
+      <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
+        <View style={styles.profileCard}>
           <Image
             source={{
               uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${workerInfo?.profileImage}`,
@@ -83,74 +81,90 @@ const AboutInfoPage: React.FC = () => {
           <Text style={styles.sectionTitle}>Contact Information</Text>
 
           <View style={styles.infoItem}>
-            <MaterialCommunityIcons
-              name="email-outline"
-              size={24}
-              color="#0B153C"
-            />
+            <View style={[styles.iconCircle, { backgroundColor: '#DBEAFE' }]}>
+              <MaterialCommunityIcons
+                name="email-outline"
+                size={20}
+                color="#2563EB"
+              />
+            </View>
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Email</Text>
-              <Text style={styles.infoValue}>{workerInfo?.emailAddress}</Text>
+              <Text style={styles.infoValue}>{workerInfo?.emailAddress || "N/A"}</Text>
             </View>
           </View>
 
           <View style={styles.divider} />
 
           <View style={styles.infoItem}>
-            <MaterialCommunityIcons
-              name="phone-outline"
-              size={24}
-              color="#0B153C"
-            />
+            <View style={[styles.iconCircle, { backgroundColor: '#FEF3C7' }]}>
+              <MaterialCommunityIcons
+                name="phone-outline"
+                size={20}
+                color="#D97706"
+              />
+            </View>
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Phone Number</Text>
-              <Text style={styles.infoValue}>{workerInfo?.phoneNumber}</Text>
+              <Text style={styles.infoValue}>{workerInfo?.phoneNumber || "N/A"}</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Personal Details</Text>
+
+          <View style={styles.infoItem}>
+            <View style={[styles.iconCircle, { backgroundColor: '#D1FAE5' }]}>
+              <MaterialCommunityIcons
+                name="gender-male-female"
+                size={20}
+                color="#10B981"
+              />
+            </View>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Gender</Text>
+              <Text style={styles.infoValue}>
+                {formatGender(workerInfo?.gender) || "N/A"}
+              </Text>
             </View>
           </View>
 
           <View style={styles.divider} />
 
           <View style={styles.infoItem}>
-            <MaterialCommunityIcons
-              name="home-outline"
-              size={24}
-              color="#0B153C"
-            />
+            <View style={[styles.iconCircle, { backgroundColor: '#FEE2E2' }]}>
+              <Ionicons
+                name="calendar-outline"
+                size={20}
+                color="#EF4444"
+              />
+            </View>
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Address</Text>
+              <Text style={styles.infoLabel}>Birthday</Text>
               <Text style={styles.infoValue}>
-                {workerInfo?.houseNumber} {workerInfo?.street}{" "}
-                {workerInfo?.barangay}
+                {formatBirthday(workerInfo?.birthday) || "N/A"}
               </Text>
             </View>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Basic Information</Text>
+          <Text style={styles.sectionTitle}>Address Details</Text>
 
           <View style={styles.infoItem}>
-            <Ionicons name="person-outline" size={24} color="#0B153C" />
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Gender</Text>
-              <Text style={styles.infoValue}>
-                {formatGender(workerInfo?.gender)}
-              </Text>
+            <View style={[styles.iconCircle, { backgroundColor: '#DBEAFE' }]}>
+              <Ionicons
+                name="location-outline"
+                size={20}
+                color="#2563EB"
+              />
             </View>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.infoItem}>
-            <MaterialCommunityIcons
-              name="cake-variant-outline"
-              size={24}
-              color="#0B153C"
-            />
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Birthday</Text>
+              <Text style={styles.infoLabel}>Address</Text>
               <Text style={styles.infoValue}>
-                {formatBirthday(workerInfo?.birthday)}
+                {workerInfo?.address?.barangay}, {workerInfo?.address?.municipality},{" "}
+                {workerInfo?.address?.province}
               </Text>
             </View>
           </View>
@@ -163,108 +177,124 @@ const AboutInfoPage: React.FC = () => {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#F8FAFC",
   },
-  container: {
-    flex: 1,
-    backgroundColor: "#f8f9fa",
-    padding: 16,
-    paddingTop: Platform.OS === "ios" ? 50 : 40,
-  },
-  header: {
+  topHeader: {
+    backgroundColor: "#0B153C",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === "android" ? 44 : 10,
+  },
+  iosHeader: {
+    paddingTop: Platform.OS === "ios" ? 10 : 10,
   },
   backButton: {
-    padding: 8,
-    width: 40,
+    padding: 6,
   },
-  titleContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 22,
+  topHeaderTitle: {
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
-    textAlign: "center",
+    color: "#FFFFFF",
+  },
+  container: {
+    flex: 1,
   },
   editButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#0B153C",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    backgroundColor: "#F59E0B",
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 16,
   },
   editButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
+    color: "#0B153C",
+    fontSize: 13,
+    fontWeight: "700",
     marginLeft: 4,
   },
-  profileSection: {
+  profileCard: {
     alignItems: "center",
-    marginBottom: 24,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    shadowColor: "#0B153C",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     marginBottom: 12,
+    borderWidth: 3,
+    borderColor: "#0B153C",
   },
   profileName: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
+    color: "#0F172A",
+    textAlign: "center",
   },
   section: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    shadowColor: "#0B153C",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
     elevation: 2,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 16,
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginBottom: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   infoItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 10,
+  },
+  iconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: "center",
+    alignItems: "center",
   },
   infoContent: {
-    marginLeft: 16,
+    marginLeft: 14,
     flex: 1,
   },
   infoLabel: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: 12,
+    color: "#64748B",
+    fontWeight: "500",
   },
   infoValue: {
-    fontSize: 16,
-    color: "#333",
-    fontWeight: "500",
+    fontSize: 15,
+    color: "#0F172A",
+    fontWeight: "600",
     marginTop: 2,
   },
   divider: {
     height: 1,
-    backgroundColor: "#e0e0e0",
+    backgroundColor: "#F1F5F9",
   },
 });
 
