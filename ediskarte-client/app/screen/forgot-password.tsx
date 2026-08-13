@@ -49,6 +49,30 @@ export default function ForgotPasswordScreen() {
     return emailRegex.test(text.trim());
   };
 
+  const getBackendUrl = (endpoint: string) => {
+    const host = process.env.EXPO_PUBLIC_IP_ADDRESS || "localhost";
+    return `http://${host}:3000${endpoint}`;
+  };
+
+  // Helper fetch with fallback for Android emulator / local development
+  const safeFetch = async (endpoint: string, options: any) => {
+    const primaryUrl = getBackendUrl(endpoint);
+    try {
+      const res = await fetch(primaryUrl, options);
+      return res;
+    } catch (err) {
+      // Fallback 1: localhost
+      try {
+        const res = await fetch(`http://localhost:3000${endpoint}`, options);
+        return res;
+      } catch (err2) {
+        // Fallback 2: Android emulator 10.0.2.2
+        const res = await fetch(`http://10.0.2.2:3000${endpoint}`, options);
+        return res;
+      }
+    }
+  };
+
   // Step 1: Request OTP
   const handleSendOTP = async () => {
     if (!email.trim()) {
@@ -64,14 +88,11 @@ export default function ForgotPasswordScreen() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/auth/store-otp`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.trim() }),
-        }
-      );
+      const response = await safeFetch('/store-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      });
 
       const data = await response.json();
       setLoading(false);
@@ -102,17 +123,14 @@ export default function ForgotPasswordScreen() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/auth/verify-otp`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: email.trim(),
-            otp: otp.trim(),
-          }),
-        }
-      );
+      const response = await safeFetch('/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim(),
+          otp: otp.trim(),
+        }),
+      });
 
       const data = await response.json();
       setLoading(false);
@@ -147,17 +165,14 @@ export default function ForgotPasswordScreen() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/auth/reset-password`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: email.trim(),
-            password: newPassword.trim(),
-          }),
-        }
-      );
+      const response = await safeFetch('/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim(),
+          password: newPassword.trim(),
+        }),
+      });
 
       const data = await response.json();
       setLoading(false);
