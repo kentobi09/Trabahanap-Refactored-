@@ -4,7 +4,6 @@ import {
   Text,
   View,
   TouchableOpacity,
-  SafeAreaView,
   Platform,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -45,7 +44,7 @@ export default function BirthdayEntryScreen() {
       setBirthdate(currentDate);
       const calculatedAge = calculateAge(currentDate);
       setAge(calculatedAge);
-      
+
       if (calculatedAge < 18) {
         setError("You must be at least 18 years old");
       } else {
@@ -60,7 +59,7 @@ export default function BirthdayEntryScreen() {
       return;
     }
 
-    if (age && age < 18) {
+    if (age !== null && age < 18) {
       setError("You must be at least 18 years old");
       return;
     }
@@ -146,21 +145,25 @@ export default function BirthdayEntryScreen() {
           </View>
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[
             styles.nextButton,
-            age !== null && age < 18 && styles.nextButtonDisabled
-          ]} 
+            age !== null && age < 18 && styles.nextButtonDisabled,
+          ]}
           onPress={handleNext}
           disabled={age !== null && age < 18}
         >
-          <Text style={[
-            styles.nextButtonText,
-            age !== null && age < 18 && styles.nextButtonTextDisabled
-          ]}>Next</Text>
+          <Text
+            style={[
+              styles.nextButtonText,
+              age !== null && age < 18 && styles.nextButtonTextDisabled,
+            ]}
+          >
+            Next
+          </Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -272,6 +275,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   nextButtonTextDisabled: {
-    color: "#666666",
+    color: "#64748B",
   },
 });

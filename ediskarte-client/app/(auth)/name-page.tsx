@@ -5,15 +5,13 @@ import {
   View,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
   Alert,
+  Platform,
 } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SignUpData, handleFormData } from "@/api/signup-request";
-
-import { StatusBar } from "expo-status-bar";
-import { Platform } from "react-native";
+import { SignUpData } from "@/api/signup-request";
 
 export default function NameEntryScreen() {
   const router = useRouter();
@@ -125,11 +123,9 @@ export default function NameEntryScreen() {
 
           <View style={styles.rowContainer}>
             <View style={[styles.inputGroup, styles.middleNameContainer]}>
-              <Text style={styles.label}>
-                Middle Name
-              </Text>
+              <Text style={styles.label}>Middle Name</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, middleNameError && styles.inputError]}
                 value={middleName}
                 onChangeText={(text) => {
                   const filteredText = handleStringInput(text);
@@ -155,7 +151,7 @@ export default function NameEntryScreen() {
           <Text style={styles.nextButtonText}>Next</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

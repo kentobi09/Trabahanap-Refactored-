@@ -434,19 +434,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#000",
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#000033",
-    justifyContent: "center",
-    alignItems: "center",
-  },
   successModalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",

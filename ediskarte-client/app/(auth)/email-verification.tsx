@@ -282,7 +282,7 @@ export default function EmailVerificationScreen() {
       {/* Re-add modal rendering */}
       {renderModal("success")}
       {renderModal("error")}
-    </SafeAreaView>
+    </View>
   );
 }
 
