@@ -65,6 +65,10 @@ class User(Document):
     joined_at: datetime = Field(alias="joinedAt")
     verification_status: str = Field(alias="verificationStatus")
     verified_at: datetime | None = Field(default=None, alias="verifiedAt") # Set when verified
+    account_status: str = Field(default="active", alias="accountStatus") # "active", "suspended", "banned"
+    ban_reason: str | None = Field(default=None, alias="banReason")
+    suspend_reason: str | None = Field(default=None, alias="suspendReason")
+    suspended_until: datetime | None = Field(default=None, alias="suspendedUntil")
 
     class Settings:
         name = "users"

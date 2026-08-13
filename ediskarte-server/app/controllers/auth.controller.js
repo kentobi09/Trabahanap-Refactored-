@@ -42,6 +42,35 @@ transporter.verify(function (error, success) {
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
+
+  // Check Native MongoDB for account status (banned / suspended)
+  try {
+    const db = await getNativeDb();
+    const nativeUser = await db.collection("users").findOne({ emailAddress: email });
+    if (nativeUser) {
+      if (nativeUser.accountStatus === "banned" || nativeUser.isBanned === true) {
+        return res.status(403).json({
+          error: "Account Banned",
+          accountStatus: "banned",
+          banReason: nativeUser.banReason || "Violation of platform terms and conditions.",
+        });
+      }
+      if (nativeUser.accountStatus === "suspended" || nativeUser.isSuspended === true) {
+        const now = new Date();
+        if (!nativeUser.suspendedUntil || new Date(nativeUser.suspendedUntil) > now) {
+          return res.status(403).json({
+            error: "Account Suspended",
+            accountStatus: "suspended",
+            suspendReason: nativeUser.suspendReason || "Temporary suspension due to user report.",
+            suspendedUntil: nativeUser.suspendedUntil || null,
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error checking account status in MongoDB:", err);
+  }
+
   let user = await prisma.user.findFirst({
     where: { emailAddress: email },
   });

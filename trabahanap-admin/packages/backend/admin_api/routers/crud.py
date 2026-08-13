@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect, Query, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect, Query, BackgroundTasks, Response
 from ..models.documents import User, Applicant, Admin, AdminCreate, LoginRequest, TotalUsers, Job, TotalJobs, TotalApplicants, ApplicantJobSeeker, JobSeeker, MonthlyData, ReportValidation, FinalReport, Achievement, ReportResponse
 from admin_api.utils.security import get_password_hash, verify_password, create_access_token, create_refresh_token, get_current_active_admin
 from datetime import datetime, timedelta
@@ -6,6 +6,8 @@ from beanie import PydanticObjectId
 from typing import List, Dict, Any, Optional
 import logging
 import json
+import csv
+import io
 from ..services.email_service import send_email_async, get_verification_email_body, get_report_email_body, get_notification_for_reported_user_body
 
 # Configure basic logging
@@ -559,20 +561,154 @@ async def reject_report(report_id: PydanticObjectId, background_tasks: Backgroun
 
     return report_to_reject
 
+# --- User Management (Ban / Suspend / Unban) Endpoints ---
+@router.put("/api/users/{user_id}/ban", summary="Ban a User")
+async def ban_user(
+    user_id: str,
+    reason: Optional[str] = Query("Violation of Terms of Service"),
+    current_admin: Admin = Depends(get_current_active_admin)
+):
+    try:
+        user = await User.get(user_id)
+        if not user:
+            try:
+                user = await User.find_one(User.id == PydanticObjectId(user_id))
+            except Exception:
+                user = None
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user.account_status = "banned"
+        user.ban_reason = reason
+        await user.save()
+
+        await broadcast_notification(
+            type="user_banned",
+            message=f"User {user.email} has been banned.",
+            details={"userId": str(user.id), "reason": reason}
+        )
+        return {"status": "success", "message": f"User {user.email} has been banned", "accountStatus": "banned"}
+    except Exception as e:
+        logger.error(f"Error banning user {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error banning user: {str(e)}")
+
+@router.put("/api/users/{user_id}/suspend", summary="Suspend a User")
+async def suspend_user(
+    user_id: str,
+    days: int = Query(7, ge=1, le=365),
+    reason: Optional[str] = Query("Temporary suspension due to report"),
+    current_admin: Admin = Depends(get_current_active_admin)
+):
+    try:
+        user = await User.get(user_id)
+        if not user:
+            try:
+                user = await User.find_one(User.id == PydanticObjectId(user_id))
+            except Exception:
+                user = None
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        suspended_until = datetime.utcnow() + timedelta(days=days)
+        user.account_status = "suspended"
+        user.suspend_reason = reason
+        user.suspended_until = suspended_until
+        await user.save()
+
+        await broadcast_notification(
+            type="user_suspended",
+            message=f"User {user.email} suspended for {days} days.",
+            details={"userId": str(user.id), "suspendedUntil": suspended_until.isoformat(), "reason": reason}
+        )
+        return {
+            "status": "success",
+            "message": f"User {user.email} suspended for {days} days",
+            "accountStatus": "suspended",
+            "suspendedUntil": suspended_until
+        }
+    except Exception as e:
+        logger.error(f"Error suspending user {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error suspending user: {str(e)}")
+
+@router.put("/api/users/{user_id}/unban", summary="Unban / Unsuspend a User")
+async def unban_user(
+    user_id: str,
+    current_admin: Admin = Depends(get_current_active_admin)
+):
+    try:
+        user = await User.get(user_id)
+        if not user:
+            try:
+                user = await User.find_one(User.id == PydanticObjectId(user_id))
+            except Exception:
+                user = None
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user.account_status = "active"
+        user.ban_reason = None
+        user.suspend_reason = None
+        user.suspended_until = None
+        await user.save()
+
+        await broadcast_notification(
+            type="user_unbanned",
+            message=f"User {user.email} status reset to active.",
+            details={"userId": str(user.id)}
+        )
+        return {"status": "success", "message": f"User {user.email} is now active", "accountStatus": "active"}
+    except Exception as e:
+        logger.error(f"Error unbanning user {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error unbanning user: {str(e)}")
+
 # --- Job Request Endpoints ---
 @router.get("/api/job_requests/", response_model=List[Job])
 async def get_all_job_requests(
-    current_admin: Admin = Depends(get_current_active_admin) # Assuming admin auth is needed
+    current_admin: Admin = Depends(get_current_active_admin)
 ):
     jobs = await Job.find_all().to_list()
-    # if not jobs: # frontend might prefer an empty list over 404
-    #     raise HTTPException(status_code=404, detail="No job requests found")
     return jobs
+
+@router.get("/api/job_requests/export/csv", summary="Export Job Requests as CSV")
+async def export_job_requests_csv(
+    current_admin: Admin = Depends(get_current_active_admin)
+):
+    jobs = await Job.find_all().to_list()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write CSV Header
+    writer.writerow([
+        "Job ID", "Job Title", "Category", "Client ID", "Job Location", 
+        "Budget", "Job Duration", "Job Status", "Applicant Count", "Date Posted"
+    ])
+    
+    for job in jobs:
+        writer.writerow([
+            str(job.id),
+            job.job_title,
+            job.category,
+            str(job.client_id),
+            job.job_location,
+            job.budget,
+            job.job_duration,
+            job.job_status.value if hasattr(job.job_status, 'value') else str(job.job_status),
+            job.applicant_count,
+            job.date_posted.strftime("%Y-%m-%d %H:%M:%S") if job.date_posted else ""
+        ])
+    
+    csv_content = output.getvalue()
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=job_requests.csv"}
+    )
 
 @router.get("/api/job_requests/{job_id}", response_model=Job)
 async def get_job_request_by_id(
     job_id: PydanticObjectId,
-    current_admin: Admin = Depends(get_current_active_admin) # Assuming admin auth is needed
+    current_admin: Admin = Depends(get_current_active_admin)
 ):
     job = await Job.get(job_id)
     if not job:

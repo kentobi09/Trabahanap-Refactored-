@@ -10,6 +10,7 @@ import {
   Image,
   ScrollView,
   Platform,
+  Modal,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
@@ -25,6 +26,13 @@ export default function SignInScreen() {
   const router = useRouter();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
+
+  const [bannedModalVisible, setBannedModalVisible] = useState(false);
+  const [accountStatusData, setAccountStatusData] = useState<{
+    status: "banned" | "suspended";
+    reason: string;
+    suspendedUntil?: string | null;
+  } | null>(null);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -68,6 +76,16 @@ export default function SignInScreen() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 403 || data.accountStatus === "banned" || data.accountStatus === "suspended") {
+          setAccountStatusData({
+            status: data.accountStatus || "banned",
+            reason: data.banReason || data.suspendReason || data.error || "Account access restricted.",
+            suspendedUntil: data.suspendedUntil || null,
+          });
+          setBannedModalVisible(true);
+          return;
+        }
+
         // Handle specific error cases based on backend response
         if (response.status === 401) {
           if (data.error === "User not found") {
@@ -222,6 +240,66 @@ export default function SignInScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Account Status Card Modal */}
+      <Modal
+        visible={bannedModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setBannedModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.accountStatusCard}>
+            <View
+              style={[
+                styles.statusIconContainer,
+                accountStatusData?.status === "banned"
+                  ? styles.bannedIconBg
+                  : styles.suspendedIconBg,
+              ]}
+            >
+              <Ionicons
+                name={accountStatusData?.status === "banned" ? "ban" : "warning"}
+                size={42}
+                color="#FFFFFF"
+              />
+            </View>
+
+            <Text style={styles.statusTitle}>
+              {accountStatusData?.status === "banned"
+                ? "Account Banned"
+                : "Account Suspended"}
+            </Text>
+
+            <Text style={styles.statusDescription}>
+              Your account access has been restricted by the administrator.
+            </Text>
+
+            <View style={styles.reasonBox}>
+              <Text style={styles.reasonLabel}>Reason:</Text>
+              <Text style={styles.reasonText}>{accountStatusData?.reason}</Text>
+              {accountStatusData?.status === "suspended" &&
+                accountStatusData.suspendedUntil && (
+                  <Text style={styles.suspensionExpiry}>
+                    Suspended until:{" "}
+                    {new Date(accountStatusData.suspendedUntil).toLocaleDateString()}
+                  </Text>
+                )}
+            </View>
+
+            <Text style={styles.contactSupportText}>
+              If you believe this action was taken in error, please contact customer support.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.closeModalButton}
+              onPress={() => setBannedModalVisible(false)}
+            >
+              <Text style={styles.closeModalButtonText}>Understand</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -380,5 +458,96 @@ const styles = StyleSheet.create({
   },
   successMessage: {
     color: "#10B981",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.75)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  accountStatusCard: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 24,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 15,
+    elevation: 8,
+  },
+  statusIconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  bannedIconBg: {
+    backgroundColor: "#EF4444",
+  },
+  suspendedIconBg: {
+    backgroundColor: "#F59E0B",
+  },
+  statusTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#0F172A",
+    marginBottom: 6,
+    textAlign: "center",
+  },
+  statusDescription: {
+    fontSize: 14,
+    color: "#64748B",
+    textAlign: "center",
+    marginBottom: 18,
+  },
+  reasonBox: {
+    width: "100%",
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+  },
+  reasonLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#475569",
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  reasonText: {
+    fontSize: 14,
+    color: "#1E293B",
+    lineHeight: 20,
+  },
+  suspensionExpiry: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#D97706",
+    marginTop: 8,
+  },
+  contactSupportText: {
+    fontSize: 12,
+    color: "#94A3B8",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  closeModalButton: {
+    backgroundColor: "#0B153C",
+    width: "100%",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  closeModalButtonText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "bold",
   },
 });
