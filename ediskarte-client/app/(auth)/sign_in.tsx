@@ -8,11 +8,13 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Image,
+  ScrollView,
+  Platform,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { safePush, safeReplace } from "../constants/navigation";
+import { safePush, safeReplace, safeBack } from "../constants/navigation";
 import io, { Socket } from "socket.io-client";
 
 export default function SignInScreen() {
@@ -125,20 +127,26 @@ export default function SignInScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar style="light" backgroundColor="#0B153C" />
 
       <View style={styles.headerBackground}>
-        <Image
-          source={require("assets/images/ediskarte-logo.png")}
-          style={styles.logoImage}
-          resizeMode="contain"
-        />
+        <TouchableOpacity style={styles.backButton} onPress={() => safeBack()}>
+          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+
+        <View style={styles.logoCard}>
+          <Image
+            source={require("assets/images/ediskarte-logo.png")}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+        </View>
         <Text style={styles.brandTitle}>eDiskarte</Text>
         <Text style={styles.brandSubtitle}>Empowering Local Service & Opportunities</Text>
       </View>
 
-      <View style={styles.formContainer}>
+      <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Sign In</Text>
         <Text style={styles.subtitle}>Enter your details to access your account</Text>
 
@@ -213,8 +221,8 @@ export default function SignInScreen() {
             <Text style={styles.signUpText}>Sign Up</Text>
           </TouchableOpacity>
         </View>
-      </View>
-    </SafeAreaView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -225,16 +233,38 @@ const styles = StyleSheet.create({
   },
   headerBackground: {
     backgroundColor: "#0B153C",
-    paddingTop: 36,
-    paddingBottom: 28,
+    paddingTop: Platform.OS === "android" ? 44 : 20,
+    paddingBottom: 24,
     alignItems: "center",
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
+    position: "relative",
+  },
+  backButton: {
+    position: "absolute",
+    left: 16,
+    top: Platform.OS === "android" ? 44 : 20,
+    padding: 6,
+    zIndex: 10,
+  },
+  logoCard: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+    marginTop: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
   },
   logoImage: {
-    width: 72,
-    height: 72,
-    marginBottom: 8,
+    width: 54,
+    height: 54,
   },
   brandTitle: {
     fontSize: 24,
