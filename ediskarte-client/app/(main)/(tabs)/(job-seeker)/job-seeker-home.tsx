@@ -307,7 +307,7 @@ export default function JobListingScreen() {
           style={styles.searchBar}
           onPress={() => safePush('/screen/search-screen-jobseeker')}
         >
-          <Ionicons name="search-outline" size={18} color="#666" />
+          <Ionicons name="search-outline" size={18} color="#E2E8F0" />
           <Text style={styles.searchText}>Search jobs here</Text>
         </TouchableOpacity>
 
@@ -316,7 +316,7 @@ export default function JobListingScreen() {
           onPress={handleNotificationPress}
         >
           <View style={{ position: 'relative' }}>
-            <Ionicons name="notifications-outline" size={24} color="#000" />
+            <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
             {hasUnread && (
               <View style={styles.notifIndicator} />
             )}
@@ -621,32 +621,41 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingTop: Platform.OS === 'android' ? 50 : 10,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === 'android' ? 44 : 10,
+    backgroundColor: "#0B153C",
   },
   iosHeader:{
-    paddingTop: Platform.OS === 'ios' ? 60 : 10,
+    paddingTop: Platform.OS === 'ios' ? 10 : 10,
   },
   searchBar: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f1f1f1",
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    borderRadius: 24,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     marginRight: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.18)",
   },
   searchText: {
     marginLeft: 8,
-    color: "#666",
+    color: "#E2E8F0",
     fontSize: 14,
+    fontWeight: "500",
   },
   notificationButton: {
-    padding: 4,
+    padding: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    borderRadius: 20,
   },
   tabScrollView: {
-    maxHeight: 50,
+    maxHeight: 52,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
   },
   tabScrollContent: {
     paddingHorizontal: 16,
@@ -654,22 +663,23 @@ const styles = StyleSheet.create({
   },
   tab: {
     marginRight: 24,
-    paddingBottom: 8,
+    paddingVertical: 12,
     position: "relative",
-    minWidth:30,
+    minWidth: 30,
   },
   tabText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
-    color: "#666",
+    color: "#64748B",
   },
   activeTab: {
-    color: "#000",
+    color: "#0B153C",
     fontWeight: "700",
   },
   activeIndicator: {
     height: 3,
-    backgroundColor: "#000",
+    backgroundColor: "#F59E0B",
+    borderRadius: 2,
     position: "absolute",
     bottom: 0,
     left: 0,
@@ -680,19 +690,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   jobCard: {
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     marginBottom: 16,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#e9ecef",
-    shadowColor: "#000",
+    borderColor: "#E2E8F0",
+    shadowColor: "#0B153C",
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
     elevation: 3,
   },
   cardContentContainer: {
@@ -717,27 +727,27 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     marginRight: 8,
-    backgroundColor: "#eee",
+    backgroundColor: "#E2E8F0",
   },
   posterName: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#222",
+    color: "#0F172A",
   },
   postedDate: {
     fontSize: 11,
-    color: "#777",
+    color: "#64748B",
   },
   categoryBadge: {
-    backgroundColor: "#e8f0fe",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: "#FEF3C7",
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
   },
   categoryText: {
-    color: "#1a73e8",
+    color: "#D97706",
     fontSize: 11,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   jobMainContent: {
     marginBottom: 14,

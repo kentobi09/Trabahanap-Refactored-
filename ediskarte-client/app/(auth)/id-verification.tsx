@@ -130,12 +130,14 @@ export default function IDVerification() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="auto" />
-      <View style={styles.header}>
+    <View style={styles.mainContainer}>
+      <StatusBar style="light" backgroundColor="#0B153C" />
+      <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Ionicons name="arrow-back" size={24} color="#000033" />
+          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
         </TouchableOpacity>
+        <Text style={styles.topHeaderTitle}>ID Verification</Text>
+        <View style={{ width: 32 }} />
       </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>ID Verification</Text>
@@ -292,17 +294,39 @@ export default function IDVerification() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F8FAFC",
+  },
+  topHeader: {
+    backgroundColor: "#0B153C",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === "android" ? 44 : 10,
+  },
+  iosHeader: {
+    paddingTop: Platform.OS === "ios" ? 10 : 10,
+  },
+  backButton: {
+    padding: 6,
+  },
+  topHeaderTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   scrollContent: {
-    padding: 40,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 30,
   },
   title: {
     fontSize: 28,
@@ -409,19 +433,6 @@ const styles = StyleSheet.create({
   idTypeText: {
     fontSize: 16,
     color: "#000",
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#000033",
-    justifyContent: "center",
-    alignItems: "center",
   },
   successModalOverlay: {
     flex: 1,

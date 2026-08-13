@@ -305,18 +305,17 @@ const EditProfilePage: React.FC = () => {
 
   return (
     <View style={styles.mainContainer}>
-      <ScrollView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-            <AntDesign name="arrowleft" size={24} color="#0B153C" />
-          </TouchableOpacity>
-          <View style={styles.titleContainer}>
-            <Text style={styles.headerTitle}>Edit Profile</Text>
-          </View>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSavePress}>
-            <Text style={styles.saveButtonText}>Save</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
+          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+        <Text style={styles.topHeaderTitle}>Edit Profile</Text>
+        <TouchableOpacity style={styles.saveButton} onPress={handleSavePress}>
+          <Text style={styles.saveButtonText}>Save</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
 
         <View style={styles.profileSection}>
           <TouchableOpacity onPress={handleImagePicker}>
@@ -599,52 +598,41 @@ const styles = StyleSheet.create({
   },
   mainContainer: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#F8FAFC",
   },
-  container: {
-    flex: 1,
-    backgroundColor: "#f8f9fa",
-    padding: 16,
-    paddingTop: Platform.OS === "ios" ? 50 : 40,
-  },
-  header: {
+  topHeader: {
+    backgroundColor: "#0B153C",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === "android" ? 44 : 10,
+  },
+  iosHeader: {
+    paddingTop: Platform.OS === "ios" ? 10 : 10,
   },
   backButton: {
-    padding: 8,
-    width: 40,
+    padding: 6,
   },
-  titleContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 22,
+  topHeaderTitle: {
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
-    textAlign: "center",
+    color: "#FFFFFF",
+  },
+  container: {
+    flex: 1,
   },
   saveButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#0B153C",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    backgroundColor: "#F59E0B",
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 16,
   },
   saveButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
+    color: "#0B153C",
+    fontSize: 13,
+    fontWeight: "700",
   },
   profileSection: {
     alignItems: "center",

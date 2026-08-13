@@ -940,6 +940,7 @@ export const getNotifications = async (req, res) => {
         { clientId: userId },
         { clientId: new ObjectId(userId) }
       ];
+      query.notificationType = { $nin: ["chat-approved", "chat-rejected"] };
     } else if (userType === "job-seeker") {
       const jobSeeker = await prisma.jobSeeker.findUnique({
         where: { userId: userId }
@@ -957,6 +958,8 @@ export const getNotifications = async (req, res) => {
         );
       }
       query.$or = orConditions;
+      // Job seeker is the requester, so they must NEVER see chat-request notifications
+      query.notificationType = { $ne: "chat-request" };
     } else {
       return res.status(400).json({ error: "Invalid user type." });
     }

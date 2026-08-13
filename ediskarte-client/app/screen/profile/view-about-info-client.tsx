@@ -7,34 +7,29 @@ import {
   TouchableOpacity,
   Platform,
   Image,
-  ActivityIndicator
+  ActivityIndicator,
 } from "react-native";
 import {
-  AntDesign,
   Ionicons,
   MaterialCommunityIcons,
-  Feather,
 } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { safePush, safeReplace, safeBack } from "../../constants/navigation";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { safePush, safeBack, safeReplace } from "../../constants/navigation";
 
 interface WorkerInfo {
-  firstName: string;
-  middleName: string;
-  lastName: string;
-  suffixName: string;
-  profileImage: string;
-  emailAddress: string;
-  phoneNumber: string;
-  houseNumber: string;
-  street: string;
-  barangay: string;
-  gender: string;
-  birthday: string;
+  name: string;
   email: string;
-  address: string;
-  name:string;
+  phoneNumber?: string;
+  address?: any;
+  houseNumber?: string;
+  street?: string;
+  barangay?: string;
+  municipality?: string;
+  province?: string;
+  profileImage?: string;
+  gender?: string;
+  birthday?: string;
 }
 
 const AboutInfoPage: React.FC = () => {
@@ -65,10 +60,8 @@ const AboutInfoPage: React.FC = () => {
         return;
       }
 
-      console.log('Fetching profile for ID:', jobseekerId);
-      
       const response = await fetch(
-      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/clients/${jobseekerId}/profile`,
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/profile/${jobseekerId}/details`,
         {
           headers: { 
             Authorization: `Bearer ${token}`,
@@ -82,8 +75,19 @@ const AboutInfoPage: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log('Profile fetched successfully:', data);
-      setWorkerInfo(data);
+      
+      if (data.user) {
+        const flatData = {
+          ...data,
+          ...data.user,
+          name: `${data.user.firstName} ${data.user.middleName || ""} ${data.user.lastName}`,
+          email: data.user.emailAddress,
+          phoneNumber: data.user.phoneNumber || "",
+        };
+        setWorkerInfo(flatData);
+      } else {
+        setWorkerInfo(data);
+      }
       setLoading(false);
     } catch (error: any) {
       console.error("Error fetching profile:", error);
@@ -96,35 +100,29 @@ const AboutInfoPage: React.FC = () => {
     safeBack();
   };
 
-  const handleEditPress = () => {
-    safePush("./edit-profile", { otherParticipantId: jobseekerId });
-  };
-
-  const formatGender = (gender: string | undefined) => {
-    if (!gender) return "";
-    return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
-  };
-
-  const formatBirthday = (birthday: string | undefined) => {
-    if (!birthday) return "";
-    const date = new Date(birthday);
-    return date.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
+  const formatAddress = (info: any) => {
+    if (!info) return "Not Specified";
+    if (typeof info.address === "string" && info.address.trim() && info.address.replace(/[\s,]/g, "").length > 0) {
+      return info.address;
+    }
+    if (info.address && typeof info.address === "object") {
+      const parts = [info.address.houseNumber, info.address.street, info.address.barangay, info.address.municipality, info.address.province].filter((p: any) => p && String(p).trim());
+      if (parts.length > 0) return parts.join(", ");
+    }
+    const topParts = [info.houseNumber, info.street, info.barangay, info.municipality, info.province].filter((p: any) => p && String(p).trim());
+    if (topParts.length > 0) return topParts.join(", ");
+    return "Not Specified";
   };
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
+      <View style={styles.mainContainer}>
+        <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
           <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-            <AntDesign name="arrowleft" size={24} color="#0B153C" />
+            <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          <View style={styles.titleContainer}>
-            <Text style={styles.headerTitle}>About</Text>
-          </View>
+          <Text style={styles.topHeaderTitle}>About Info</Text>
+          <View style={{ width: 40 }} />
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0B153C" />
@@ -135,14 +133,13 @@ const AboutInfoPage: React.FC = () => {
 
   if (error || !workerInfo) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
+      <View style={styles.mainContainer}>
+        <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
           <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-            <AntDesign name="arrowleft" size={24} color="#0B153C" />
+            <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          <View style={styles.titleContainer}>
-            <Text style={styles.headerTitle}>About</Text>
-          </View>
+          <Text style={styles.topHeaderTitle}>About Info</Text>
+          <View style={{ width: 40 }} />
         </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error || "Profile not found"}</Text>
@@ -153,23 +150,21 @@ const AboutInfoPage: React.FC = () => {
 
   return (
     <View style={styles.mainContainer}>
-      <ScrollView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-            <AntDesign name="arrowleft" size={24} color="#0B153C" />
-          </TouchableOpacity>
-          <View style={styles.titleContainer}>
-            <Text style={styles.headerTitle}>About</Text>
-          </View>
+      <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
+          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+        <Text style={styles.topHeaderTitle}>About Info</Text>
+        <View style={{ width: 40 }} />
+      </View>
 
-        </View>
-
+      <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
         <View style={styles.profileSection}>
           <Image
             source={{
               uri: workerInfo.profileImage 
                 ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${workerInfo.profileImage}`
-                : 'https://via.placeholder.com/100'
+                : 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'
             }}
             style={styles.profileImage}
           />
@@ -217,14 +212,10 @@ const AboutInfoPage: React.FC = () => {
             />
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Address</Text>
-              <Text style={styles.infoValue}>
-                {workerInfo.address}
-              </Text>
+              <Text style={styles.infoValue}>{formatAddress(workerInfo)}</Text>
             </View>
           </View>
         </View>
-
-
       </ScrollView>
     </View>
   );
@@ -233,108 +224,103 @@ const AboutInfoPage: React.FC = () => {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#F8FAFC",
   },
-  container: {
-    flex: 1,
-    backgroundColor: "#f8f9fa",
-    padding: 16,
-    paddingTop: Platform.OS === "ios" ? 50 : 40,
-  },
-  header: {
+  topHeader: {
+    backgroundColor: "#0B153C",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === "android" ? 44 : 10,
+  },
+  iosHeader: {
+    paddingTop: Platform.OS === "ios" ? 10 : 10,
   },
   backButton: {
-    padding: 8,
-    width: 40,
+    padding: 6,
   },
-  titleContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 22,
+  topHeaderTitle: {
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
-    textAlign: "center",
+    color: "#FFFFFF",
   },
-  editButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#0B153C",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-  },
-  editButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
-    marginLeft: 4,
+  container: {
+    flex: 1,
   },
   profileSection: {
     alignItems: "center",
-    marginBottom: 24,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    shadowColor: "#0B153C",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     marginBottom: 12,
+    borderWidth: 3,
+    borderColor: "#0B153C",
   },
   profileName: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
+    color: "#0F172A",
+    textAlign: "center",
   },
   section: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    shadowColor: "#0B153C",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
     elevation: 2,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 16,
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginBottom: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   infoItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 10,
   },
   infoContent: {
-    marginLeft: 16,
+    marginLeft: 14,
     flex: 1,
   },
   infoLabel: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: 12,
+    color: "#64748B",
+    fontWeight: "500",
   },
   infoValue: {
-    fontSize: 16,
-    color: "#333",
-    fontWeight: "500",
+    fontSize: 15,
+    color: "#0F172A",
+    fontWeight: "600",
     marginTop: 2,
   },
   divider: {
     height: 1,
-    backgroundColor: "#e0e0e0",
+    backgroundColor: "#F1F5F9",
   },
   loadingContainer: {
     flex: 1,
@@ -348,7 +334,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   errorText: {
-    color: "red",
+    color: "#EF4444",
     fontSize: 16,
     textAlign: "center",
   },

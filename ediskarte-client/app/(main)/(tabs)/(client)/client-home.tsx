@@ -254,7 +254,7 @@ export default function JobListingScreen() {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <View style={[styles.header, Platform.OS === "ios" && styles.iosHeader]}>
         <TouchableOpacity style={styles.searchBar} onPress={handleSearchPress}>
-          <Ionicons name="search-outline" size={18} color="#666" />
+          <Ionicons name="search-outline" size={18} color="#E2E8F0" />
           <Text style={styles.searchText}>Search workers here</Text>
         </TouchableOpacity>
 
@@ -263,7 +263,7 @@ export default function JobListingScreen() {
           style={styles.notificationButton}
         >
           <View style={{ position: 'relative' }}>
-            <Ionicons name="notifications-outline" size={24} color="#000" />
+            <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
             {hasUnread && (
               <View style={styles.notifIndicator} />
             )}
@@ -297,7 +297,7 @@ export default function JobListingScreen() {
         </View>
 
         <TouchableOpacity style={styles.addButton} onPress={handleAddJobPress}>
-          <Feather name="plus" size={20} color="#000" />
+          <Feather name="plus" size={20} color="#0B153C" />
         </TouchableOpacity>
       </View>
 
@@ -377,9 +377,7 @@ export default function JobListingScreen() {
                     )}
 
                     <View style={[styles.jobFooter, { marginTop: 12, borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 12 }]}>
-                      <View style={[styles.categoryBadge, {
-                        backgroundColor: job.category === "plumbing" ? "#9b59b6" : "#3498db"
-                      }]}>
+                      <View style={styles.categoryBadge}>
                         <Text style={styles.categoryText}>
                           {reverseCamelCase(job.category)}
                         </Text>
@@ -494,9 +492,7 @@ export default function JobListingScreen() {
                     <Text style={styles.jobDescription} numberOfLines={2}>{job.jobDescription}</Text>
 
                     <View style={styles.jobFooter}>
-                      <View style={[styles.categoryBadge, {
-                        backgroundColor: job.category === "plumbing" ? "#9b59b6" : "#3498db"
-                      }]}>
+                      <View style={styles.categoryBadge}>
                         <Text style={styles.categoryText}>
                           {reverseCamelCase(job.category)}
                         </Text>
@@ -867,38 +863,6 @@ export default function JobListingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingTop: Platform.OS === "android" ? 50 : 10,
-  },
-  iosHeader: {
-    paddingTop: Platform.OS === "ios" ? 10 : 10,
-  },
-  searchBar: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f1f1f1",
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginRight: 12,
-  },
-  searchText: {
-    marginLeft: 8,
-    color: "#666",
-    fontSize: 14,
-  },
-  notificationButton: {
-    padding: 4,
-  },
   titleContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -915,12 +879,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
-  },
-  jobCard: {
-    backgroundColor: "#f1f1f1",
-    borderRadius: 12,
-    marginBottom: 16,
-    overflow: "hidden",
   },
   cardContentContainer: {
     padding: 16,
@@ -1000,14 +958,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   categoryBadge: {
+    backgroundColor: "#FEF3C7",
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingVertical: 5,
+    borderRadius: 14,
   },
   categoryText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "500",
+    color: "#D97706",
+    fontSize: 11,
+    fontWeight: "700",
   },
   statusText: {
     fontSize: 14,
@@ -1174,12 +1133,66 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: 'red',
   },
+  container: {
+    flex: 1,
+    backgroundColor: "#F8FAFC",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === "android" ? 44 : 10,
+    backgroundColor: "#0B153C",
+  },
+  iosHeader: {
+    paddingTop: Platform.OS === "ios" ? 10 : 10,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    borderRadius: 24,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.18)",
+  },
+  searchText: {
+    marginLeft: 8,
+    color: "#E2E8F0",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  notificationButton: {
+    padding: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    borderRadius: 20,
+  },
+  jobCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    marginBottom: 16,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    shadowColor: "#0B153C",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
   tabContainer: {
     flexDirection: "row",
     paddingHorizontal: 16,
-    marginVertical: 10,
+    paddingVertical: 12,
     justifyContent: "space-between",
     alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
   },
   tabSection: {
     flexDirection: "row",
@@ -1190,26 +1203,31 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   addButton: {
-    width: 28,
-    height: 28,
+    width: 36,
+    height: 36,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 14,
+    backgroundColor: "#F59E0B",
+    borderRadius: 18,
+    shadowColor: "#F59E0B",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   tabText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
-    color: "#666",
+    color: "#64748B",
   },
   activeTab: {
-    color: "#000",
+    color: "#0B153C",
     fontWeight: "700",
   },
   activeIndicator: {
     height: 3,
-    backgroundColor: "#000",
+    backgroundColor: "#F59E0B",
+    borderRadius: 2,
     position: "absolute",
     bottom: 0,
     left: 0,

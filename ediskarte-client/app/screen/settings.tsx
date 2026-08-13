@@ -45,131 +45,144 @@ const SettingsScreen = () => {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Back Button */}
-      <TouchableOpacity 
-        style={styles.backButton} 
-        onPress={handleGoBack}
-      >
-        <Ionicons name="arrow-back-outline" size={24} color="#333" />
-      </TouchableOpacity>
-
-      <Text style={styles.title}>Settings</Text>
-
-      {/* Legal Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Legal</Text>
-        
-        <TouchableOpacity style={styles.settingItem} onPress={handlePrivacyPolicy}>
-          <View style={styles.settingLeft}>
-            <MaterialIcons name="privacy-tip" size={24} color="#0B153C" />
-            <Text style={styles.settingText}>Privacy Policy</Text>
-          </View>
-          <AntDesign name="right" size={20} color="#666" />
+    <View style={styles.container}>
+      <View style={[styles.header, Platform.OS === 'ios' && styles.iosHeader]}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={handleGoBack}
+        >
+          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.settingItem} onPress={handleTermsConditions}>
-          <View style={styles.settingLeft}>
-            <Feather name="file-text" size={24} color="#0B153C" />
-            <Text style={styles.settingText}>Terms & Conditions</Text>
-          </View>
-          <AntDesign name="right" size={20} color="#666" />
-        </TouchableOpacity>
+        <Text style={styles.title}>Settings</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      {/* Account Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account</Text>
-        
-        <TouchableOpacity style={styles.settingItem} onPress={handleLogout}>
-          <View style={styles.settingLeft}>
-            <MaterialIcons name="logout" size={24} color="#FF3B30" />
-            <Text style={[styles.settingText, { color: '#FF3B30' }]}>Logout</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
+      <ScrollView style={styles.contentScroll} contentContainerStyle={{ padding: 16 }}>
+        {/* Legal Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Legal & Information</Text>
+          
+          <TouchableOpacity style={styles.settingItem} onPress={handlePrivacyPolicy}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconCircle, { backgroundColor: '#DBEAFE' }]}>
+                <MaterialIcons name="privacy-tip" size={20} color="#2563EB" />
+              </View>
+              <Text style={styles.settingText}>Privacy Policy</Text>
+            </View>
+            <AntDesign name="right" size={16} color="#94A3B8" />
+          </TouchableOpacity>
 
-      {/* Add this Modal component */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={logoutModalVisible}
-        onRequestClose={() => setLogoutModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.warningIconContainer}>
-              <MaterialIcons name="logout" size={60} color="#FF3B30" />
+          <TouchableOpacity style={styles.settingItem} onPress={handleTermsConditions}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconCircle, { backgroundColor: '#FEF3C7' }]}>
+                <Feather name="file-text" size={20} color="#D97706" />
+              </View>
+              <Text style={styles.settingText}>Terms & Conditions</Text>
             </View>
-            <Text style={styles.modalTitle}>Logout</Text>
-            <Text style={styles.modalText}>
-              Are you sure you want to logout?
-            </Text>
-            <View style={styles.modalButtonsContainer}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setLogoutModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>No</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.confirmButton]}
-                onPress={handleConfirmLogout}
-              >
-                <Text style={styles.confirmButtonText}>Yes</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+            <AntDesign name="right" size={16} color="#94A3B8" />
+          </TouchableOpacity>
         </View>
-      </Modal>
-    </ScrollView>
+
+        {/* Account Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account Actions</Text>
+          
+          <TouchableOpacity style={styles.settingItem} onPress={handleLogout}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconCircle, { backgroundColor: '#FEE2E2' }]}>
+                <MaterialIcons name="logout" size={20} color="#EF4444" />
+              </View>
+              <Text style={[styles.settingText, { color: '#EF4444', fontWeight: '600' }]}>Logout</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Modal component */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={logoutModalVisible}
+          onRequestClose={() => setLogoutModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.warningIconContainer}>
+                <Ionicons name="log-out-outline" size={40} color="#EF4444" />
+              </View>
+              <Text style={styles.modalTitle}>Confirm Logout</Text>
+              <Text style={styles.modalText}>
+                Are you sure you want to log out of your account?
+              </Text>
+              <View style={styles.modalButtonsContainer}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setLogoutModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.logoutConfirmButton}
+                  onPress={handleConfirmLogout}
+                >
+                  <Text style={styles.logoutConfirmButtonText}>Logout</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    backgroundColor: '#F8FAFC',
+  },
+  header: {
+    backgroundColor: '#0B153C',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === 'android' ? 44 : 10,
+  },
+  iosHeader: {
+    paddingTop: Platform.OS === 'ios' ? 10 : 10,
   },
   backButton: {
-    marginBottom: 16,
-    padding: 4,
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
+    padding: 6,
   },
   title: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 24,
+    color: '#FFFFFF',
+  },
+  contentScroll: {
+    flex: 1,
   },
   section: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0B153C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
     elevation: 2,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 16,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 14,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   settingItem: {
     flexDirection: 'row',
@@ -177,83 +190,97 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#F1F5F9',
   },
   settingLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  iconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   settingText: {
-    fontSize: 16,
+    fontSize: 15,
     marginLeft: 12,
-    color: '#333',
+    color: '#0F172A',
+    fontWeight: '500',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(11, 21, 60, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
     padding: 24,
     width: '85%',
     maxWidth: 340,
     alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    elevation: 8,
+    shadowColor: '#0B153C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+  },
+  warningIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 12,
+    color: '#0F172A',
+    marginBottom: 8,
     textAlign: 'center',
   },
   modalText: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: 14,
+    color: '#475569',
     marginBottom: 24,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 20,
   },
   modalButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    gap: 12,
   },
   cancelButton: {
-    backgroundColor: '#EEEEEE',
-    marginRight: 8,
-  },
-  confirmButton: {
-    backgroundColor: '#FF3B30',
-    marginLeft: 8,
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#333',
-    fontSize: 16,
-    fontWeight: '500',
+    color: '#0F172A',
+    fontSize: 15,
+    fontWeight: '600',
   },
-  confirmButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
+  logoutConfirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
   },
-  warningIconContainer: {
-    marginBottom: 16,
+  logoutConfirmButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
 
-export default SettingsScreen; 
+export default SettingsScreen;

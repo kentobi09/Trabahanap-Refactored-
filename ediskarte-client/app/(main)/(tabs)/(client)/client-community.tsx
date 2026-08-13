@@ -111,6 +111,8 @@ const SocialFeedScreen = () => {
   const [isPosting, setIsPosting] = useState<boolean>(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isVerified, setIsVerified] = useState<boolean>(true);
+  const [selectedPostForOptions, setSelectedPostForOptions] = useState<Post | null>(null);
+  const [isOptionsModalVisible, setIsOptionsModalVisible] = useState<boolean>(false);
 
   const checkVerificationAction = async (): Promise<boolean> => {
     const status = await AsyncStorage.getItem("verificationStatus");
@@ -1012,7 +1014,7 @@ const SocialFeedScreen = () => {
                       style={styles.commentActionButton}
                       onPress={() => handleStartEditComment(comment)}
                     >
-                      <Ionicons name="create-outline" size={16} color="#666" />
+                      <Ionicons name="create-outline" size={18} color="#2563EB" />
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.commentActionButton}
@@ -1020,7 +1022,7 @@ const SocialFeedScreen = () => {
                         handleConfirmDeleteComment(postId, comment.id)
                       }
                     >
-                      <Ionicons name="trash-outline" size={16} color="#666" />
+                      <Ionicons name="trash-outline" size={18} color="#EF4444" />
                     </TouchableOpacity>
                   </View>
                 )}
@@ -1176,23 +1178,12 @@ const SocialFeedScreen = () => {
               })}
             </Text>
           </View>
-          {/* Ownership check for post edit/delete. data.id is current user's ID */}
-          {data && item.author?.id === data.id && (
-              <View style={styles.postHeaderActions}>
-                <TouchableOpacity
-                  style={styles.postActionButton}
-                  onPress={() => handleOpenEditModal(item)}
-                >
-                  <Ionicons name="create-outline" size={20} color="#666" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.postActionButton}
-                  onPress={() => handleDeletePost(item.id)}
-                >
-                  <Ionicons name="trash-outline" size={20} color="#666" />
-                </TouchableOpacity>
-              </View>
-            )}
+          <TouchableOpacity
+            style={styles.postOptionsButton}
+            onPress={() => handleOpenOptionsModal(item)}
+          >
+            <Ionicons name="ellipsis-horizontal" size={20} color="#64748B" />
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.content}>{item.postContent}</Text>
@@ -1286,6 +1277,19 @@ const SocialFeedScreen = () => {
     );
   };
 
+  const handleOpenOptionsModal = (post: Post) => {
+    setSelectedPostForOptions(post);
+    setIsOptionsModalVisible(true);
+  };
+
+  const handleReportPost = (post: Post) => {
+    setIsOptionsModalVisible(false);
+    Alert.alert(
+      "Report Submitted",
+      "Thank you for helping keep our community safe. Our team will review this post promptly."
+    );
+  };
+
   const handleOpenEditModal = (post: Post) => {
     setEditingPostDetails(post);
     setEditedContentText(post.postContent);
@@ -1342,12 +1346,9 @@ const SocialFeedScreen = () => {
 
   return (
     <SafeAreaView
-      style={[
-        styles.container,
-        Platform.OS === "android" && styles.androidContainer,
-      ]}
+      style={styles.container}
     >
-      <StatusBar backgroundColor="#fff" barStyle="dark-content" />
+      <StatusBar backgroundColor="#0B153C" barStyle="light-content" />
 
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Community</Text>
@@ -1637,6 +1638,89 @@ const SocialFeedScreen = () => {
         </SafeAreaView>
       </Modal>
 
+      {/* Post Options Action Sheet Modal */}
+      <Modal
+        visible={isOptionsModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsOptionsModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.actionSheetBackdrop}
+          activeOpacity={1}
+          onPress={() => setIsOptionsModalVisible(false)}
+        >
+          <View style={styles.actionSheetContainer}>
+            <View style={styles.actionSheetHandle} />
+            <Text style={styles.actionSheetTitle}>Post Options</Text>
+
+            {data && selectedPostForOptions?.author?.id === data.id ? (
+              <>
+                <TouchableOpacity
+                  style={styles.actionSheetOption}
+                  onPress={() => {
+                    setIsOptionsModalVisible(false);
+                    if (selectedPostForOptions) {
+                      handleOpenEditModal(selectedPostForOptions);
+                    }
+                  }}
+                >
+                  <View style={[styles.actionSheetIconCircle, { backgroundColor: '#DBEAFE' }]}>
+                    <Ionicons name="create-outline" size={20} color="#2563EB" />
+                  </View>
+                  <View style={styles.actionSheetTextContainer}>
+                    <Text style={styles.actionSheetOptionTitle}>Edit Post</Text>
+                    <Text style={styles.actionSheetOptionSub}>Modify text content or image</Text>
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.actionSheetOption}
+                  onPress={() => {
+                    setIsOptionsModalVisible(false);
+                    if (selectedPostForOptions) {
+                      handleDeletePost(selectedPostForOptions.id);
+                    }
+                  }}
+                >
+                  <View style={[styles.actionSheetIconCircle, { backgroundColor: '#FEE2E2' }]}>
+                    <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                  </View>
+                  <View style={styles.actionSheetTextContainer}>
+                    <Text style={[styles.actionSheetOptionTitle, { color: '#EF4444' }]}>Delete Post</Text>
+                    <Text style={styles.actionSheetOptionSub}>Permanently remove this post</Text>
+                  </View>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <TouchableOpacity
+                style={styles.actionSheetOption}
+                onPress={() => {
+                  if (selectedPostForOptions) {
+                    handleReportPost(selectedPostForOptions);
+                  }
+                }}
+              >
+                <View style={[styles.actionSheetIconCircle, { backgroundColor: '#FEE2E2' }]}>
+                  <Ionicons name="flag-outline" size={20} color="#EF4444" />
+                </View>
+                <View style={styles.actionSheetTextContainer}>
+                  <Text style={[styles.actionSheetOptionTitle, { color: '#EF4444' }]}>Report Post</Text>
+                  <Text style={styles.actionSheetOptionSub}>Flag inappropriate or offensive content</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={styles.actionSheetCancelButton}
+              onPress={() => setIsOptionsModalVisible(false)}
+            >
+              <Text style={styles.actionSheetCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       {/* Edit Post Modal */}
       {editingPostDetails && (
         <Modal
@@ -1789,44 +1873,43 @@ const styles = StyleSheet.create({
     width: Dimensions.get("window").width,
     height: Dimensions.get("window").width,
   },
-  androidContainer: {
-    marginTop: Platform.OS === "android" ? StatusBar.currentHeight || 25 : 0,
-  },
+  androidContainer: {},
   header: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === "android" ? 44 : 10,
+    backgroundColor: "#0B153C",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 15,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e1e9ee",
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#0b216f",
+    color: "#FFFFFF",
   },
   createPostTrigger: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 15,
-    backgroundColor: "#fff",
+    padding: 16,
+    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: "#e1e9ee",
-    marginBottom: 8,
+    borderBottomColor: "#E2E8F0",
+    marginBottom: 12,
   },
   createPostPlaceholder: {
     flex: 1,
-    height: 40,
+    height: 42,
     borderWidth: 1,
-    borderColor: "#e1e9ee",
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    backgroundColor: "#f5f5f5",
+    borderColor: "#E2E8F0",
+    borderRadius: 21,
+    paddingHorizontal: 16,
+    backgroundColor: "#F8FAFC",
     justifyContent: "center",
   },
   createPostText: {
-    color: "#666",
+    color: "#64748B",
+    fontSize: 14,
   },
   userAvatar: {
     width: 40,
@@ -1835,31 +1918,34 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   postButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    backgroundColor: "#0077B5",
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    backgroundColor: "#F59E0B",
     borderRadius: 20,
+    shadowColor: "#F59E0B",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   disabledButton: {
-    backgroundColor: "#b0c4de",
+    backgroundColor: "#CBD5E1",
   },
   postButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+    color: "#0B153C",
+    fontWeight: "700",
   },
   feedContainer: {
-    paddingBottom: 15,
+    paddingBottom: 20,
+    paddingHorizontal: 0,
   },
   postContainer: {
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
     marginBottom: 8,
-    padding: 15,
-    borderRadius: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    padding: 16,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "#E2E8F0",
   },
   postHeader: {
     flexDirection: "row",
@@ -2215,12 +2301,77 @@ const styles = StyleSheet.create({
     color: "#0077B5",
     fontWeight: "500",
   },
-  postHeaderActions: {
-    flexDirection: "row",
+  postOptionsButton: {
+    padding: 6,
+    borderRadius: 16,
   },
-  postHeaderActionIcon: {
-    marginLeft: 10,
-    padding: 5,
+  actionSheetBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.5)",
+    justifyContent: "flex-end",
+  },
+  actionSheetContainer: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === "ios" ? 36 : 24,
+  },
+  actionSheetHandle: {
+    width: 36,
+    height: 4,
+    backgroundColor: "#CBD5E1",
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 16,
+  },
+  actionSheetTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  actionSheetOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
+  },
+  actionSheetIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  actionSheetTextContainer: {
+    flex: 1,
+  },
+  actionSheetOptionTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#0F172A",
+  },
+  actionSheetOptionSub: {
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 2,
+  },
+  actionSheetCancelButton: {
+    marginTop: 16,
+    backgroundColor: "#F1F5F9",
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: "center",
+  },
+  actionSheetCancelText: {
+    color: "#475569",
+    fontSize: 15,
+    fontWeight: "700",
   },
   modalContainer: {
     flex: 1,

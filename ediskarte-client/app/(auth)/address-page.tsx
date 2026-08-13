@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SignUpData } from "@/api/signup-request";
 import { barangays } from "../constants/barangays";
+import { StatusBar } from "expo-status-bar";
 
 interface FormData {
   barangay: string;
@@ -73,9 +74,11 @@ export default function AddressEntryScreen() {
     }
 
     SignUpData({
-      barangay: formData.barangay,
-      street: formData.street,
-      houseNumber: formData.houseNumber,
+      address: {
+        barangay: formData.barangay,
+        street: formData.street,
+        houseNumber: formData.houseNumber,
+      },
     });
 
     router.push({
@@ -93,11 +96,15 @@ export default function AddressEntryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <View style={styles.mainContainer}>
+      <StatusBar style="light" backgroundColor="#0B153C" />
+
+      <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Ionicons name="arrow-back" size={24} color="#000033" />
+          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
         </TouchableOpacity>
+        <Text style={styles.topHeaderTitle}>Create Account</Text>
+        <View style={{ width: 32 }} />
       </View>
 
       <View style={styles.contentContainer}>
@@ -186,33 +193,39 @@ export default function AddressEntryScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F8FAFC",
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
+  topHeader: {
+    backgroundColor: "#0B153C",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === "android" ? 44 : 10,
+  },
+  iosHeader: {
+    paddingTop: Platform.OS === "ios" ? 10 : 10,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginTop: 30,
-    borderColor: "#000033",
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 6,
+  },
+  topHeaderTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   contentContainer: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingHorizontal: 28,
+    paddingTop: 24,
     alignItems: "center",
   },
   title: {

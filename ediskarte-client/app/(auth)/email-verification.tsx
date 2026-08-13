@@ -5,10 +5,11 @@ import {
   View,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
   Modal,
   Animated,
+  Platform,
 } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { storeOTPRequest, verifyOTPRequest } from "../../api/signup-request";
@@ -212,11 +213,15 @@ export default function EmailVerificationScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <View style={styles.mainContainer}>
+      <StatusBar style="light" backgroundColor="#0B153C" />
+
+      <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Ionicons name="arrow-back" size={24} color="#000033" />
+          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
         </TouchableOpacity>
+        <Text style={styles.topHeaderTitle}>Verify Email</Text>
+        <View style={{ width: 32 }} />
       </View>
 
       <View style={styles.contentContainer}>
@@ -277,62 +282,72 @@ export default function EmailVerificationScreen() {
       {/* Re-add modal rendering */}
       {renderModal("success")}
       {renderModal("error")}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F8FAFC",
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
+  topHeader: {
+    backgroundColor: "#0B153C",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === "android" ? 44 : 10,
+  },
+  iosHeader: {
+    paddingTop: Platform.OS === "ios" ? 10 : 10,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginTop: 30,
-    borderColor: "#000033",
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 6,
+  },
+  topHeaderTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   contentContainer: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingHorizontal: 28,
+    paddingTop: 24,
     alignItems: "center",
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
+    color: "#0F172A",
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#666",
+    fontSize: 14,
+    color: "#64748B",
     textAlign: "center",
-    marginBottom: 40,
+    marginBottom: 28,
   },
   formContainer: {
     width: "100%",
-    marginBottom: 30,
+    marginBottom: 20,
   },
   label: {
-    fontSize: 16,
-    marginBottom: 8,
-    fontWeight: "bold",
+    fontSize: 14,
+    marginBottom: 6,
+    fontWeight: "600",
+    color: "#1E293B",
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 4,
+    borderColor: "#CBD5E1",
+    borderRadius: 10,
     padding: 12,
-    fontSize: 16,
+    fontSize: 18,
+    backgroundColor: "#FFFFFF",
+    color: "#0F172A",
     textAlign: "center",
     letterSpacing: 8,
   },

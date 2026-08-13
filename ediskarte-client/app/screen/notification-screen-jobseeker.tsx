@@ -90,7 +90,6 @@ const NotificationScreen = () => {
         const filtered = mappedNotifications.filter(
           (n: any) =>
             n.type === 'job_match' ||
-            n.type === 'chat_request' ||
             n.type === 'chat_rejected' ||
             n.type === 'chat_approved' ||
             n.type === 'offer_made' ||
@@ -221,14 +220,14 @@ const NotificationScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <View style={styles.mainContainer}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B153C" />
       
-      <View style={styles.header}>
+      <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back-outline" size={24} color="#000" />
+          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
+        <Text style={styles.topHeaderTitle}>Notifications</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -255,32 +254,34 @@ const NotificationScreen = () => {
           </Text>
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F8FAFC',
   },
-  header: {
+  topHeader: {
+    backgroundColor: '#0B153C',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 20,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === 'android' ? 44 : 10,
+  },
+  iosHeader: {
+    paddingTop: Platform.OS === 'ios' ? 10 : 10,
   },
   backButton: {
-    padding: 8,
+    padding: 6,
   },
-  headerTitle: {
+  topHeaderTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#FFFFFF',
   },
   placeholder: {
     width: 40,

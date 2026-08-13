@@ -114,7 +114,7 @@ export const createChat = async (req, res) => {
       try {
         await db.collection("notifications").insertOne({
           clientId: clientId,
-          jobSeekerId: jobSeekerId,
+          jobSeekerId: null, // TARGET CLIENT ONLY so job seeker does not see client's notification
           notificationType: "chat-request",
           notificationTitle: "New Chat Request",
           notificationMessage: `A job seeker has requested to chat about your job posting "${job.jobTitle}".`,
@@ -424,7 +424,7 @@ export const chatApprove = async (req, res) => {
       const participant = await db.collection("participants").findOne({ chatId });
       if (participant && participant.jobSeekerId) {
         await db.collection("notifications").insertOne({
-          clientId: userId,
+          clientId: null, // TARGET JOB SEEKER ONLY so employer does not see job seeker's notification
           jobSeekerId: participant.jobSeekerId.toString(),
           notificationType: "chat-approved",
           notificationTitle: "Chat Approved",
@@ -479,7 +479,7 @@ export const chatReject = async (req, res) => {
       const participant = await db.collection("participants").findOne({ chatId });
       if (participant && participant.jobSeekerId) {
         await db.collection("notifications").insertOne({
-          clientId: userId,
+          clientId: null, // TARGET JOB SEEKER ONLY so employer does not see job seeker's notification
           jobSeekerId: participant.jobSeekerId.toString(),
           notificationType: "chat-rejected",
           notificationTitle: "Chat Rejected",

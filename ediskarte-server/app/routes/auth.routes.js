@@ -5,6 +5,7 @@ import {
   storeOTP,
   verifyOtpOnly,
   verifyApplicant,
+  resetPassword,
 } from "../controllers/auth.controller.js";
 import express from "express";
 import multer from "multer";
@@ -31,6 +32,7 @@ router.post("/login", login);
 router.get("/decodeToken", decodeToken);
 router.post("/store-otp", storeOTP);
 router.post("/verify-otp", verifyOtpOnly);
+router.post("/reset-password", resetPassword);
 router.post(
   "/signup",
   signUpData.fields([

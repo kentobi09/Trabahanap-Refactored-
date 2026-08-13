@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  StatusBar,
 } from "react-native";
 import {
   AntDesign,
@@ -598,16 +599,19 @@ const UtilityWorkerProfile: React.FC = () => {
     []; // Map to local data and filter out nulls
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.actionsHeader}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={handleSettingsPress}
-        >
-          <Ionicons name="settings-outline" size={18} color="#0B153C" />
-          <Text style={styles.actionButtonText}>Settings</Text>
+    <View style={styles.mainContainer}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B153C" />
+      <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
+        <TouchableOpacity style={styles.topBackButton} onPress={() => safeBack()}>
+          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+        <Text style={styles.topHeaderTitle}>Profile</Text>
+        <TouchableOpacity style={styles.settingsHeaderButton} onPress={handleSettingsPress}>
+          <Ionicons name="settings-outline" size={22} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
+
+      <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
 
       <View style={styles.header}>
         <TouchableOpacity
@@ -1177,6 +1181,7 @@ const UtilityWorkerProfile: React.FC = () => {
         </>
       )}
     </ScrollView>
+    </View>
   );
 };
 
@@ -1314,11 +1319,35 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     margin: 5,
   },
+  mainContainer: {
+    flex: 1,
+    backgroundColor: "#F8FAFC",
+  },
+  topHeader: {
+    backgroundColor: "#0B153C",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === "android" ? 44 : 10,
+  },
+  iosHeader: {
+    paddingTop: Platform.OS === "ios" ? 10 : 10,
+  },
+  topBackButton: {
+    padding: 6,
+  },
+  topHeaderTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+  },
+  settingsHeaderButton: {
+    padding: 6,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
-    padding: 16,
-    paddingTop: Platform.OS === "ios" ? 60 : 40,
   },
   backButton: {
     marginBottom: 16,

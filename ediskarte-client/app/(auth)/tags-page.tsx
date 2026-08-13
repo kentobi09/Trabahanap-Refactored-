@@ -4,9 +4,9 @@ import {
   Text,
   View,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   TextInput,
+  Platform,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
@@ -68,14 +68,14 @@ export default function JobPreferenceScreen() {
 
   const handleTagPress = (tag: string) => {
     setSelectedPreferences((prev) =>
-      prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag]
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
 
   const handleNext = () => {
-    if (selectedPreferences.length > 0 || otherProfession.trim()) {
-      const allTags = [...selectedPreferences];
-      if (otherProfession.trim()) {
+    if (selectedPreferences.length > 0 || otherProfession.trim() !== "") {
+      let allTags = [...selectedPreferences];
+      if (otherProfession.trim() !== "") {
         allTags.push(otherProfession.trim());
       }
       SignUpData({
@@ -120,11 +120,15 @@ export default function JobPreferenceScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <View style={styles.mainContainer}>
+      <StatusBar style="light" backgroundColor="#0B153C" />
+
+      <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#000033" />
+          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
         </TouchableOpacity>
+        <Text style={styles.topHeaderTitle}>Job Preferences</Text>
+        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView
@@ -165,35 +169,42 @@ export default function JobPreferenceScreen() {
           <Text style={styles.nextButtonText}>Next</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F8FAFC",
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
+  topHeader: {
+    backgroundColor: "#0B153C",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === "android" ? 44 : 10,
+  },
+  iosHeader: {
+    paddingTop: Platform.OS === "ios" ? 10 : 10,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginTop: 30,
-    borderColor: "#000033",
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 6,
+  },
+  topHeaderTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   scrollContainer: {
     flex: 1,
   },
   scrollContentContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   title: {
     fontSize: 24,

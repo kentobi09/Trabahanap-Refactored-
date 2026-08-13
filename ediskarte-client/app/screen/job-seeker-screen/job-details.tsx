@@ -238,11 +238,14 @@ export default function JobDetailsScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-      <View style={styles.header}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B153C" />
+
+      <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
         <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-          <Ionicons name="arrow-back-circle-outline" size={32} color="#000" />
+          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Job Details</Text>
+        <Text style={styles.topHeaderTitle}>Job Details</Text>
+        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView style={styles.scrollView}>
@@ -395,25 +398,27 @@ export default function JobDetailsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#F8FAFC',
   },
-  header: {
+  topHeader: {
+    backgroundColor: '#0B153C',
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-    paddingTop: Platform.OS === 'ios' ? 50 : 40,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === 'android' ? 44 : 10,
+  },
+  iosHeader: {
+    paddingTop: Platform.OS === 'ios' ? 10 : 10,
   },
   backButton: {
-    marginRight: 16,
+    padding: 4,
   },
-  headerTitle: {
-    fontSize: 18,
+  topHeaderTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#0D2040',
+    color: '#FFFFFF',
   },
   scrollView: {
     flex: 1,
@@ -562,21 +567,28 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
+    borderTopColor: '#E2E8F0',
   },
   applyButton: {
-    backgroundColor: '#0D2040',
+    backgroundColor: '#F59E0B',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
+    shadowColor: "#F59E0B",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   appliedButton: {
-    backgroundColor: '#8E9AA6',
+    backgroundColor: '#CBD5E1',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   applyButtonText: {
-    color: '#fff',
+    color: '#0B153C',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   reviewCard: {
     backgroundColor: '#fff',

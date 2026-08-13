@@ -95,7 +95,8 @@ const ChatScreen: React.FC = () => {
       chatId,
       userRole: 'job-seeker',
     });
-    socket.emit('fetch_user_chats');
+    setChats((prev) => prev.filter((c) => c.id !== chatId && (c as any)._id !== chatId));
+    setFilteredSearchedChats((prev) => prev.filter((c) => c.id !== chatId && (c as any)._id !== chatId));
     setChatOptionsModalVisible(false);
   };
   const handleSearch = (query: string) => {
@@ -462,13 +463,13 @@ const ChatScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="light-content" backgroundColor="#0B153C" />
       <View style={[styles.header, Platform.OS === 'ios' && styles.iosHeader]}>
         <Text style={styles.headerTitle}>Chats</Text>
         <TouchableOpacity 
           onPress={() => setFilterModalVisible(true)}
         >
-          <Ionicons name="filter" size={24} color="#000" />
+          <Ionicons name="options-outline" size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
@@ -557,19 +558,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#ccc',
-    paddingTop: Platform.OS === 'android' ? 50 : 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: '#0B153C',
+    paddingTop: Platform.OS === 'android' ? 44 : 10,
   },
   iosHeader: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 10,
+    paddingTop: Platform.OS === 'ios' ? 10 : 10,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: "#0b216f",
+    color: "#FFFFFF",
   },
   searchContainer: {
     padding: 10,

@@ -8,6 +8,7 @@ import {
   ScrollView,
   Image,
   SafeAreaView,
+  StatusBar,
   Modal,
   FlatList,
   Alert,
@@ -335,20 +336,19 @@ export default function AddJobScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <View style={styles.mainContainer}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B153C" />
+      <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
         <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-          <Ionicons
-            name="arrow-back-circle-outline"
-            size={36}
-            color="#001F3F"
-          />
+          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+        <Text style={styles.topHeaderTitle}>Post a New Job</Text>
+        <TouchableOpacity style={styles.saveHeaderButton} onPress={handleSave}>
+          <Text style={styles.saveHeaderButtonText}>Post</Text>
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.title}>Add a job</Text>
-
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={{ padding: 16 }}>
         <Text style={styles.label}>
           Title <Text style={styles.required}>*</Text>
         </Text>
@@ -673,35 +673,48 @@ export default function AddJobScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F8FAFC",
   },
-  header: {
+  topHeader: {
+    backgroundColor: "#0B153C",
     flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingTop: Platform.OS === 'android' ? 40 : 12,
     alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === "android" ? 44 : 10,
+  },
+  iosHeader: {
+    paddingTop: Platform.OS === "ios" ? 10 : 10,
   },
   backButton: {
-    padding: 4,
+    padding: 6,
   },
-  title: {
-    fontSize: 30,
+  topHeaderTitle: {
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#000",
+    color: "#FFFFFF",
+  },
+  saveHeaderButton: {
+    backgroundColor: "#F59E0B",
+    paddingVertical: 6,
     paddingHorizontal: 16,
-    marginBottom: 16,
+    borderRadius: 16,
+  },
+  saveHeaderButtonText: {
+    color: "#0B153C",
+    fontSize: 13,
+    fontWeight: "700",
   },
   scrollView: {
     flex: 1,
-    paddingHorizontal: 16,
   },
   label: {
     fontSize: 16,

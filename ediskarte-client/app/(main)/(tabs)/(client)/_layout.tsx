@@ -7,16 +7,24 @@ export default function ClientLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "white",
-          elevation: 8,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
-          borderTopWidth: 0,
+          backgroundColor: "#FFFFFF",
+          height: 64,
+          paddingBottom: 8,
+          paddingTop: 6,
+          elevation: 10,
+          shadowColor: "#0B153C",
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
+          borderTopWidth: 1,
+          borderTopColor: "#E2E8F0",
         },
-        tabBarActiveTintColor: "#0A1747",
-        tabBarInactiveTintColor: "#666",
+        tabBarActiveTintColor: "#0B153C",
+        tabBarInactiveTintColor: "#94A3B8",
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: "600",
+        },
       }}
     >
       <Tabs.Screen

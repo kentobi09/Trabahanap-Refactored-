@@ -1,81 +1,103 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform, TouchableOpacity } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 export default function WaitingValidation() {
   const router = useRouter();
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.replace('/sign_in');
+      router.replace('/(auth)/sign_in');
     }, 8000); // 8 seconds
 
-    // Cleanup the timer if component unmounts
     return () => clearTimeout(timer);
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
-      <Stack.Screen
-        options={{
-          headerShown: false,
-        }}
-      />
+    <View style={styles.mainContainer}>
+      <StatusBar style="light" backgroundColor="#0B153C" />
+      <Stack.Screen options={{ headerShown: false }} />
+
+      <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
+        <TouchableOpacity onPress={() => router.replace('/(auth)/sign_in')} style={styles.backButton}>
+          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+        <Text style={styles.topHeaderTitle}>Verification Pending</Text>
+        <View style={{ width: 32 }} />
+      </View>
       
       <View style={styles.content}>
-        <MaterialIcons name="check-circle" size={80} color="#007AFF" style={styles.icon} />
+        <MaterialIcons name="verified-user" size={80} color="#D97706" style={styles.icon} />
         
         <Text style={styles.title}>Account Under Review</Text>
         
         <Text style={styles.description}>
-          Your account is currently being reviewed by our team. This process usually takes 24-48 hours.
+          Your account is currently being reviewed by our admin team. This process usually takes 24-48 hours.
           We'll notify you once your account has been validated.
         </Text>
         
         <Text style={styles.subDescription}>
-          Thank you for your patience. You can close this app and we'll send you a notification when your account is ready.
+          Thank you for your patience. You will be redirected to the sign in page shortly.
         </Text>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F8FAFC',
+  },
+  topHeader: {
+    backgroundColor: "#0B153C",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === "android" ? 44 : 10,
+  },
+  iosHeader: {
+    paddingTop: Platform.OS === "ios" ? 10 : 10,
+  },
+  backButton: {
+    padding: 6,
+  },
+  topHeaderTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   content: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: 28,
     justifyContent: 'center',
     alignItems: 'center',
   },
   icon: {
-    marginBottom: 30,
+    marginBottom: 24,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 16,
     textAlign: 'center',
-    color: '#000',
+    color: '#0F172A',
   },
   description: {
-    fontSize: 16,
+    fontSize: 15,
     textAlign: 'center',
     marginBottom: 20,
-    color: '#333',
-    lineHeight: 24,
+    color: '#334155',
+    lineHeight: 22,
   },
   subDescription: {
-    fontSize: 14,
+    fontSize: 13,
     textAlign: 'center',
-    color: '#666',
-    lineHeight: 20,
+    color: '#64748B',
+    lineHeight: 18,
   },
 }); 

@@ -10,6 +10,7 @@ import {
   Image,
   SafeAreaView,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -167,27 +168,29 @@ const SearchScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <View style={styles.mainContainer}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B153C" />
+      <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
         <TouchableOpacity 
           style={styles.backButton} 
           onPress={handleGoBack}
         >
-          <Ionicons name="arrow-back-outline" size={24} color="#333" />
+          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         
         <View style={styles.searchContainer}>
-          <Ionicons name="search-outline" size={20} color="#666" />
+          <Ionicons name="search-outline" size={18} color="#E2E8F0" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search jobs here"
+            placeholder="Search jobs here..."
+            placeholderTextColor="rgba(255, 255, 255, 0.7)"
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoFocus={true}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color="#666" />
+              <Ionicons name="close-circle" size={18} color="#CBD5E1" />
             </TouchableOpacity>
           )}
         </View>
@@ -358,41 +361,46 @@ const SearchScreen = () => {
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F8FAFC',
   },
-  header: {
+  topHeader: {
+    backgroundColor: '#0B153C',
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    paddingTop: Platform.OS === 'ios' ? 20 : 40,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingTop: Platform.OS === 'android' ? 44 : 10,
+  },
+  iosHeader: {
+    paddingTop: Platform.OS === 'ios' ? 10 : 10,
   },
   backButton: {
-    marginRight: 12,
+    marginRight: 10,
+    padding: 4,
   },
   searchContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f1f1f1',
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 20,
+    paddingHorizontal: 14,
     paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
     marginLeft: 8,
-    color: '#333',
+    color: '#FFFFFF',
   },
   content: {
     flex: 1,
@@ -400,25 +408,30 @@ const styles = StyleSheet.create({
   filtersContainer: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
   },
   filterChip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#f1f1f1',
+    backgroundColor: '#F1F5F9',
     marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   filterChipSelected: {
-    backgroundColor: '#0B153C',
+    backgroundColor: '#F59E0B',
+    borderColor: '#F59E0B',
   },
   filterText: {
-    color: '#666',
-    fontSize: 14,
-    fontWeight: '500',
+    color: '#64748B',
+    fontSize: 13,
+    fontWeight: '600',
   },
   filterTextSelected: {
-    color: '#fff',
+    color: '#0B153C',
+    fontWeight: '700',
   },
   section: {
     padding: 16,
