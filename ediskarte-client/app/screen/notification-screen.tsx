@@ -15,7 +15,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type NotificationType = 'application' | 'job_match' | 'chat_request' | 'offer' | 'offer_made' | 'review';
+type NotificationType = 'application' | 'job_match' | 'chat_request' | 'offer' | 'offer_made' | 'offer_accepted' | 'offer_rejected' | 'review';
 
 interface Notification {
   id: string;
@@ -76,6 +76,8 @@ const NotificationScreen = () => {
               n.type === 'chat_request' ||
               n.type === 'offer' ||
               n.type === 'offer_made' ||
+              n.type === 'offer_accepted' ||
+              n.type === 'offer_rejected' ||
               n.type === 'review'
           )
         );

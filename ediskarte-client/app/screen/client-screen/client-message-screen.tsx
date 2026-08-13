@@ -373,7 +373,7 @@ const ChatScreen: React.FC<ChatProps> = ({
       handleSystemMessage("Client declined the chat request", "system");
       setCurrentChatStatus("declined");
       setShowApprovalModal(false);
-      router.back(); // Optionally navigate back after rejection
+      safeBack();
     } catch (error) {
       console.error("Error declining chat:", error);
     }
@@ -1622,15 +1622,12 @@ const ChatScreen: React.FC<ChatProps> = ({
         offerModalVisible && (
           <View style={styles.offerBanner}>
             <View style={styles.offerContent}>
-              <MaterialIcons
-                name="attach-money"
-                size={24}
-                color="#0b8043"
-                style={styles.offerIcon}
-              />
+              <Text style={{ fontSize: 22, fontWeight: "bold", color: "#0b8043", marginRight: 8 }}>
+                ₱
+              </Text>
               <View style={styles.offerTextContainer}>
                 <Text style={styles.offerTitle}>
-                  Payment Offer: {offerAmount}
+                  Payment Offer: ₱{offerAmount}
                 </Text>
                 <Text style={styles.offerDescription}>
                   {receiverName} has sent you a payment offer. Would you like to
@@ -1668,7 +1665,7 @@ const ChatScreen: React.FC<ChatProps> = ({
           <View style={styles.confirmModalContainer}>
             <Text style={styles.confirmModalTitle}>Accept Offer?</Text>
             <Text style={styles.confirmModalText}>
-              Are you sure you want to accept the {offerAmount} payment offer
+              Are you sure you want to accept the ₱{offerAmount} payment offer
               from {receiverName}?
             </Text>
             <Text style={styles.warningText}>

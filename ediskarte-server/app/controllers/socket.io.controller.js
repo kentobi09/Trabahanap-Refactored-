@@ -1019,25 +1019,28 @@ export function initializeSocketIO(httpServer) {
       }
     });
 
-    socket.on('delete_chat', async ({ chatId, userRole }) => {
+    socket.on('delete_chat', async ({ chatId, userId, userRole }) => {
       try {
-        const userId = socket.user.id;
+        const currentUserId = userId || socket.user?.id;
         const db = await getNativeDb();
-    
-        const updateData =
-          userRole === 'job-seeker'
-            ? { deletedByJobSeeker: true }
-            : { deletedByClient: true };
-    
-        await db.collection("participants").updateMany(
-          {
-            chatId,
-            ...(userRole === 'job-seeker' ? { jobSeekerId: userId } : { userId }),
-          },
-          { $set: updateData }
-        );
-    
+
+        let chatIdObj;
+        try { chatIdObj = new ObjectId(chatId); } catch(e) { chatIdObj = chatId; }
+
+        // Delete from native MongoDB collections
+        await db.collection("chats").deleteMany({ $or: [{ _id: chatIdObj }, { id: chatId }] });
+        await db.collection("participants").deleteMany({ $or: [{ chatId: chatIdObj }, { chatId: chatId }] });
+        await db.collection("messages").deleteMany({ $or: [{ chatId: chatIdObj }, { chatId: chatId }] });
+
+        // Delete from Prisma if present
+        try {
+          await prisma.participant.deleteMany({ where: { chatId: chatId } });
+          await prisma.message.deleteMany({ where: { chatId: chatId } });
+          await prisma.chat.deleteMany({ where: { id: chatId } });
+        } catch (e) {}
+
         socket.emit('chat_deleted_success', { chatId });
+        io.emit('chat_deleted', { chatId });
       } catch (error) {
         console.error('Error deleting chat:', error);
         socket.emit('chat_deleted_error', { error: 'Failed to delete chat' });

@@ -90,7 +90,6 @@ const NotificationScreen = () => {
         const filtered = mappedNotifications.filter(
           (n: any) =>
             n.type === 'job_match' ||
-            n.type === 'chat_request' ||
             n.type === 'chat_rejected' ||
             n.type === 'chat_approved' ||
             n.type === 'offer_made' ||

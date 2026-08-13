@@ -95,7 +95,8 @@ const ChatScreen: React.FC = () => {
       chatId,
       userRole: 'job-seeker',
     });
-    socket.emit('fetch_user_chats');
+    setChats((prev) => prev.filter((c) => c.id !== chatId && (c as any)._id !== chatId));
+    setFilteredSearchedChats((prev) => prev.filter((c) => c.id !== chatId && (c as any)._id !== chatId));
     setChatOptionsModalVisible(false);
   };
   const handleSearch = (query: string) => {
