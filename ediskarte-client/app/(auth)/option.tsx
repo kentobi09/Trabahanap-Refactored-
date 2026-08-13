@@ -43,7 +43,7 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="auto" />
+      <StatusBar style="dark" />
 
       <View style={styles.logoContainer}>
         <Image
@@ -51,6 +51,8 @@ export default function WelcomeScreen() {
           style={styles.logo}
           resizeMode="contain"
         />
+        <Text style={styles.brandTitle}>eDiskarte</Text>
+        <Text style={styles.brandSubtitle}>Empowering Local Service & Opportunities</Text>
       </View>
 
       <View style={styles.buttonContainer}>
@@ -69,18 +71,32 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0B153C",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
   },
   logoContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 20,
   },
   logo: {
-    width: 220,
-    height: 220,
-    marginBottom: 10,
+    width: 180,
+    height: 180,
+    marginBottom: 12,
+  },
+  brandTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#0B153C",
+    letterSpacing: 0.5,
+  },
+  brandSubtitle: {
+    fontSize: 13,
+    color: "#64748B",
+    marginTop: 4,
+    fontWeight: "500",
+    textAlign: "center",
   },
   buttonContainer: {
     width: "100%",
@@ -88,32 +104,32 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
   loginButton: {
-    backgroundColor: "#F59E0B",
+    backgroundColor: "#0B153C",
     borderRadius: 12,
     paddingVertical: 15,
     alignItems: "center",
-    marginBottom: 16,
-    shadowColor: "#F59E0B",
+    marginBottom: 14,
+    shadowColor: "#0B153C",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
     elevation: 3,
   },
   loginButtonText: {
-    color: "#0B153C",
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
   },
   signUpButton: {
-    backgroundColor: "transparent",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
+    backgroundColor: "#FFFBEB",
+    borderWidth: 1.5,
+    borderColor: "#F59E0B",
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
   },
   signUpButtonText: {
-    color: "#FFFFFF",
+    color: "#D97706",
     fontSize: 16,
     fontWeight: "bold",
   },

@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -18,15 +19,17 @@ const PrivacyPolicy = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={styles.mainContainer}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B153C" />
+      <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
         <TouchableOpacity 
           style={styles.backButton} 
           onPress={handleGoBack}
         >
-          <Ionicons name="arrow-back-outline" size={24} color="#333" />
+          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.title}>Privacy Policy</Text>
+        <Text style={styles.topHeaderTitle}>Privacy Policy</Text>
+        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView style={styles.content}>
@@ -102,51 +105,58 @@ const PrivacyPolicy = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F8FAFC',
   },
-  header: {
+  topHeader: {
+    backgroundColor: '#0B153C',
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === 'android' ? 44 : 10,
+  },
+  iosHeader: {
+    paddingTop: Platform.OS === 'ios' ? 10 : 10,
   },
   backButton: {
-    padding: 4,
-    marginRight: 16,
+    padding: 6,
   },
-  title: {
+  topHeaderTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#FFFFFF',
   },
   content: {
     flex: 1,
     padding: 16,
   },
   lastUpdated: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 13,
+    color: '#64748B',
     marginBottom: 20,
     fontStyle: 'italic',
   },
   section: {
-    marginBottom: 24,
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#0F172A',
     marginBottom: 8,
   },
   text: {
     fontSize: 14,
     lineHeight: 22,
-    color: '#444',
+    color: '#475569',
   },
 });
 

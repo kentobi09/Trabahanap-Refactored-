@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -18,15 +19,17 @@ const TermsAndConditions = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={styles.mainContainer}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B153C" />
+      <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
         <TouchableOpacity 
           style={styles.backButton} 
           onPress={handleGoBack}
         >
-          <Ionicons name="arrow-back-outline" size={24} color="#333" />
+          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.title}>Terms and Conditions</Text>
+        <Text style={styles.topHeaderTitle}>Terms and Conditions</Text>
+        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView style={styles.content}>
@@ -61,25 +64,24 @@ const TermsAndConditions = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>4. Payment Terms</Text>
           <Text style={styles.text}>
-            4.1. All payment arrangements are made directly between clients and service providers.{'\n\n'}
-            4.2. TrabaHanap is not responsible for any payment disputes between users.{'\n\n'}
-            4.3. Users are responsible for complying with all applicable tax laws.
+            4.1. Payment terms are agreed upon between job seekers and clients.{'\n\n'}
+            4.2. TrabaHanap is not responsible for payment disputes between users.{'\n\n'}
+            4.3. Service fees may apply for certain platform features.
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>5. User Content</Text>
+          <Text style={styles.sectionTitle}>5. Termination</Text>
           <Text style={styles.text}>
-            5.1. Users retain ownership of their content but grant TrabaHanap license to use it.{'\n\n'}
-            5.2. Users are responsible for ensuring their content doesn't violate any laws or rights.{'\n\n'}
-            5.3. TrabaHanap reserves the right to remove inappropriate content.
+            5.1. We reserve the right to terminate or suspend access to our service immediately, without prior notice, for any violation of these Terms.{'\n\n'}
+            5.2. Users may terminate their account at any time by following the in-app instructions.
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>6. Termination</Text>
+          <Text style={styles.sectionTitle}>6. Contact Us</Text>
           <Text style={styles.text}>
-            TrabaHanap reserves the right to terminate or suspend accounts that violate these terms or for any other reason at our discretion.
+            If you have any questions about these Terms, please contact us at support@trabahanap.com.
           </Text>
         </View>
       </ScrollView>
@@ -88,52 +90,59 @@ const TermsAndConditions = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F8FAFC',
   },
-  header: {
+  topHeader: {
+    backgroundColor: '#0B153C',
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: Platform.OS === 'android' ? 44 : 10,
+  },
+  iosHeader: {
+    paddingTop: Platform.OS === 'ios' ? 10 : 10,
   },
   backButton: {
-    padding: 4,
-    marginRight: 16,
+    padding: 6,
   },
-  title: {
+  topHeaderTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#FFFFFF',
   },
   content: {
     flex: 1,
     padding: 16,
   },
   lastUpdated: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 13,
+    color: '#64748B',
     marginBottom: 20,
     fontStyle: 'italic',
   },
   section: {
-    marginBottom: 24,
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#0F172A',
     marginBottom: 8,
   },
   text: {
     fontSize: 14,
     lineHeight: 22,
-    color: '#444',
+    color: '#475569',
   },
 });
 
-export default TermsAndConditions; 
+export default TermsAndConditions;
