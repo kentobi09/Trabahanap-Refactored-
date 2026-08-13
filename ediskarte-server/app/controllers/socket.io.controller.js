@@ -625,11 +625,23 @@ export function initializeSocketIO(httpServer) {
               jobSeekerId: recipientParticipant.jobSeekerId ? recipientParticipant.jobSeekerId.toString() : null,
             },
             type: "offer_made",
-            title: "New Offer Made",
-            message: notification.message,
+            title: "New Job Offer",
+            message: `You received a new job offer of ₱${offerAmount} for "${jobTitle}".`,
             relatedIds: [chatId, jobRequestId].filter(Boolean),
           });
         }
+
+        // Also notify sender (Employer) that their offer was sent
+        await createNotification({
+          recipient: {
+            userId: senderId,
+            jobSeekerId: null,
+          },
+          type: "offer_made",
+          title: "Job Offer Sent",
+          message: `You sent a job offer of ₱${offerAmount} for "${jobTitle}".`,
+          relatedIds: [chatId, jobRequestId].filter(Boolean),
+        });
       } catch (error) {
         console.error("❌ make_offer error:", error);
         socket.emit("make_offer_error", { message: "Failed to make offer" });
@@ -694,14 +706,14 @@ export function initializeSocketIO(httpServer) {
 
         const notification = {
           type: "offer_accepted",
-          message: `The offer of ₱${offer} for "${jobTitle}" was accepted by the employer.`,
+          message: `The job offer of ₱${offer} for "${jobTitle}" was accepted.`,
           offerAmount: offer,
           jobTitle,
           chatId,
         };
         io.to(chatId).emit("offer_notification", notification);
 
-        // Create DB notification
+        // Create DB notification for recipient (Employer / Client)
         const senderId = socket.user.id;
         let senderJobSeekerId = null;
         const senderJS = await prisma.jobSeeker.findUnique({
@@ -725,7 +737,7 @@ export function initializeSocketIO(httpServer) {
             },
             type: "offer_accepted",
             title: "Offer Accepted",
-            message: notification.message,
+            message: `Your job offer of ₱${offer} for "${jobTitle}" was accepted by the job seeker.`,
             relatedIds: [chatId, jobRequestId].filter(Boolean),
           });
         }
@@ -773,7 +785,7 @@ export function initializeSocketIO(httpServer) {
 
         const notification = {
           type: "offer_rejected",
-          message: `The offer of ₱${offerAmount} for "${jobTitle}" was rejected by the employer.`,
+          message: `The job offer of ₱${offerAmount} for "${jobTitle}" was declined.`,
           offerAmount,
           jobTitle,
           chatId,
@@ -804,8 +816,8 @@ export function initializeSocketIO(httpServer) {
               jobSeekerId: recipientParticipant.jobSeekerId ? recipientParticipant.jobSeekerId.toString() : null,
             },
             type: "offer_rejected",
-            title: "Your Offer Was Rejected",
-            message: `Unfortunately, your offer of ₱${offerAmount} for "${jobTitle}" was rejected by the employer.`,
+            title: "Offer Declined",
+            message: `Your job offer of ₱${offerAmount} for "${jobTitle}" was declined by the job seeker.`,
             relatedIds: [chatId, actualJobRequestId].filter(Boolean),
           });
         }
@@ -1484,22 +1496,45 @@ export function initializeSocketIO(httpServer) {
 }
 
 async function createNotification({ recipient, type, title, message, relatedIds }) {
-  // If recipient.userId is null (common for job seekers in Participant model), fall back to jobSeekerId (their User ID)
-  const targetUserId = recipient.userId || recipient.jobSeekerId;
+  const targetUserId = recipient.userId || recipient.clientId || recipient.jobSeekerId;
 
   if (!targetUserId) {
-    throw new Error('Notification must have a clientId (userId)');
+    console.warn("Notification skipped: missing recipient ID");
+    return;
   }
+
+  const isJobSeekerRecipient = !!recipient.jobSeekerId;
+
   const data = {
     notificationType: type,
     notificationTitle: title,
     notificationMessage: message,
-    relatedIds: (relatedIds || []).filter(Boolean),
-    clientId: targetUserId,
+    relatedIds: (relatedIds || []).filter(Boolean).map(String),
+    clientId: isJobSeekerRecipient ? null : targetUserId.toString(),
+    jobSeekerId: isJobSeekerRecipient ? recipient.jobSeekerId.toString() : null,
+    isRead: false,
+    createdAt: new Date(),
   };
-  if (recipient.jobSeekerId) data.jobSeekerId = recipient.jobSeekerId;
+
   try {
-    const createdNotification = await prisma.notification.create({ data });
+    const db = await getNativeDb();
+    await db.collection("notifications").insertOne(data);
+  } catch (e) {
+    console.warn("Failed to write notification to MongoDB:", e.message);
+  }
+
+  try {
+    const createdNotification = await prisma.notification.create({
+      data: {
+        notificationType: type,
+        notificationTitle: title,
+        notificationMessage: message,
+        relatedIds: (relatedIds || []).filter(Boolean).map(String),
+        clientId: data.clientId,
+        jobSeekerId: data.jobSeekerId,
+      }
+    });
+
     if (ioInstance) {
       let finalUserId = targetUserId;
       if (!onlineUsers.has(finalUserId)) {
