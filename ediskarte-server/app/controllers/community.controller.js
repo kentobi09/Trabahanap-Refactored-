@@ -37,11 +37,11 @@ export const createPosting = async (req, res) => {
       let jobSeeker = await db.collection("jobseekers").findOne({
         $or: [{ userId: req.body.jobSeeker }, { userId: new ObjectId(req.body.jobSeeker) }, { _id: new ObjectId(req.body.jobSeeker) }]
       });
-
-      if (!jobSeeker) {
-        return res.status(404).json({ message: "JobSeeker not found for the provided userId" });
+      if (jobSeeker) {
+        seekerIdObj = jobSeeker._id;
+      } else {
+        try { seekerIdObj = new ObjectId(req.body.jobSeeker); } catch (e) { seekerIdObj = req.body.jobSeeker; }
       }
-      seekerIdObj = jobSeeker._id;
     }
 
     const doc = {
