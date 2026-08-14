@@ -16,8 +16,15 @@ async function getNativeDb() {
 export const createPosting = async (req, res) => {
   try {
     const db = await getNativeDb();
-    const postContent = req.body.postContent;
-    const postImage = req.file ? req.file.path : "";
+    const postContent = req.body.postContent || "";
+    let postImages = [];
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+      postImages = req.files.map((f) => f.path.replace(/\\/g, "/"));
+    } else if (req.file) {
+      postImages = [req.file.path.replace(/\\/g, "/")];
+    }
+
+    const postImage = postImages.length > 0 ? (postImages.length === 1 ? postImages[0] : postImages) : "";
     const likeCount = parseInt(req.body.likeCount) || 0;
     const commentCount = parseInt(req.body.commentCount) || 0;
 

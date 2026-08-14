@@ -481,3 +481,51 @@ export const getAchievements = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const deleteCredential = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { credentialPath } = req.body;
+
+    if (!credentialPath) {
+      return res.status(400).json({ message: "Credential path is required" });
+    }
+
+    const db = await getNativeDb();
+    let userIdObj;
+    try { userIdObj = new ObjectId(userId); } catch (e) { userIdObj = userId; }
+
+    const seekerDoc = await db.collection("jobseekers").findOne({
+      $or: [{ userId: userId }, { userId: userIdObj }, { _id: userIdObj }]
+    });
+
+    if (!seekerDoc) {
+      return res.status(404).json({ message: "JobSeeker profile not found" });
+    }
+
+    const currentCredentials = Array.isArray(seekerDoc.credentials) ? seekerDoc.credentials : [];
+    const updatedCredentials = currentCredentials.filter(c => c !== credentialPath);
+
+    await db.collection("jobseekers").updateOne(
+      { _id: seekerDoc._id },
+      { $set: { credentials: updatedCredentials } }
+    );
+
+    // Optionally try to delete file from disk if present
+    try {
+      if (fs.existsSync(credentialPath)) {
+        fs.unlinkSync(credentialPath);
+      }
+    } catch (e) {
+      console.log("Could not delete credential file from disk:", e);
+    }
+
+    return res.status(200).json({
+      message: "Credential removed successfully",
+      credentials: updatedCredentials,
+    });
+  } catch (error) {
+    console.error("Error deleting credential:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};

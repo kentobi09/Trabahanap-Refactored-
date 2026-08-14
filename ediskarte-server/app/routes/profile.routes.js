@@ -5,6 +5,7 @@ import {
   updateJobTags,
   getJobSeekerProfileByUserId,
   uploadCredential,
+  deleteCredential,
   getAchievements,
 } from "../controllers/profile.controller.js";
 import fs from "fs";
@@ -63,6 +64,8 @@ router.post(
   memoryUpload.array("credentialFile", 5),
   uploadCredential
 );
+
+router.delete("/user/profile/credential/:userId", authenticateToken, deleteCredential);
 
 router.get("/user/achievements/:userId", authenticateToken, getAchievements);
 

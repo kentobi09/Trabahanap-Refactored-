@@ -44,7 +44,7 @@ const formData = multer({ storage: storage });
 
 router.post(
   "/community/posts/create-post",
-  formData.single("postImage"),
+  formData.array("postImage", 5),
   createPosting
 );
 router.post("/community/posts/:postId/hasLiked", userHasLiked);
