@@ -1138,6 +1138,26 @@ export const getJobRequestById = async (req, res) => {
 //     res.json(search);
 //   } catch (error) {
 //     console.error("Error saving search:", error);
-//     res.status(500).json({ error: "Failed to save search" });
-//   }
-// };
+export const getAllUsers = async (req, res) => {
+  try {
+    const db = await getNativeDb();
+    const users = await db.collection("users").find({}).toArray();
+    const formatted = users.map(u => ({
+      id: u._id.toString(),
+      _id: u._id.toString(),
+      firstName: u.firstName || "",
+      lastName: u.lastName || "",
+      emailAddress: u.emailAddress || "",
+      userType: u.userType || "job-seeker",
+      verificationStatus: u.verificationStatus || "pending",
+      accountStatus: u.accountStatus || "active",
+      banReason: u.banReason || "",
+      suspendReason: u.suspendReason || "",
+      suspendedUntil: u.suspendedUntil || null
+    }));
+    res.json(formatted);
+  } catch (err) {
+    console.error("Error fetching all users:", err);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+};

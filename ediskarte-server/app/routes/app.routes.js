@@ -20,6 +20,7 @@ import {
   markNotificationsAsRead,
   hasUnreadNotifications,
   getClientCompletedJobs,
+  getAllUsers,
 } from "../controllers/app.controller.js";
 import multer from "multer";
 import {
@@ -150,5 +151,6 @@ router.use(
 );
 
 router.get("/api/search/jobseekers", authenticateToken, searchJobSeekers);
+router.get("/api/users/all", getAllUsers);
 
 export default router;
