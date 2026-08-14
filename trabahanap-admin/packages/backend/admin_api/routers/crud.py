@@ -8,7 +8,8 @@ import logging
 import json
 import csv
 import io
-from ..services.email_service import send_email_async, get_verification_email_body, get_report_email_body, get_notification_for_reported_user_body
+import re
+from ..services.email_service import send_email_async, get_verification_email_body, get_report_email_body, get_notification_for_reported_user_body, get_sanction_email_body
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO)
@@ -353,6 +354,86 @@ async def read_admin_me(current_admin: Admin = Depends(get_current_active_admin)
     return current_admin
 
 
+# Helper functions to resolve display names for reports
+async def _resolve_user_name(user_id_or_obj) -> Optional[str]:
+    if not user_id_or_obj:
+        return None
+    try:
+        user_doc = await User.get(user_id_or_obj)
+        if user_doc:
+            name_parts = [p for p in [user_doc.first_name, user_doc.middle_name, user_doc.last_name, user_doc.suffix_name] if p]
+            full = " ".join(name_parts).strip()
+            if full:
+                return full
+    except Exception:
+        pass
+
+    try:
+        from bson import ObjectId
+        db = User.get_motor_collection().database
+        str_id = str(user_id_or_obj)
+        query = [{"_id": str_id}]
+        try:
+            query.append({"_id": ObjectId(str_id)})
+        except Exception:
+            pass
+        user_raw = await db["users"].find_one({"$or": query})
+        if user_raw:
+            fn = user_raw.get("firstName") or user_raw.get("first_name") or ""
+            ln = user_raw.get("lastName") or user_raw.get("last_name") or ""
+            full = f"{fn} {ln}".strip()
+            if full:
+                return full
+    except Exception as e:
+        logger.error(f"Error in _resolve_user_name: {e}")
+    return None
+
+async def resolve_reported_object_display_name(reported_object_id) -> str:
+    if not reported_object_id:
+        return "N/A"
+    
+    str_id = str(reported_object_id)
+
+    # 1. Check if reported_object_id is a User
+    user_name = await _resolve_user_name(reported_object_id)
+    if user_name:
+        return user_name
+
+    # 2. Check if reported_object_id is a Community Post
+    try:
+        from bson import ObjectId
+        db = User.get_motor_collection().database
+        query = [{"_id": str_id}]
+        try:
+            query.append({"_id": ObjectId(str_id)})
+        except Exception:
+            pass
+        post_raw = await db["post"].find_one({"$or": query})
+        if post_raw:
+            author_name = None
+            if post_raw.get("clientId"):
+                author_name = await _resolve_user_name(post_raw.get("clientId"))
+            elif post_raw.get("jobSeekerId"):
+                seeker_query = [{"_id": post_raw.get("jobSeekerId")}]
+                if isinstance(post_raw.get("jobSeekerId"), str) and len(post_raw.get("jobSeekerId")) == 24:
+                    try:
+                        seeker_query.append({"_id": ObjectId(post_raw.get("jobSeekerId"))})
+                    except Exception:
+                        pass
+                seeker_raw = await db["jobseekers"].find_one({"$or": seeker_query})
+                if seeker_raw and seeker_raw.get("userId"):
+                    author_name = await _resolve_user_name(seeker_raw.get("userId"))
+            
+            if author_name:
+                return author_name
+            
+            snippet = post_raw.get("postContent", "")[:30]
+            return f"Post: \"{snippet}...\"" if snippet else str_id
+    except Exception as e:
+        logger.error(f"Error resolving post: {e}")
+
+    return f"Object ID: {str_id}"
+
 # --- Report Management Endpoints --- 
 
 @router.get("/api/reports/pending", response_model=List[ReportResponse], summary="Get Pending User Reports")
@@ -361,44 +442,27 @@ async def get_pending_reports(current_admin: Admin = Depends(get_current_active_
     
     response_reports = []
     for report_doc in pending_reports_docs:
-        reporter_name_str = "N/A"  # Default value
-        reported_object_name_str = "N/A"  # Default value
+        reporter_name_str = "N/A"
+        reported_object_name_str = "N/A"
 
-        # Fetch reporter's name
-        if report_doc.reporter: # This is a PydanticObjectId
-            reporter_user = await User.get(report_doc.reporter) # User.get() takes PydanticObjectId
-            if reporter_user:
-                name_parts = []
-                if reporter_user.first_name: name_parts.append(reporter_user.first_name)
-                if reporter_user.middle_name: name_parts.append(reporter_user.middle_name)
-                if reporter_user.last_name: name_parts.append(reporter_user.last_name)
-                if reporter_user.suffix_name: name_parts.append(reporter_user.suffix_name)
-                name = " ".join(name_parts).strip()
-                reporter_name_str = name if name else f"User ID: {str(reporter_user.id)}"
+        if report_doc.reporter:
+            r_name = await _resolve_user_name(report_doc.reporter)
+            reporter_name_str = r_name if r_name else f"User ID: {str(report_doc.reporter)}"
 
-        # Fetch reported object's name (assuming it's a User)
-        if report_doc.reported_object_id: # This is a PydanticObjectId
-            reported_user = await User.get(report_doc.reported_object_id)
-            if reported_user:
-                name_parts = []
-                if reported_user.first_name: name_parts.append(reported_user.first_name)
-                if reported_user.middle_name: name_parts.append(reported_user.middle_name)
-                if reported_user.last_name: name_parts.append(reported_user.last_name)
-                if reported_user.suffix_name: name_parts.append(reported_user.suffix_name)
-                name = " ".join(name_parts).strip()
-                reported_object_name_str = name if name else f"User ID: {str(reported_user.id)}"
+        if report_doc.reported_object_id:
+            reported_object_name_str = await resolve_reported_object_display_name(report_doc.reported_object_id)
         
-        # Construct ReportResponse using aliased keys for fields that have them
         report_response_entry = ReportResponse(
-            id=report_doc.id,  # 'id' has no alias in ReportResponse
-            reportedObjectId=report_doc.reported_object_id, # Alias is reportedObjectId
-            reporter=report_doc.reporter, # 'reporter' has no alias
+            id=report_doc.id,
+            reportedObjectId=report_doc.reported_object_id,
+            reporter=report_doc.reporter,
             reason=report_doc.reason,
             status=report_doc.status,
-            dateReported=report_doc.date_reported, # Alias is dateReported
-            dateApproved=report_doc.date_approved, # Alias is dateApproved
-            reporterName=reporter_name_str, # Alias is reporterName
-            reportedObjectName=reported_object_name_str # Alias is reportedObjectName
+            imageEvidence=report_doc.image_evidence,
+            dateReported=report_doc.date_reported,
+            dateApproved=report_doc.date_approved,
+            reporterName=reporter_name_str,
+            reportedObjectName=reported_object_name_str
         )
         response_reports.append(report_response_entry)
             
@@ -414,26 +478,11 @@ async def get_all_reports(current_admin: Admin = Depends(get_current_active_admi
         reported_object_name_str = "N/A"
 
         if report_doc.reporter:
-            reporter_user = await User.get(report_doc.reporter)
-            if reporter_user:
-                name_parts = []
-                if reporter_user.first_name: name_parts.append(reporter_user.first_name)
-                if reporter_user.middle_name: name_parts.append(reporter_user.middle_name)
-                if reporter_user.last_name: name_parts.append(reporter_user.last_name)
-                if reporter_user.suffix_name: name_parts.append(reporter_user.suffix_name)
-                name = " ".join(name_parts).strip()
-                reporter_name_str = name if name else f"User ID: {str(reporter_user.id)}"
+            r_name = await _resolve_user_name(report_doc.reporter)
+            reporter_name_str = r_name if r_name else f"User ID: {str(report_doc.reporter)}"
 
         if report_doc.reported_object_id:
-            reported_user = await User.get(report_doc.reported_object_id)
-            if reported_user:
-                name_parts = []
-                if reported_user.first_name: name_parts.append(reported_user.first_name)
-                if reported_user.middle_name: name_parts.append(reported_user.middle_name)
-                if reported_user.last_name: name_parts.append(reported_user.last_name)
-                if reported_user.suffix_name: name_parts.append(reported_user.suffix_name)
-                name = " ".join(name_parts).strip()
-                reported_object_name_str = name if name else f"User ID: {str(reported_user.id)}"
+            reported_object_name_str = await resolve_reported_object_display_name(report_doc.reported_object_id)
         
         report_response_entry = ReportResponse(
             id=report_doc.id,
@@ -441,6 +490,7 @@ async def get_all_reports(current_admin: Admin = Depends(get_current_active_admi
             reporter=report_doc.reporter,
             reason=report_doc.reason,
             status=report_doc.status,
+            imageEvidence=report_doc.image_evidence,
             dateReported=report_doc.date_reported,
             dateApproved=report_doc.date_approved,
             reporterName=reporter_name_str,
@@ -451,7 +501,13 @@ async def get_all_reports(current_admin: Admin = Depends(get_current_active_admi
     return response_reports
 
 @router.put("/api/reports/{report_id}/approve", response_model=ReportValidation, summary="Approve a User Report")
-async def approve_report(report_id: PydanticObjectId, background_tasks: BackgroundTasks, current_admin: Admin = Depends(get_current_active_admin)):
+async def approve_report(
+    report_id: PydanticObjectId, 
+    background_tasks: BackgroundTasks, 
+    action: Optional[str] = Query("none"),
+    days: int = Query(7),
+    current_admin: Admin = Depends(get_current_active_admin)
+):
     report_to_approve = await ReportValidation.get(report_id)
 
     if not report_to_approve:
@@ -462,10 +518,10 @@ async def approve_report(report_id: PydanticObjectId, background_tasks: Backgrou
         logger.warning(f"Approve_report: Report {report_id} already processed. Status: {report_to_approve.status}. Attempt by admin {current_admin.email}")
         raise HTTPException(status_code=400, detail=f"Report {report_id} already processed. Status: {report_to_approve.status}")
 
-    report_to_approve.status = "approved"
+    report_to_approve.status = "warning" if action == "warn" else "approved"
     report_to_approve.date_approved = datetime.utcnow()
     await report_to_approve.save()
-    logger.info(f"Report {report_id} approved by admin {current_admin.email}")
+    logger.info(f"Report {report_id} processed with status {report_to_approve.status} by admin {current_admin.email}")
 
     final_report_entry = FinalReport(
         original_report_id=str(report_to_approve.id), 
@@ -476,46 +532,49 @@ async def approve_report(report_id: PydanticObjectId, background_tasks: Backgrou
         date_approved=report_to_approve.date_approved 
     )
     await final_report_entry.insert()
-    logger.info(f"FinalReport entry created for approved report {report_id}")
+
+    # Execute sanction on reported user if requested
+    if action == "ban":
+        try:
+            await ban_user(str(report_to_approve.reported_object_id), reason=report_to_approve.reason, background_tasks=background_tasks, current_admin=current_admin)
+        except Exception as e:
+            logger.error(f"Failed to ban reported user: {e}")
+    elif action == "suspend":
+        try:
+            await suspend_user(str(report_to_approve.reported_object_id), days=days, reason=report_to_approve.reason, background_tasks=background_tasks, current_admin=current_admin)
+        except Exception as e:
+            logger.error(f"Failed to suspend reported user: {e}")
+    elif action == "warn":
+        reported_user = await User.get(report_to_approve.reported_object_id)
+        if reported_user and reported_user.email:
+            warn_name = f"{reported_user.first_name} {reported_user.last_name or ''}".strip()
+            warn_body = f"""
+            <p>Dear {warn_name},</p>
+            <p>This is an <strong>Official Warning</strong> regarding a report submitted about your activity on Trabahanap.</p>
+            <p>Please review our community guidelines to ensure all interactions remain safe and respectful.</p>
+            <p>Further policy violations may result in account suspension or a permanent ban.</p>
+            <p>Sincerely,<br>The Trabahanap Team</p>
+            """
+            background_tasks.add_task(send_email_async, "Official Warning - Trabahanap Community Guidelines", [reported_user.email], warn_body)
 
     # Send email to REPORTER
     reporter_user = await User.get(report_to_approve.reporter) 
-    if reporter_user:
-        if reporter_user.email:
-            reporter_name = f"{reporter_user.first_name} {reporter_user.last_name if reporter_user.last_name else ''}".strip()
-            email_subject_to_reporter = "Update on Your Recent Report to Trabahanap"
-            email_body_to_reporter = get_report_email_body(
-                reporter_name=reporter_name,
-                report_status="approved",
-                reported_item_info=f"Report ID {str(report_to_approve.id)} concerning object ID {str(report_to_approve.reported_object_id)}" 
-            )
-            background_tasks.add_task(send_email_async, email_subject_to_reporter, [reporter_user.email], email_body_to_reporter)
-        else:
-            logger.warning(f"REPORTER user {reporter_user.id} found, but no email address is present. Cannot send approval notification for report {report_id}.")
-    else:
-        logger.warning(f"REPORTER user with ID {report_to_approve.reporter} not found. Cannot send approval notification for report {report_id}.")
-
-    # Send email to REPORTED USER (if applicable and report is approved)
-    reported_user = await User.get(report_to_approve.reported_object_id)
-    if reported_user:
-        if reported_user.email:
-            reported_user_name = f"{reported_user.first_name} {reported_user.last_name if reported_user.last_name else ''}".strip()
-            email_subject_to_reported_user = "Notification Regarding Your Account/Content on Trabahanap"
-            email_body_to_reported_user = get_notification_for_reported_user_body(
-                reported_user_name=reported_user_name,
-                reported_item_info=f"Content/behavior associated with your account (Ref: {report_to_approve.reported_object_id})",
-                report_reason=report_to_approve.reason
-            )
-            background_tasks.add_task(send_email_async, email_subject_to_reported_user, [reported_user.email], email_body_to_reported_user)
-        else:
-            logger.warning(f"REPORTED USER {reported_user.id} (object ID {report_to_approve.reported_object_id}) found, but no email address is present. Cannot send notification for approved report {report_id}.")
-    else:
-        logger.warning(f"REPORTED USER with ID {report_to_approve.reported_object_id} not found. Cannot send notification for approved report {report_id}. This might be normal if the reported object is not a user or does not have an email.")
+    if reporter_user and reporter_user.email:
+        reporter_name = f"{reporter_user.first_name} {reporter_user.last_name or ''}".strip()
+        email_subject_to_reporter = "Update on Your Report - Trabahanap"
+        action_desc = "account banned" if action == "ban" else f"account suspended for {days} days" if action == "suspend" else "an official warning issued" if action == "warn" else "action taken"
+        email_body_to_reporter = get_report_email_body(
+            reporter_name=reporter_name,
+            report_status="approved",
+            reported_item_info=f"Report regarding {report_to_approve.reported_object_id}",
+            reason=f"Our team reviewed your report and took the following action: {action_desc}."
+        )
+        background_tasks.add_task(send_email_async, email_subject_to_reporter, [reporter_user.email], email_body_to_reporter)
 
     await broadcast_notification(
         type="report_approved", 
-        message=f"Report ID {str(report_to_approve.id)} has been approved.", 
-        details={"reportId": str(report_to_approve.id), "status": "approved"}
+        message=f"Report ID {str(report_to_approve.id)} has been processed.", 
+        details={"reportId": str(report_to_approve.id), "status": report_to_approve.status, "action": action}
     )
 
     return report_to_approve
@@ -566,28 +625,79 @@ async def reject_report(report_id: PydanticObjectId, background_tasks: Backgroun
 async def ban_user(
     user_id: str,
     reason: Optional[str] = Query("Violation of Terms of Service"),
+    background_tasks: BackgroundTasks = None,
     current_admin: Admin = Depends(get_current_active_admin)
 ):
     try:
+        target_email = None
+        user_name = "User"
         user = await User.get(user_id)
         if not user:
             try:
                 user = await User.find_one(User.id == PydanticObjectId(user_id))
             except Exception:
                 user = None
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
         
-        user.account_status = "banned"
-        user.ban_reason = reason
-        await user.save()
+        applicant = await Applicant.get(user_id)
+        if not applicant:
+            try:
+                applicant = await Applicant.find_one(Applicant.id == PydanticObjectId(user_id))
+            except Exception:
+                applicant = None
+
+        if user:
+            target_email = user.email
+            user_name = f"{user.first_name} {user.last_name or ''}".strip()
+            user.account_status = "banned"
+            user.ban_reason = reason
+            await user.save()
+
+        if applicant:
+            target_email = target_email or applicant.email
+            if user_name == "User":
+                user_name = f"{applicant.first_name} {applicant.last_name or ''}".strip()
+            applicant.account_status = "banned"
+            applicant.ban_reason = reason
+            await applicant.save()
+
+        if target_email:
+            if not user:
+                user = await User.find_one(User.email == target_email)
+                if user:
+                    user.account_status = "banned"
+                    user.ban_reason = reason
+                    await user.save()
+            if not applicant:
+                applicant = await Applicant.find_one(Applicant.email == target_email)
+                if applicant:
+                    applicant.account_status = "banned"
+                    applicant.ban_reason = reason
+                    await applicant.save()
+
+        if not user and not applicant:
+            raise HTTPException(status_code=404, detail="User or Applicant not found")
+
+        # Directly sync native Mongo fields `accountStatus`, `isBanned`, `banReason`
+        if target_email:
+            db_user = User.get_motor_collection().database
+            await db_user.users.update_many(
+                {"emailAddress": target_email},
+                {"$set": {"accountStatus": "banned", "isBanned": True, "banReason": reason}}
+            )
+            await db_user.applicants.update_many(
+                {"emailAddress": target_email},
+                {"$set": {"accountStatus": "banned", "isBanned": True, "banReason": reason}}
+            )
+            if background_tasks:
+                email_body = get_sanction_email_body(user_name=user_name, action_type="banned")
+                background_tasks.add_task(send_email_async, "Account Security Update - Trabahanap", [target_email], email_body)
 
         await broadcast_notification(
             type="user_banned",
-            message=f"User {user.email} has been banned.",
-            details={"userId": str(user.id), "reason": reason}
+            message=f"User {target_email} has been banned.",
+            details={"userId": user_id, "reason": reason}
         )
-        return {"status": "success", "message": f"User {user.email} has been banned", "accountStatus": "banned"}
+        return {"status": "success", "message": f"User {target_email} has been banned", "accountStatus": "banned"}
     except Exception as e:
         logger.error(f"Error banning user {user_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error banning user: {str(e)}")
@@ -597,32 +707,87 @@ async def suspend_user(
     user_id: str,
     days: int = Query(7, ge=1, le=365),
     reason: Optional[str] = Query("Temporary suspension due to report"),
+    background_tasks: BackgroundTasks = None,
     current_admin: Admin = Depends(get_current_active_admin)
 ):
     try:
+        suspended_until = datetime.utcnow() + timedelta(days=days)
+        target_email = None
+        user_name = "User"
+
         user = await User.get(user_id)
         if not user:
             try:
                 user = await User.find_one(User.id == PydanticObjectId(user_id))
             except Exception:
                 user = None
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        suspended_until = datetime.utcnow() + timedelta(days=days)
-        user.account_status = "suspended"
-        user.suspend_reason = reason
-        user.suspended_until = suspended_until
-        await user.save()
+
+        applicant = await Applicant.get(user_id)
+        if not applicant:
+            try:
+                applicant = await Applicant.find_one(Applicant.id == PydanticObjectId(user_id))
+            except Exception:
+                applicant = None
+
+        if user:
+            target_email = user.email
+            user_name = f"{user.first_name} {user.last_name or ''}".strip()
+            user.account_status = "suspended"
+            user.suspend_reason = reason
+            user.suspended_until = suspended_until
+            await user.save()
+
+        if applicant:
+            target_email = target_email or applicant.email
+            if user_name == "User":
+                user_name = f"{applicant.first_name} {applicant.last_name or ''}".strip()
+            applicant.account_status = "suspended"
+            applicant.suspend_reason = reason
+            applicant.suspended_until = suspended_until
+            await applicant.save()
+
+        if target_email:
+            if not user:
+                user = await User.find_one(User.email == target_email)
+                if user:
+                    user.account_status = "suspended"
+                    user.suspend_reason = reason
+                    user.suspended_until = suspended_until
+                    await user.save()
+            if not applicant:
+                applicant = await Applicant.find_one(Applicant.email == target_email)
+                if applicant:
+                    applicant.account_status = "suspended"
+                    applicant.suspend_reason = reason
+                    applicant.suspended_until = suspended_until
+                    await applicant.save()
+
+        if not user and not applicant:
+            raise HTTPException(status_code=404, detail="User or Applicant not found")
+
+        # Directly sync native Mongo fields `accountStatus`, `isSuspended`, `suspendReason`, `suspendedUntil`
+        if target_email:
+            db_user = User.get_motor_collection().database
+            await db_user.users.update_many(
+                {"emailAddress": target_email},
+                {"$set": {"accountStatus": "suspended", "isSuspended": True, "suspendReason": reason, "suspendedUntil": suspended_until}}
+            )
+            await db_user.applicants.update_many(
+                {"emailAddress": target_email},
+                {"$set": {"accountStatus": "suspended", "isSuspended": True, "suspendReason": reason, "suspendedUntil": suspended_until}}
+            )
+            if background_tasks:
+                email_body = get_sanction_email_body(user_name=user_name, action_type="suspended", days=days)
+                background_tasks.add_task(send_email_async, "Account Security Update - Trabahanap", [target_email], email_body)
 
         await broadcast_notification(
             type="user_suspended",
-            message=f"User {user.email} suspended for {days} days.",
-            details={"userId": str(user.id), "suspendedUntil": suspended_until.isoformat(), "reason": reason}
+            message=f"User {target_email} suspended for {days} days.",
+            details={"userId": user_id, "suspendedUntil": suspended_until.isoformat(), "reason": reason}
         )
         return {
             "status": "success",
-            "message": f"User {user.email} suspended for {days} days",
+            "message": f"User {target_email} suspended for {days} days",
             "accountStatus": "suspended",
             "suspendedUntil": suspended_until
         }
@@ -633,30 +798,69 @@ async def suspend_user(
 @router.put("/api/users/{user_id}/unban", summary="Unban / Unsuspend a User")
 async def unban_user(
     user_id: str,
+    background_tasks: BackgroundTasks = None,
     current_admin: Admin = Depends(get_current_active_admin)
 ):
     try:
+        target_email = None
+        user_name = "User"
+
         user = await User.get(user_id)
         if not user:
             try:
                 user = await User.find_one(User.id == PydanticObjectId(user_id))
             except Exception:
                 user = None
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        user.account_status = "active"
-        user.ban_reason = None
-        user.suspend_reason = None
-        user.suspended_until = None
-        await user.save()
+
+        applicant = await Applicant.get(user_id)
+        if not applicant:
+            try:
+                applicant = await Applicant.find_one(Applicant.id == PydanticObjectId(user_id))
+            except Exception:
+                applicant = None
+
+        if user:
+            target_email = user.email
+            user_name = f"{user.first_name} {user.last_name or ''}".strip()
+            user.account_status = "active"
+            user.ban_reason = None
+            user.suspend_reason = None
+            user.suspended_until = None
+            await user.save()
+
+        if applicant:
+            target_email = target_email or applicant.email
+            if user_name == "User":
+                user_name = f"{applicant.first_name} {applicant.last_name or ''}".strip()
+            applicant.account_status = "active"
+            applicant.ban_reason = None
+            applicant.suspend_reason = None
+            applicant.suspended_until = None
+            await applicant.save()
+
+        if target_email:
+            db_user = User.get_motor_collection().database
+            await db_user.users.update_many(
+                {"emailAddress": target_email},
+                {"$set": {"accountStatus": "active", "isBanned": False, "isSuspended": False}, "$unset": {"banReason": "", "suspendReason": "", "suspendedUntil": ""}}
+            )
+            await db_user.applicants.update_many(
+                {"emailAddress": target_email},
+                {"$set": {"accountStatus": "active", "isBanned": False, "isSuspended": False}, "$unset": {"banReason": "", "suspendReason": "", "suspendedUntil": ""}}
+            )
+            if background_tasks:
+                email_body = get_sanction_email_body(user_name=user_name, action_type="active")
+                background_tasks.add_task(send_email_async, "Account Restored - Trabahanap", [target_email], email_body)
+
+        if not user and not applicant:
+            raise HTTPException(status_code=404, detail="User or Applicant not found")
 
         await broadcast_notification(
             type="user_unbanned",
-            message=f"User {user.email} status reset to active.",
-            details={"userId": str(user.id)}
+            message=f"User {target_email} status reset to active.",
+            details={"userId": user_id}
         )
-        return {"status": "success", "message": f"User {user.email} is now active", "accountStatus": "active"}
+        return {"status": "success", "message": f"User {target_email} is now active", "accountStatus": "active"}
     except Exception as e:
         logger.error(f"Error unbanning user {user_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error unbanning user: {str(e)}")
@@ -669,30 +873,78 @@ async def get_all_job_requests(
     jobs = await Job.find_all().to_list()
     return jobs
 
-@router.get("/api/job_requests/export/csv", summary="Export Job Requests as CSV")
+def get_plain_rate(budget: Any) -> int:
+    try:
+        b_num = float(str(budget or 0).replace('₱', '').replace(',', '').strip())
+        return int(round(b_num))
+    except Exception:
+        return 0
+
+@router.get("/api/job_requests/export/csv", summary="Export Job Requests as CSV for PESO")
 async def export_job_requests_csv(
-    current_admin: Admin = Depends(get_current_active_admin)
+    category: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None)
 ):
     jobs = await Job.find_all().to_list()
     
+    # Filter by category if provided
+    if category and category.strip() and category.lower() != "all":
+        jobs = [j for j in jobs if (j.category or "").lower() == category.lower()]
+        
+    # Filter by status if provided
+    if status and status.strip() and status.lower() != "all":
+        jobs = [j for j in jobs if (j.job_status.value if hasattr(j.job_status, 'value') else str(j.job_status)).lower() == status.lower()]
+        
+    # Filter by date range if provided
+    if start_date:
+        try:
+            sd = datetime.strptime(start_date, "%Y-%m-%d")
+            jobs = [j for j in jobs if j.date_posted and j.date_posted >= sd]
+        except Exception:
+            pass
+            
+    if end_date:
+        try:
+            ed = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
+            jobs = [j for j in jobs if j.date_posted and j.date_posted <= ed]
+        except Exception:
+            pass
+
     output = io.StringIO()
     writer = csv.writer(output)
     
-    # Write CSV Header
+    # Write PESO-ready CSV Header
     writer.writerow([
-        "Job ID", "Job Title", "Category", "Client ID", "Job Location", 
-        "Budget", "Job Duration", "Job Status", "Applicant Count", "Date Posted"
+        "Job Reference ID", "Job Title", "Category", "Employer Name", "Employer Email", 
+        "Location / Barangay", "Rate (Depends on duration)", "Job Duration", "Job Status", "Applicant Count", "Date Posted"
     ])
     
     for job in jobs:
+        client_name = "N/A"
+        client_email = "N/A"
+        if job.client_id:
+            try:
+                client_user = await User.get(job.client_id)
+                if client_user:
+                    names = [client_user.first_name, client_user.last_name]
+                    client_name = " ".join([n for n in names if n]).strip() or str(job.client_id)
+                    client_email = client_user.email or "N/A"
+            except Exception:
+                client_name = str(job.client_id)
+
+        plain_rate = get_plain_rate(job.budget)
+
         writer.writerow([
             str(job.id),
             job.job_title,
             job.category,
-            str(job.client_id),
+            client_name,
+            client_email,
             job.job_location,
-            job.budget,
-            job.job_duration,
+            plain_rate,
+            job.job_duration or "",
             job.job_status.value if hasattr(job.job_status, 'value') else str(job.job_status),
             job.applicant_count,
             job.date_posted.strftime("%Y-%m-%d %H:%M:%S") if job.date_posted else ""
@@ -702,7 +954,7 @@ async def export_job_requests_csv(
     return Response(
         content=csv_content,
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=job_requests.csv"}
+        headers={"Content-Disposition": f"attachment; filename=peso_job_requests_{datetime.now().strftime('%Y%m%d')}.csv"}
     )
 
 @router.get("/api/job_requests/{job_id}", response_model=Job)

@@ -137,7 +137,10 @@ class Applicant(Document):
     jobs_done: int = Field(default=0, alias="jobsDone")
     joined_at: datetime | None = Field(default_factory=datetime.utcnow, alias="joinedAt")
     verification_status: str | None = Field(default="pending", alias="verificationStatus")
-    
+    account_status: str = Field(default="active", alias="accountStatus")
+    ban_reason: str | None = Field(default=None, alias="banReason")
+    suspend_reason: str | None = Field(default=None, alias="suspendReason")
+    suspended_until: datetime | None = Field(default=None, alias="suspendedUntil")
 
     class Settings:
         name = "applicants"
@@ -203,10 +206,11 @@ class JobSeeker(Document):
 
 
 class ReportValidation(Document):
-    reported_object_id: PydanticObjectId = Field(alias="reportedObjectId")
-    reporter: PydanticObjectId
+    reported_object_id: PydanticObjectId | str = Field(alias="reportedObjectId")
+    reporter: PydanticObjectId | str
     reason: str
-    status: str = Field(default="pending")  # e.g., pending, approved, rejected
+    status: str = Field(default="pending")  # e.g., pending, approved, rejected, warning
+    image_evidence: Optional[str] = Field(default=None, alias="imageEvidence")
     date_reported: datetime = Field(default_factory=datetime.utcnow, alias="dateReported")
     date_approved: Optional[datetime] = Field(default=None, alias="dateApproved")
 
@@ -232,6 +236,7 @@ class ReportResponse(BaseModel):
     reporter: str 
     reason: str
     status: str
+    image_evidence: Optional[str] = Field(default=None, alias="imageEvidence")
     date_reported: datetime = Field(alias="dateReported")
     date_approved: Optional[datetime] = Field(default=None, alias="dateApproved")
     reporter_name: Optional[str] = Field(default=None, alias="reporterName") 

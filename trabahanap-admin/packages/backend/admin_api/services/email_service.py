@@ -113,15 +113,38 @@ def get_notification_for_reported_user_body(reported_user_name: str, reported_it
     """
     return html_content
 
-async def send_email_async(subject: str, recipients: List[EmailStr], body: str):
-    message = MessageSchema(
-        subject=subject,
-        recipients=recipients,
-        body=body,
-        subtype="html"  # Send emails as HTML
-    )
-    try:
-        await fm.send_message(message)
-        print(f"Email sent to {recipients} with subject: {subject}")
-    except Exception as e:
-        print(f"Failed to send email: {e}")
+def get_sanction_email_body(user_name: str, action_type: str, days: Optional[int] = None) -> str:
+    """Generates HTML email body for user account sanction (ban, suspend, unban)."""
+    if action_type == "banned":
+        title = "Notice of Account Ban"
+        content = "<p>Your account on Trabahanap has been <strong>banned</strong> due to a policy or report violation.</p><p>You will no longer be able to log in or use Trabahanap services.</p>"
+    elif action_type == "suspended":
+        title = f"Notice of Account Suspension ({days or 7} Days)"
+        content = f"<p>Your account on Trabahanap has been <strong>suspended for {days or 7} days</strong> due to a user report review.</p><p>During this period, your access to Trabahanap will be temporarily restricted.</p>"
+    else:
+        title = "Account Access Restored"
+        content = "<p>Your account status on Trabahanap has been reset to <strong>Active</strong>.</p><p>You can now log in and resume using all Trabahanap features.</p>"
+
+    html_content = f"""
+    <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; }}
+                .container {{ background-color: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0; }}
+                .header {{ color: #1e3a8a; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2 class="header">{title}</h2>
+                <div class="content">
+                    <p>Dear {user_name},</p>
+                    {content}
+                    <p>If you have any questions, please contact our support team.</p>
+                    <p>Sincerely,<br>The Trabahanap Team</p>
+                </div>
+            </div>
+        </body>
+    </html>
+    """
+    return html_content
