@@ -141,6 +141,13 @@ const SocialFeedScreen = () => {
     string | null
   >(null); // New local image picked by user
 
+  // Report Modal states
+  const [reportModalVisible, setReportModalVisible] = useState<boolean>(false);
+  const [reportingPost, setReportingPost] = useState<Post | null>(null);
+  const [reportReason, setReportReason] = useState<string>("");
+  const [reportEvidence, setReportEvidence] = useState<string | null>(null);
+  const [isSubmittingReport, setIsSubmittingReport] = useState<boolean>(false);
+
   // State for Comment Editing (Restored)
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentTextForComment, setEditingCommentTextForComment] =
@@ -1284,10 +1291,74 @@ const SocialFeedScreen = () => {
 
   const handleReportPost = (post: Post) => {
     setIsOptionsModalVisible(false);
-    Alert.alert(
-      "Report Submitted",
-      "Thank you for helping keep our community safe. Our team will review this post promptly."
-    );
+    setReportingPost(post);
+    setReportReason("");
+    setReportEvidence(null);
+    setReportModalVisible(true);
+  };
+
+  const handlePickReportEvidence = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const base64Str = asset.base64
+          ? `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`
+          : asset.uri;
+        setReportEvidence(base64Str);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to pick screenshot evidence");
+    }
+  };
+
+  const handleSubmitCommunityReport = async () => {
+    if (!reportReason.trim()) {
+      Alert.alert("Required", "Please provide a reason for your report.");
+      return;
+    }
+    if (!reportingPost) return;
+
+    setIsSubmittingReport(true);
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const currentUserId = await AsyncStorage.getItem("currentUserId");
+      await fetch(
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/report`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            reason: reportReason,
+            reportedObjectId: reportingPost.id,
+            reporter: currentUserId,
+            imageEvidence: reportEvidence,
+          }),
+        }
+      );
+      Alert.alert(
+        "Report Submitted",
+        "Thank you for helping keep our community safe. Our admin team will review your report and evidence promptly."
+      );
+      setReportModalVisible(false);
+      setReportingPost(null);
+      setReportReason("");
+      setReportEvidence(null);
+    } catch (error) {
+      console.error("Error submitting report:", error);
+      Alert.alert("Error", "Failed to submit report. Please try again.");
+    } finally {
+      setIsSubmittingReport(false);
+    }
   };
 
   const handleOpenEditModal = (post: Post) => {
@@ -1832,6 +1903,104 @@ const SocialFeedScreen = () => {
             <Text style={styles.successModalText}>
               Post uploaded successfully!
             </Text>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Report Post Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={reportModalVisible}
+        onRequestClose={() => {
+          setReportModalVisible(false);
+          setReportEvidence(null);
+        }}
+      >
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", padding: 20 }}>
+          <View style={{ backgroundColor: "#fff", width: "100%", maxWidth: 360, borderRadius: 16, padding: 20, elevation: 5 }}>
+            <Text style={{ fontSize: 18, fontWeight: "bold", color: "#0F172A", marginBottom: 12, textAlign: "center" }}>
+              Report Community Post
+            </Text>
+            
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: "#CBD5E1",
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 14,
+                height: 90,
+                textAlignVertical: "top",
+                backgroundColor: "#F8FAFC",
+              }}
+              placeholder="Please state why you are reporting this post..."
+              value={reportReason}
+              onChangeText={setReportReason}
+              multiline
+            />
+
+            <Text style={{ fontSize: 13, fontWeight: "600", color: "#475569", marginTop: 12 }}>
+              Attach Screenshot Evidence
+            </Text>
+
+            {reportEvidence ? (
+              <View style={{ marginTop: 8, position: "relative", width: "100%", alignItems: "center" }}>
+                <Image source={{ uri: reportEvidence }} style={{ width: "100%", height: 130, borderRadius: 8, resizeMode: "cover" }} />
+                <TouchableOpacity
+                  style={{ position: "absolute", top: 6, right: 6, backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 12, padding: 4 }}
+                  onPress={() => setReportEvidence(null)}
+                >
+                  <Ionicons name="close" size={18} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "100%",
+                  paddingVertical: 12,
+                  marginTop: 8,
+                  borderWidth: 1.5,
+                  borderColor: "#CBD5E1",
+                  borderStyle: "dashed",
+                  borderRadius: 8,
+                  backgroundColor: "#F8FAFC",
+                }}
+                onPress={handlePickReportEvidence}
+              >
+                <Ionicons name="camera" size={20} color="#0284C7" style={{ marginRight: 6 }} />
+                <Text style={{ color: "#0284C7", fontWeight: "600", fontSize: 14 }}>
+                  Upload Screenshot
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 18 }}>
+              <TouchableOpacity
+                style={{ paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: "#E2E8F0" }}
+                onPress={() => {
+                  setReportModalVisible(false);
+                  setReportEvidence(null);
+                }}
+                disabled={isSubmittingReport}
+              >
+                <Text style={{ color: "#475569", fontWeight: "600" }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: "#EF4444" }}
+                onPress={handleSubmitCommunityReport}
+                disabled={isSubmittingReport}
+              >
+                {isSubmittingReport ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={{ color: "#FFFFFF", fontWeight: "700" }}>Submit Report</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>

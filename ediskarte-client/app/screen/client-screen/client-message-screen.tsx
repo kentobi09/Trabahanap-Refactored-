@@ -42,7 +42,7 @@ import ActionSheet from 'react-native-actionsheet';
 import * as Clipboard from 'expo-clipboard';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
-import { submitReport } from "../../../api/reportService.ts";
+import { submitReport } from "../../../api/reportService";
 import { Audio } from 'expo-av';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -163,7 +163,62 @@ const ChatScreen: React.FC<ChatProps> = ({
   const [isBlockedByJobSeeker, setIsBlockedByJobSeeker] = useState(false);
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [reportReason, setReportReason] = useState("");
+  const [reportEvidence, setReportEvidence] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  const handlePickReportEvidence = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const base64Str = asset.base64
+          ? `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`
+          : asset.uri;
+        setReportEvidence(base64Str);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to pick screenshot evidence");
+    }
+  };
+
+  const handleReportSubmit = async () => {
+    if (!reportReason.trim()) {
+      Alert.alert("Required", "Please provide a reason for your report.");
+      return;
+    }
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const currentUserId = await AsyncStorage.getItem("currentUserId");
+      await axios.post(
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/report`,
+        {
+          reason: reportReason,
+          reportedObjectId: otherParticipantId || chatId,
+          reporter: currentUserId,
+          imageEvidence: reportEvidence,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      Alert.alert(
+        "Report Submitted",
+        "Thank you for your report. Our admin team will review your report and attached evidence promptly."
+      );
+      setReportModalVisible(false);
+      setReportReason("");
+      setReportEvidence(null);
+    } catch (error) {
+      console.error("Error submitting report:", error);
+      Alert.alert("Error", "Failed to submit report. Please try again.");
+    }
+  };
   const [callInfo, setCallInfo] = useState<{ calleeId: string; calleeInfo: any } | null>(null);
 
 
@@ -724,52 +779,8 @@ const ChatScreen: React.FC<ChatProps> = ({
   const handleOpenReportModal = () => {
     setMenuModalVisible(false); // Close main menu modal if open
     setReportReason(""); // Clear previous reason
+    setReportEvidence(null);
     setReportModalVisible(true);
-  };
-
-  const handleReportSubmit = async () => {
-    if (!reportReason.trim()) {
-      Alert.alert(
-        "Report not submitted",
-        "Please provide a reason for the report."
-      );
-      return;
-    }
-    // Assuming otherParticipantId is the ID of the user to be reported
-    if (!otherParticipantId) {
-      Alert.alert(
-        "Report not submitted",
-        "Cannot identify the user to report."
-      );
-      console.error("otherParticipantId is missing for report");
-      return;
-    }
-    if (!currentUserId) {
-      Alert.alert(
-        "Report not submitted",
-        "Current user ID not found. Cannot submit report."
-      );
-      return;
-    }
-
-    try {
-      await submitReport(
-        currentUserId as string,
-        otherParticipantId as string,
-        reportReason
-      );
-      Alert.alert(
-        "Report Submitted",
-        "Thank you for your report. We will review it shortly."
-      );
-      setReportModalVisible(false);
-    } catch (error: any) {
-      console.error("Failed to submit report:", error);
-      Alert.alert(
-        "Report Failed",
-        error.message || "Could not submit the report. Please try again."
-      );
-    }
   };
 
   const getPendingMenuOptions = (): MenuOption[] => [
@@ -1990,7 +2001,8 @@ const ChatScreen: React.FC<ChatProps> = ({
         transparent={true}
         visible={reportModalVisible}
         onRequestClose={() => {
-          setReportModalVisible(!reportModalVisible);
+          setReportModalVisible(false);
+          setReportEvidence(null);
         }}
       >
         <View style={styles.centeredView}>
@@ -1998,15 +2010,57 @@ const ChatScreen: React.FC<ChatProps> = ({
             <Text style={styles.modalText}>Report User</Text>
             <TextInput
               style={styles.reportInput}
-              placeholder="Please provide a reason for reporting..."
+              placeholder="Please provide a clear reason for reporting..."
               value={reportReason}
               onChangeText={setReportReason}
               multiline
             />
+
+            <Text style={{ fontSize: 13, fontWeight: "600", color: "#475569", marginTop: 10, alignSelf: "flex-start" }}>
+              Screenshot / Image Evidence (Recommended)
+            </Text>
+
+            {reportEvidence ? (
+              <View style={{ marginTop: 8, position: "relative", width: "100%", alignItems: "center" }}>
+                <Image source={{ uri: reportEvidence }} style={{ width: "100%", height: 140, borderRadius: 8, resizeMode: "cover" }} />
+                <TouchableOpacity
+                  style={{ position: "absolute", top: 6, right: 6, backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 12, padding: 4 }}
+                  onPress={() => setReportEvidence(null)}
+                >
+                  <Ionicons name="close" size={18} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "100%",
+                  paddingVertical: 12,
+                  marginTop: 8,
+                  borderWidth: 1.5,
+                  borderColor: "#CBD5E1",
+                  borderStyle: "dashed",
+                  borderRadius: 8,
+                  backgroundColor: "#F8FAFC",
+                }}
+                onPress={handlePickReportEvidence}
+              >
+                <Ionicons name="camera" size={20} color="#0284C7" style={{ marginRight: 6 }} />
+                <Text style={{ color: "#0284C7", fontWeight: "600", fontSize: 14 }}>
+                  Attach Screenshot Evidence
+                </Text>
+              </TouchableOpacity>
+            )}
+
             <View style={styles.modalButtonContainer}>
               <Button
                 title="Cancel"
-                onPress={() => setReportModalVisible(false)}
+                onPress={() => {
+                  setReportModalVisible(false);
+                  setReportEvidence(null);
+                }}
                 color="#777"
               />
               <Button
