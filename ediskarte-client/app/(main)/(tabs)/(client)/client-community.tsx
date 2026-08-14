@@ -539,10 +539,59 @@ const SocialFeedScreen = () => {
     return userName;
   };
 
-  async () => {
-    const { data } = await decodeToken();
-    const profileImage = data.profileImage;
-    return profileImage;
+  const renderPostMedia = (postImageProp: any) => {
+    if (!postImageProp) return null;
+
+    let images: string[] = [];
+    if (Array.isArray(postImageProp)) {
+      images = postImageProp;
+    } else if (typeof postImageProp === "string" && postImageProp.trim()) {
+      const trimmed = postImageProp.trim();
+      if (trimmed.startsWith("[")) {
+        try {
+          images = JSON.parse(trimmed);
+        } catch (e) {
+          images = [trimmed];
+        }
+      } else if (trimmed.includes(",")) {
+        images = trimmed.split(",").map((s) => s.trim());
+      } else {
+        images = [trimmed];
+      }
+    }
+
+    if (images.length === 0) return null;
+
+    const resolveUri = (img: string) =>
+      img.startsWith("http") || img.startsWith("data:")
+        ? img
+        : `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${img.replace(/^\\+|^\\+/, "")}`;
+
+    if (images.length === 1) {
+      const uri = resolveUri(images[0]);
+      return (
+        <TouchableOpacity onPress={() => setPreviewImage(uri)} style={{ marginTop: 8 }}>
+          <Image source={{ uri }} style={styles.postImage} resizeMode="cover" />
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 8 }}>
+        {images.map((img, index) => {
+          const uri = resolveUri(img);
+          return (
+            <TouchableOpacity key={index} onPress={() => setPreviewImage(uri)} style={{ marginRight: 8 }}>
+              <Image
+                source={{ uri }}
+                style={{ width: 220, height: 200, borderRadius: 8 }}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    );
   };
 
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
@@ -1212,15 +1261,7 @@ const SocialFeedScreen = () => {
 
         <Text style={styles.content}>{item.postContent}</Text>
 
-        {imageUrl && (
-          <TouchableOpacity onPress={() => setPreviewImage(imageUrl)}>
-            <Image
-              source={{ uri: imageUrl }}
-              style={styles.postImage}
-              resizeMode="cover"
-            />
-          </TouchableOpacity>
-        )}
+        {renderPostMedia(item.postImage)}
 
         <View style={styles.stats}>
           <Text style={styles.statsText}>
@@ -1563,7 +1604,23 @@ const SocialFeedScreen = () => {
               autoFocus
             />
 
-            {selectedImage && (
+            {selectedImages.length > 0 ? (
+              <View style={{ marginVertical: 12 }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {selectedImages.map((imgUri, index) => (
+                    <View key={index} style={{ marginRight: 10, position: "relative" }}>
+                      <Image source={{ uri: imgUri }} style={{ width: 140, height: 140, borderRadius: 8 }} />
+                      <TouchableOpacity
+                        style={{ position: "absolute", top: 4, right: 4, backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 12, padding: 2 }}
+                        onPress={() => removeSelectedImage(index)}
+                      >
+                        <Ionicons name="close-circle" size={22} color="#fff" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            ) : selectedImage ? (
               <View style={styles.selectedImageContainer}>
                 <Image
                   source={{ uri: selectedImage }}
@@ -1576,7 +1633,7 @@ const SocialFeedScreen = () => {
                   <Ionicons name="close-circle" size={24} color="#fff" />
                 </TouchableOpacity>
               </View>
-            )}
+            ) : null}
           </ScrollView>
 
           <View style={styles.postOptions}>
