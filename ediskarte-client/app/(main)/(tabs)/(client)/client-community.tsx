@@ -539,6 +539,21 @@ const SocialFeedScreen = () => {
     return userName;
   };
 
+  const [previewImagesList, setPreviewImagesList] = useState<string[]>([]);
+  const [previewImageIndex, setPreviewImageIndex] = useState<number>(0);
+
+  const openImagePreview = (images: string[], initialIndex: number = 0) => {
+    setPreviewImagesList(images);
+    setPreviewImageIndex(initialIndex);
+    setPreviewImage(images[initialIndex] || null);
+  };
+
+  const closeImagePreview = () => {
+    setPreviewImage(null);
+    setPreviewImagesList([]);
+    setPreviewImageIndex(0);
+  };
+
   const renderPostMedia = (postImageProp: any) => {
     if (!postImageProp) return null;
 
@@ -567,11 +582,12 @@ const SocialFeedScreen = () => {
         ? img
         : `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${img.replace(/^\\+|^\\+/, "")}`;
 
-    if (images.length === 1) {
-      const uri = resolveUri(images[0]);
+    const resolvedUris = images.map(resolveUri);
+
+    if (resolvedUris.length === 1) {
       return (
-        <TouchableOpacity onPress={() => setPreviewImage(uri)} style={{ marginTop: 8 }}>
-          <Image source={{ uri }} style={styles.postImage} resizeMode="cover" />
+        <TouchableOpacity onPress={() => openImagePreview(resolvedUris, 0)} style={{ marginTop: 8 }}>
+          <Image source={{ uri: resolvedUris[0] }} style={styles.postImage} resizeMode="cover" />
         </TouchableOpacity>
       );
     }
@@ -587,13 +603,12 @@ const SocialFeedScreen = () => {
           style={{ width: "100%", height: 240 }}
           contentContainerStyle={{ alignItems: "center" }}
         >
-          {images.map((img, index) => {
-            const uri = resolveUri(img);
+          {resolvedUris.map((uri, index) => {
             return (
               <TouchableOpacity
                 key={index}
                 activeOpacity={0.9}
-                onPress={() => setPreviewImage(uri)}
+                onPress={() => openImagePreview(resolvedUris, index)}
                 style={{
                   width: cardWidth,
                   height: 240,
@@ -619,7 +634,7 @@ const SocialFeedScreen = () => {
                   }}
                 >
                   <Text style={{ color: "#ffffff", fontSize: 12, fontWeight: "600" }}>
-                    {index + 1}/{images.length}
+                    {index + 1}/{resolvedUris.length}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -2116,22 +2131,87 @@ const SocialFeedScreen = () => {
       </Modal>
 
       <Modal
-        visible={!!previewImage}
+        visible={!!previewImage || previewImagesList.length > 0}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setPreviewImage(null)}
+        onRequestClose={closeImagePreview}
       >
-        <TouchableOpacity 
-          style={styles.imagePreviewModalContainer}
-          activeOpacity={1}
-          onPress={() => setPreviewImage(null)}
-        >
-          <Image 
-            source={{ uri: previewImage || '' }} 
-            style={styles.imagePreviewModalImage}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
+        <View style={styles.imagePreviewModalContainer}>
+          <TouchableOpacity
+            style={{
+              position: "absolute",
+              top: Platform.OS === "ios" ? 50 : 30,
+              right: 20,
+              zIndex: 100,
+              backgroundColor: "rgba(0,0,0,0.6)",
+              borderRadius: 20,
+              padding: 8,
+            }}
+            onPress={closeImagePreview}
+          >
+            <Ionicons name="close" size={26} color="#FFFFFF" />
+          </TouchableOpacity>
+
+          {previewImagesList.length > 1 ? (
+            <View style={{ flex: 1, width: "100%", justifyContent: "center", alignItems: "center" }}>
+              <ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                contentOffset={{ x: previewImageIndex * Dimensions.get("window").width, y: 0 }}
+                style={{ width: Dimensions.get("window").width, height: Dimensions.get("window").height }}
+                onMomentumScrollEnd={(e) => {
+                  const idx = Math.round(e.nativeEvent.contentOffset.x / Dimensions.get("window").width);
+                  setPreviewImageIndex(idx);
+                }}
+              >
+                {previewImagesList.map((uri, idx) => (
+                  <View
+                    key={idx}
+                    style={{
+                      width: Dimensions.get("window").width,
+                      height: Dimensions.get("window").height,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Image
+                      source={{ uri }}
+                      style={{ width: "100%", height: "80%" }}
+                      resizeMode="contain"
+                    />
+                  </View>
+                ))}
+              </ScrollView>
+              <View
+                style={{
+                  position: "absolute",
+                  bottom: 40,
+                  backgroundColor: "rgba(0,0,0,0.75)",
+                  paddingHorizontal: 16,
+                  paddingVertical: 6,
+                  borderRadius: 16,
+                }}
+              >
+                <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "600" }}>
+                  {previewImageIndex + 1} / {previewImagesList.length}
+                </Text>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.imagePreviewModalContainer}
+              activeOpacity={1}
+              onPress={closeImagePreview}
+            >
+              <Image
+                source={{ uri: previewImage || (previewImagesList[0] || "") }}
+                style={styles.imagePreviewModalImage}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          )}
+        </View>
       </Modal>
     </SafeAreaView>
   );
