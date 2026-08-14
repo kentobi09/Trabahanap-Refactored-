@@ -50,19 +50,19 @@ export const login = async (req, res) => {
     if (nativeUser) {
       if (nativeUser.accountStatus === "banned" || nativeUser.isBanned === true) {
         return res.status(403).json({
-          error: "Account Banned",
-          accountStatus: "banned",
-          banReason: nativeUser.banReason || "Violation of platform terms and conditions.",
+          error: "Account banned",
+          message: "Account banned",
+          accountStatus: "banned"
         });
       }
       if (nativeUser.accountStatus === "suspended" || nativeUser.isSuspended === true) {
         const now = new Date();
         if (!nativeUser.suspendedUntil || new Date(nativeUser.suspendedUntil) > now) {
           return res.status(403).json({
-            error: "Account Suspended",
+            error: "Account suspended",
+            message: "Account suspended",
             accountStatus: "suspended",
-            suspendReason: nativeUser.suspendReason || "Temporary suspension due to user report.",
-            suspendedUntil: nativeUser.suspendedUntil || null,
+            suspendedUntil: nativeUser.suspendedUntil || null
           });
         }
       }

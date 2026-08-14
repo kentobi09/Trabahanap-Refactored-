@@ -1069,21 +1069,47 @@ export const getUsersWhoBlockedMe = async (req, res) => {
 
 export const reportValidation = async (req, res) => {
   try {
-    console.log(req.body);
-    const { reason, reportedObjectId, reporter } = req.body;
+    const { reason, reportedObjectId, reporter, imageEvidence } = req.body;
     const db = await getNativeDb();
+
+    let evidencePath = null;
+
+    if (req.file) {
+      evidencePath = req.file.path.replace(/\\/g, "/");
+    } else if (imageEvidence && typeof imageEvidence === "string") {
+      if (imageEvidence.startsWith("data:image")) {
+        const matches = imageEvidence.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          const ext = matches[1] === "jpeg" ? "jpg" : matches[1];
+          const base64Data = matches[2];
+          const dir = "assets/report_evidence";
+          if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+          }
+          const filename = `evidence-${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`;
+          const filePath = `${dir}/${filename}`;
+          fs.writeFileSync(filePath, Buffer.from(base64Data, "base64"));
+          evidencePath = filePath;
+        } else {
+          evidencePath = imageEvidence;
+        }
+      } else {
+        evidencePath = imageEvidence;
+      }
+    }
 
     await db.collection("report_validation").insertOne({
       reason,
       reportedObjectId,
       reporter,
+      imageEvidence: evidencePath,
       status: "pending",
       dateReported: new Date(),
     });
 
-    res.status(200).json({ message: "Report validated successfully" });
+    res.status(200).json({ message: "Report submitted successfully" });
   } catch (error) {
-    console.error("Error in reportValidation:", error);
+    console.error("Error submitting report:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

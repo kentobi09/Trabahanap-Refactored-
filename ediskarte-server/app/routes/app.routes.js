@@ -149,6 +149,15 @@ router.use(
     },
   })
 );
+router.use(
+  "/assets/report_evidence",
+  express.static(path.join(__dirname, "../assets/report_evidence"), {
+    maxAge: "1d",
+    setHeaders: (res) => {
+      res.set("Cross-Origin-Resource-Policy", "cross-origin");
+    },
+  })
+);
 
 router.get("/api/search/jobseekers", authenticateToken, searchJobSeekers);
 router.get("/api/users/all", getAllUsers);
