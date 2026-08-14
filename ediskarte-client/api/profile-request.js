@@ -236,3 +236,25 @@ export async function uploadCredential(
   // Start the upload process with retry logic
   return attemptUpload();
 }
+
+export async function deleteCredential(userId, credentialPath) {
+  const token = await AsyncStorage.getItem("token");
+
+  if (!token) {
+    throw new Error("Authentication token not found.");
+  }
+
+  const response = await axios.delete(
+    `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/profile/credential/${userId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      data: {
+        credentialPath,
+      },
+    }
+  );
+
+  return response.data;
+}

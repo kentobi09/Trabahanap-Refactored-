@@ -538,32 +538,48 @@ const SocialFeedScreen = () => {
     return userName;
   };
 
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+
   const pickImage = async () => {
     try {
+      const remainingSlots = 5 - selectedImages.length;
+      if (remainingSlots <= 0) {
+        Alert.alert("Limit Reached", "You can attach a maximum of 5 images.");
+        return;
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1,
+        allowsMultipleSelection: true,
+        selectionLimit: remainingSlots,
+        quality: 0.8,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setSelectedImage(result.assets[0].uri);
+        const newUris = result.assets.map((a) => a.uri);
+        setSelectedImages((prev) => [...prev, ...newUris].slice(0, 5));
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to select image");
+      Alert.alert("Error", "Failed to select images");
     }
   };
 
+  const removeSelectedImage = (index: number) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleAddPost = async () => {
-    if (newPostText.trim() === "" && !selectedImage) return;
+    if (newPostText.trim() === "" && selectedImages.length === 0 && !selectedImage) return;
     setIsPosting(true);
 
-    const newPost: Post = {
+    const imagesToUpload = selectedImages.length > 0 ? selectedImages : (selectedImage ? [selectedImage] : []);
+
+    const newPost: any = {
       id: Date.now().toString(),
       username: await getUsername(),
       postContent: newPostText,
-      postImage: selectedImage || "",
+      postImages: imagesToUpload,
+      postImage: imagesToUpload[0] || "",
       likeCount: 0,
       commentCount: 0,
       createdAt: Date.now().toString(),
@@ -574,6 +590,7 @@ const SocialFeedScreen = () => {
       refetch();
       setNewPostText("");
       setSelectedImage(null);
+      setSelectedImages([]);
       setShowCreatePost(false);
       setShowSuccessModal(true);
       setTimeout(() => {
