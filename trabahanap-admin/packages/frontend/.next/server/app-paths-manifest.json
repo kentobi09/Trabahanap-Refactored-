@@ -1,0 +1,6 @@
+{
+  "/dashboard/user-management/page": "app/dashboard/user-management/page.js",
+  "/dashboard/user-reports/page": "app/dashboard/user-reports/page.js",
+  "/dashboard/job-requests/page": "app/dashboard/job-requests/page.js",
+  "/dashboard/verification-requests/page": "app/dashboard/verification-requests/page.js"
+}
