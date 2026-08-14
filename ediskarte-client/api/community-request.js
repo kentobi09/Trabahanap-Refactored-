@@ -18,18 +18,28 @@ export async function AddCommunityPost(params) {
   formData.append("likeCount", params.likeCount);
   formData.append("commentCount", params.commentCount);
 
+  const isLocalFileUri = (uri) =>
+    typeof uri === "string" &&
+    (uri.startsWith("file://") ||
+      uri.startsWith("content://") ||
+      uri.startsWith("ph://") ||
+      uri.startsWith("data:") ||
+      uri.startsWith("blob:"));
+
   if (params.postImages && Array.isArray(params.postImages) && params.postImages.length > 0) {
     params.postImages.forEach((imgUri, index) => {
-      const filename = imgUri.split("/").pop() || `image_${index}.jpg`;
-      const ext = filename.split(".").pop() || "jpg";
-      const mimeType = mime.lookup(filename) || `image/${ext}`;
-      formData.append("postImage", {
-        uri: imgUri,
-        name: filename,
-        type: mimeType,
-      });
+      if (isLocalFileUri(imgUri)) {
+        const filename = imgUri.split("/").pop() || `image_${index}.jpg`;
+        const ext = filename.split(".").pop() || "jpg";
+        const mimeType = mime.lookup(filename) || `image/${ext}`;
+        formData.append("postImage", {
+          uri: imgUri,
+          name: filename,
+          type: mimeType,
+        });
+      }
     });
-  } else if (params.postImage) {
+  } else if (params.postImage && isLocalFileUri(params.postImage)) {
     const filename = params.postImage.split("/").pop() || "image.jpg";
     const ext = filename.split(".").pop() || "jpg";
     const mimeType = mime.lookup(filename) || `image/${ext}`;
