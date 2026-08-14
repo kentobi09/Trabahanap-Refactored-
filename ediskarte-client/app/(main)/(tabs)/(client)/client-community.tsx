@@ -576,21 +576,57 @@ const SocialFeedScreen = () => {
       );
     }
 
+    const cardWidth = Dimensions.get("window").width - 32;
+
     return (
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 8 }}>
-        {images.map((img, index) => {
-          const uri = resolveUri(img);
-          return (
-            <TouchableOpacity key={index} onPress={() => setPreviewImage(uri)} style={{ marginRight: 8 }}>
-              <Image
-                source={{ uri }}
-                style={{ width: 220, height: 200, borderRadius: 8 }}
-                resizeMode="cover"
-              />
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+      <View style={{ marginVertical: 8, height: 240 }}>
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          style={{ width: "100%", height: 240 }}
+          contentContainerStyle={{ alignItems: "center" }}
+        >
+          {images.map((img, index) => {
+            const uri = resolveUri(img);
+            return (
+              <TouchableOpacity
+                key={index}
+                activeOpacity={0.9}
+                onPress={() => setPreviewImage(uri)}
+                style={{
+                  width: cardWidth,
+                  height: 240,
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  backgroundColor: "#f1f5f9",
+                }}
+              >
+                <Image
+                  source={{ uri }}
+                  style={{ width: "100%", height: "100%" }}
+                  resizeMode="cover"
+                />
+                <View
+                  style={{
+                    position: "absolute",
+                    bottom: 10,
+                    right: 10,
+                    backgroundColor: "rgba(0,0,0,0.65)",
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                    borderRadius: 12,
+                  }}
+                >
+                  <Text style={{ color: "#ffffff", fontSize: 12, fontWeight: "600" }}>
+                    {index + 1}/{images.length}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
     );
   };
 
