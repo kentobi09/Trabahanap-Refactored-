@@ -917,21 +917,40 @@ const UtilityWorkerProfile: React.FC = () => {
                         data={currentCredentials}
                         keyExtractor={(_, index) => index.toString()}
                         renderItem={({ item, index }) => (
-                          <TouchableOpacity 
-                            style={styles.credentialItem}
-                            onPress={() => handleImagePreview(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item}`)}
-                          >
-                            <Image
-                              source={{
-                                uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item}`,
+                          <View style={[styles.credentialItem, { position: "relative" }]}>
+                            <TouchableOpacity 
+                              onPress={() => handleImagePreview(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item}`)}
+                            >
+                              <Image
+                                source={{
+                                  uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item}`,
+                                }}
+                                style={styles.credentialImage}
+                                resizeMode="contain"
+                              />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={{
+                                position: "absolute",
+                                top: 6,
+                                right: 6,
+                                backgroundColor: "rgba(239,68,68,0.95)",
+                                borderRadius: 14,
+                                width: 28,
+                                height: 28,
+                                justifyContent: "center",
+                                alignItems: "center",
+                                elevation: 5,
+                                zIndex: 10,
                               }}
-                              style={styles.credentialImage}
-                              resizeMode="contain"
-                            />
-                            <View style={styles.imageOverlay}>
-                              <Text style={styles.replaceText}>Tap to view</Text>
-                            </View>
-                          </TouchableOpacity>
+                              onPress={() => {
+                                setCredentialToDelete(item);
+                                setDeleteConfirmModalVisible(true);
+                              }}
+                            >
+                              <Ionicons name="trash" size={15} color="#FFFFFF" />
+                            </TouchableOpacity>
+                          </View>
                         )}
                         contentContainerStyle={styles.credentialsList}
                         onMomentumScrollEnd={(event) => {
@@ -1000,39 +1019,18 @@ const UtilityWorkerProfile: React.FC = () => {
                     data={currentCredentials}
                     keyExtractor={(_, index) => index.toString()}
                     renderItem={({ item, index }) => (
-                      <View style={[styles.credentialItem, { position: "relative" }]}>
-                        <TouchableOpacity 
-                          onPress={() => handleImagePreview(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item}`)}
-                        >
-                          <Image
-                            source={{
-                              uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item}`,
-                            }}
-                            style={styles.credentialImage}
-                            resizeMode="contain"
-                          />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={{
-                            position: "absolute",
-                            top: 6,
-                            right: 6,
-                            backgroundColor: "rgba(239,68,68,0.9)",
-                            borderRadius: 14,
-                            width: 28,
-                            height: 28,
-                            justifyContent: "center",
-                            alignItems: "center",
-                            elevation: 4,
+                      <TouchableOpacity 
+                        style={styles.credentialItem}
+                        onPress={() => handleImagePreview(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item}`)}
+                      >
+                        <Image
+                          source={{
+                            uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item}`,
                           }}
-                          onPress={() => {
-                            setCredentialToDelete(item);
-                            setDeleteConfirmModalVisible(true);
-                          }}
-                        >
-                          <Ionicons name="trash" size={15} color="#FFFFFF" />
-                        </TouchableOpacity>
-                      </View>
+                          style={styles.credentialImage}
+                          resizeMode="contain"
+                        />
+                      </TouchableOpacity>
                     )}
                     contentContainerStyle={styles.credentialsList}
                     onMomentumScrollEnd={(event) => {
