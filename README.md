@@ -1,8 +1,8 @@
 # 🚀 TrabaHanap / eDiskarte Refactored Monorepo
 
-This repository contains the refactored, production-ready version of the **eDiskarte & TrabaHanap Admin** platform.
+This repository contains the refactored, standalone-MongoDB-resilient version of the **eDiskarte & TrabaHanap Admin** platform.
 
-It features a fully containerized Docker architecture supporting both the **User Mobile/Web Application** and the **Admin Management Portal**, backed by MongoDB.
+It has been fully audited to run natively on standard **standalone MongoDB** (without requiring replica sets or `rs0` configurations), using native MongoDB driver queries to bypass Prisma Client's standalone MongoDB limitations.
 
 ---
 
@@ -10,7 +10,7 @@ It features a fully containerized Docker architecture supporting both the **User
 
 | Service Name | Description | Tech Stack | Exposed Port |
 | :--- | :--- | :--- | :--- |
-| **`mongodb`** | Primary Database (Replica set `rs0` enabled) | MongoDB 7.0 | `27017` |
+| **`mongodb`** | Standalone Primary Database | MongoDB 7.0 | `27017` |
 | **`ediskarte-server`** | User Backend API & Socket.IO server | Node.js (Express & Prisma) | `3000` |
 | **`ediskarte-client-web`** | User Web / Expo Development Server | Expo React Native Web | `8081` |
 | **`trabahanap-admin-backend`** | Admin Dashboard Backend API | Python (FastAPI & Beanie ODM) | `8000` |
@@ -18,87 +18,22 @@ It features a fully containerized Docker architecture supporting both the **User
 
 ---
 
-## 🐳 Docker Deployment Guide (Recommended)
+## 🛠️ How to Run the Stack Natively (Recommended for Local Dev & Android Testing)
 
-### 1. Run Everything (Unified Stack)
-To build and start all User and Admin services concurrently:
-```bash
-docker compose up --build -d
-```
+Running services directly on your host machine is the recommended method for development because it connects to your existing local MongoDB database (with all real accounts and data) and allows your physical Android phone to connect over Wi-Fi via your fixed PC IP.
 
-Check the status of running containers:
-```bash
-docker compose ps
-```
-
-View real-time logs for all services:
-```bash
-docker compose logs -f
-```
-
-Stop all services:
-```bash
-docker compose down
-```
-
----
-
-### 2. Selective Service Execution (Running User or Admin Separately)
-
-If you prefer to run **only specific parts** (e.g., only the User backend or only the Admin portal to save system resources), Docker Compose allows starting individual services on demand:
-
-#### Option A: Run Only User Server + Database
-```bash
-docker compose up --build -d mongodb mongo-init ediskarte-server
-```
-
-#### Option B: Run Only Admin Portal + Database
-```bash
-docker compose up --build -d mongodb mongo-init trabahanap-admin-backend trabahanap-admin-frontend
-```
-
-#### Option C: Stop a Specific Component
-```bash
-docker compose stop trabahanap-admin-frontend
-```
-
----
-
-## 📱 Mobile App (Expo / Android) Connection
-
-To connect a physical Android device to the backend API running on your PC or inside Docker:
-
-### 1. Configure Client `.env`
-Ensure `ediskarte-client/.env` contains:
-```env
-EXPO_PUBLIC_IP_ADDRESS=127.0.0.1
-EXPO_PUBLIC_API_URL=http://127.0.0.1:3000
-```
-
-### 2. Establish USB ADB Reverse Tunnels
-Connect your Android device via USB (with USB Debugging enabled) and run:
-```powershell
-adb reverse tcp:8081 tcp:8081
-adb reverse tcp:3000 tcp:3000
-```
-
-### 3. Launch Dev Client on Mobile
-1. Open the **eDiskarte** development app on your phone.
-2. Enter `http://localhost:8081` and tap **Connect**.
-
----
-
-## 🛠️ Manual / Native Local Development
-
-If you prefer running services directly without Docker:
+### Prerequisites
+- Node.js (v20+)
+- Python (v3.11+)
+- Native MongoDB Service running on `localhost:27017`
 
 ### 1. User Backend (Express)
 ```bash
 cd ediskarte-server/app
 npm install
-npm run dev
+node index.js
 ```
-*API running on `http://localhost:3000`*
+*Server running on `http://localhost:3000` & `http://192.168.1.15:3000`*
 
 ### 2. Admin Backend (FastAPI)
 ```bash
@@ -112,9 +47,43 @@ python -m uvicorn admin_api.main:app --host 0.0.0.0 --port 8000
 ```bash
 cd trabahanap-admin/node_modules/@trabahanap-admin/frontend
 npm install
-npm run dev
+npm run dev -- --host 0.0.0.0 --port 5173
 ```
 *UI Dashboard running on `http://localhost:5173`*
+
+---
+
+## 📱 Mobile App (Android Wi-Fi Connection)
+
+### 1. Configure Client Environment
+Update `ediskarte-client/.env` with your PC's fixed Wi-Fi IP address:
+```env
+EXPO_PUBLIC_IP_ADDRESS=192.168.1.15
+EXPO_PUBLIC_API_URL=http://192.168.1.15:3000
+```
+
+### 2. Connect Mobile App
+Open the **eDiskarte** custom development client app on your Android phone connected to the same Wi-Fi network. It will automatically communicate with `http://192.168.1.15:3000`.
+
+---
+
+## 🐳 Docker Deployment Guide
+
+If deploying to a server environment or running isolated containers:
+
+### 1. Start All Services
+```bash
+docker compose up --build -d
+```
+
+### 2. Selective Execution (Targeted Services)
+```bash
+# Run only User backend and DB
+docker compose up -d mongodb ediskarte-server
+
+# Run only Admin portal and DB
+docker compose up -d mongodb trabahanap-admin-backend trabahanap-admin-frontend
+```
 
 ---
 
