@@ -180,7 +180,6 @@ class JobTag(str, enum.Enum):
 
 
 class ApplicantJobSeeker(Document):
-    id: PydanticObjectId | str | None = Field(default=None, alias="_id")
     applicantId: str | None = Field(default=None)
     joinedAt: datetime | None = Field(default=None)
     availability: bool = Field(default=True)
@@ -244,7 +243,7 @@ class ReportResponse(BaseModel):
 
     @field_validator('id', 'reported_object_id', 'reporter', mode='before')
     @classmethod
-    def _convert_ids_to_str(cls, v):
+    def convert_ids_to_str(cls, v):
         if isinstance(v, PydanticObjectId):
             return str(v)
         if v is None:
