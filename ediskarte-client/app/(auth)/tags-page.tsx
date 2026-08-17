@@ -53,10 +53,34 @@ function camelCase(str: String) {
     .replace(/\s+/g, "");
 }
 
+import { fetchPublicJobTags } from "@/api/profile-request";
+
+const defaultJobPreferences: Record<string, string[]> = JOB_PREFERENCES;
+
 export default function JobPreferenceScreen() {
   const router = useRouter();
   const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
   const [otherProfession, setOtherProfession] = useState("");
+  const [jobPreferences, setJobPreferences] = useState<Record<string, string[]>>(defaultJobPreferences);
+
+  useEffect(() => {
+    fetchPublicJobTags()
+      .then((tags) => {
+        if (Array.isArray(tags) && tags.length > 0) {
+          const categoryMap: Record<string, string[]> = {};
+          tags.forEach((t: any) => {
+            const catName = t.category || "General";
+            if (!categoryMap[catName]) categoryMap[catName] = [];
+            const displayLabel = t.label || t.tagId;
+            if (!categoryMap[catName].includes(displayLabel)) {
+              categoryMap[catName].push(displayLabel);
+            }
+          });
+          setJobPreferences(categoryMap);
+        }
+      })
+      .catch((e) => console.log("Error fetching job tags in tags-page:", e));
+  }, []);
 
   useEffect(() => {
     const userType = getSignUpUserType();
@@ -140,7 +164,7 @@ export default function JobPreferenceScreen() {
           Find the Perfect Role That Matches Your Skills & Interests
         </Text>
 
-        {Object.entries(JOB_PREFERENCES).map(([section, preferences]) =>
+        {Object.entries(jobPreferences).map(([section, preferences]) =>
           renderPreferenceSection(section, preferences)
         )}
 

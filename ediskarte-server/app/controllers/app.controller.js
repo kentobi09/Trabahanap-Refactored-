@@ -1161,3 +1161,21 @@ export const getAllUsers = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch users" });
   }
 };
+
+export const getPublicJobTags = async (req, res) => {
+  try {
+    const db = await getNativeDb();
+    const tags = await db.collection("job_tags").find({ isActive: { $ne: false } }).toArray();
+    const formatted = tags.map(t => ({
+      id: t._id ? t._id.toString() : t.tagId,
+      tagId: t.tagId,
+      label: t.label,
+      category: t.category || "General",
+      description: t.description || ""
+    }));
+    res.json(formatted);
+  } catch (err) {
+    console.error("Error fetching public job tags:", err);
+    res.status(500).json({ error: "Failed to fetch job tags" });
+  }
+};

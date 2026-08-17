@@ -7,7 +7,7 @@ services:
     restart: always
     command: ["mongod", "--bind_ip_all"]
     ports:
-      - "27017:27017"
+      - "27018:27017"
     volumes:
       - mongodb_data:/data/db
     healthcheck:
@@ -28,6 +28,8 @@ services:
       - PORT=3000
       - DATABASE_URL=mongodb://mongodb:27017/ediskarte
       - JWT_SECRET=ediskarte_super_secret_jwt_key_2026
+      - EXPO_PUBLIC_IP_ADDRESS=192.168.1.15
+      - EXPO_PUBLIC_API_URL=http://192.168.1.15:3000
     depends_on:
       mongodb:
         condition: service_healthy
@@ -69,8 +71,8 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - EXPO_PUBLIC_IP_ADDRESS=localhost
-      - EXPO_PUBLIC_API_URL=http://localhost:3000
+      - EXPO_PUBLIC_IP_ADDRESS=192.168.1.15
+      - EXPO_PUBLIC_API_URL=http://192.168.1.15:3000
     depends_on:
       - ediskarte-server
 

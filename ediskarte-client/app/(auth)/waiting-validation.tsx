@@ -1,29 +1,33 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Platform, BackHandler } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function WaitingValidation() {
   const router = useRouter();
 
   useEffect(() => {
+    // Intercept and disable Android hardware back button
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => true);
+
     const timer = setTimeout(() => {
       router.replace('/(auth)/sign_in');
     }, 8000); // 8 seconds
 
-    return () => clearTimeout(timer);
+    return () => {
+      backHandler.remove();
+      clearTimeout(timer);
+    };
   }, []);
 
   return (
     <View style={styles.mainContainer}>
       <StatusBar style="light" backgroundColor="#0B153C" />
-      <Stack.Screen options={{ headerShown: false }} />
+      <Stack.Screen options={{ headerShown: false, gestureEnabled: false }} />
 
       <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
-        <TouchableOpacity onPress={() => router.replace('/(auth)/sign_in')} style={styles.backButton}>
-          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
+        <View style={{ width: 32 }} />
         <Text style={styles.topHeaderTitle}>Verification Pending</Text>
         <View style={{ width: 32 }} />
       </View>

@@ -84,10 +84,16 @@ const UserProfilePage: React.FC = () => {
 
   const handleBanUser = async (reason: string = "Violation of terms") => {
     try {
-      await fetch(`http://localhost:8000/api/users/${user.id}/ban?reason=${encodeURIComponent(reason)}`, {
+      let res = await fetch(`http://localhost:8000/admin/api/users/${user.id}/ban?reason=${encodeURIComponent(reason)}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || ''}` },
       });
+      if (!res.ok) {
+        res = await fetch(`http://localhost:8000/api/users/${user.id}/ban?reason=${encodeURIComponent(reason)}`, {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || ''}` },
+        });
+      }
       alert(`User ${user.email} has been banned.`);
       setShowDeactivateDialog(false);
     } catch (err) {
@@ -98,10 +104,16 @@ const UserProfilePage: React.FC = () => {
 
   const handleSuspendUser = async (days: number = 7, reason: string = "Temporary suspension") => {
     try {
-      await fetch(`http://localhost:8000/api/users/${user.id}/suspend?days=${days}&reason=${encodeURIComponent(reason)}`, {
+      let res = await fetch(`http://localhost:8000/admin/api/users/${user.id}/suspend?days=${days}&reason=${encodeURIComponent(reason)}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || ''}` },
       });
+      if (!res.ok) {
+        res = await fetch(`http://localhost:8000/api/users/${user.id}/suspend?days=${days}&reason=${encodeURIComponent(reason)}`, {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || ''}` },
+        });
+      }
       alert(`User ${user.email} has been suspended for ${days} days.`);
       setShowDeactivateDialog(false);
     } catch (err) {
@@ -112,10 +124,16 @@ const UserProfilePage: React.FC = () => {
 
   const handleUnbanUser = async () => {
     try {
-      await fetch(`http://localhost:8000/api/users/${user.id}/unban`, {
+      let res = await fetch(`http://localhost:8000/admin/api/users/${user.id}/unban`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || ''}` },
       });
+      if (!res.ok) {
+        res = await fetch(`http://localhost:8000/api/users/${user.id}/unban`, {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || ''}` },
+        });
+      }
       alert(`User ${user.email} has been reactivated.`);
       setShowDeactivateDialog(false);
     } catch (err) {

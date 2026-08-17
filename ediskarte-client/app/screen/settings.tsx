@@ -38,10 +38,12 @@ const SettingsScreen = () => {
   };
 
   const handleConfirmLogout = async () => {
-    // Add token destruction logic here
-    // For example:
-    await AsyncStorage.removeItem('token');
-    safeReplace('/(auth)/sign_in');
+    try {
+      await AsyncStorage.multiRemove(['token', 'currentUserId', 'userType', 'verificationStatus']);
+    } catch (e) {
+      await AsyncStorage.clear();
+    }
+    router.replace('/(auth)/option');
   };
 
   return (

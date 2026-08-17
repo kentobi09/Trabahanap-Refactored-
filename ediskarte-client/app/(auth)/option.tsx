@@ -11,14 +11,28 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import decodeToken from "@/api/token-decoder";
 
+import { clearFormData } from "@/api/signup-request";
+
+import { BackHandler } from "react-native";
+
 export default function WelcomeScreen() {
   const router = useRouter();
+
+  useEffect(() => {
+    const backAction = () => {
+      BackHandler.exitApp();
+      return true;
+    };
+    const backHandler = BackHandler.addEventListener("hardwareBackPress", backAction);
+    return () => backHandler.remove();
+  }, []);
 
   const handleLogin = () => {
     router.push("/(auth)/sign_in");
   };
 
   const handleSignUp = () => {
+    clearFormData();
     router.push("/(auth)/user-page");
   };
 

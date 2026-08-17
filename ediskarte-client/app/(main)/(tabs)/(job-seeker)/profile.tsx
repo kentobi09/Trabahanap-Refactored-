@@ -29,6 +29,7 @@ import {
   updateUserJobTags,
   uploadCredential,
   deleteCredential,
+  fetchPublicJobTags,
 } from "@/api/profile-request";
 import * as ImagePicker from "expo-image-picker";
 
@@ -166,12 +167,24 @@ const jobTagMetadata = {
     label: "Gardening",
     icon: () => <MaterialCommunityIcons name="shovel" size={14} color="#fff" />,
   },
+  others: {
+    label: "Others",
+    icon: () => (
+      <MaterialCommunityIcons name="dots-horizontal-circle" size={14} color="#fff" />
+    ),
+  },
   default: {
     label: (tag: string) => tag,
     icon: () => (
       <MaterialCommunityIcons name="tag-outline" size={14} color="#fff" />
     ),
   },
+};
+
+const formatTagLabel = (tag: string) => {
+  if (!tag) return "";
+  const unCamel = tag.replace(/([A-Z])/g, " $1").trim();
+  return unCamel.charAt(0).toUpperCase() + unCamel.slice(1);
 };
 
 // Helper function to get display data
@@ -182,8 +195,7 @@ const getTagDisplayData = (tag: string) => {
   }
   const defaultMeta = jobTagMetadata.default;
   return {
-    label:
-      typeof defaultMeta.label === "function" ? defaultMeta.label(tag) : tag,
+    label: formatTagLabel(tag),
     Icon: defaultMeta.icon,
   };
 };
@@ -240,6 +252,17 @@ const UtilityWorkerProfile: React.FC = () => {
   const [hasReplacedImage, setHasReplacedImage] = useState(false);
   const [selectedCredentialIndex, setSelectedCredentialIndex] = useState(0);
   const [showRoleTooltip, setShowRoleTooltip] = useState(false);
+  const [serverJobTags, setServerJobTags] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetchPublicJobTags()
+      .then((tags) => {
+        if (Array.isArray(tags)) {
+          setServerJobTags(tags.map((t: any) => t.tagId).filter(Boolean));
+        }
+      })
+      .catch((e) => console.log("Failed to load server job tags:", e));
+  }, []);
 
   const {
     data: worker,
@@ -773,9 +796,13 @@ const UtilityWorkerProfile: React.FC = () => {
             </View>
             <View style={styles.skillsContainer}>
               {editingSkills
-                ? Object.keys(jobTagMetadata)
-                    .filter((tag) => tag !== "default")
-                    .map((tag, index) => {
+                ? Array.from(
+                    new Set([
+                      ...Object.keys(jobTagMetadata).filter((tag) => tag !== "default"),
+                      ...serverJobTags,
+                      ...(worker?.jobTags || []),
+                    ])
+                  ).map((tag, index) => {
                       const { label, Icon } = getTagDisplayData(tag);
                       const isSelected = selectedSkills[tag];
                       return (

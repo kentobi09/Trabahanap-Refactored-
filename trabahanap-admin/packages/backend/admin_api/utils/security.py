@@ -16,17 +16,25 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 15
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/admin/login")
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
 
 class TokenData(BaseModel):
     sub: EmailStr | None = None
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        p_bytes = str(plain_password).encode('utf-8')[:72]
+        h_bytes = str(hashed_password).encode('utf-8')
+        return bcrypt.checkpw(p_bytes, h_bytes)
+    except Exception as e:
+        print(f"verify_password error: {e}")
+        return False
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    p_bytes = str(password).encode('utf-8')[:72]
+    salt = bcrypt.gensalt(10)
+    return bcrypt.hashpw(p_bytes, salt).decode('utf-8')
 
 def create_access_token(data: dict):
     to_encode = data.copy()

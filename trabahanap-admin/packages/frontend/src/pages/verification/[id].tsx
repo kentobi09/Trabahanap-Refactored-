@@ -176,14 +176,25 @@ const VerificationProfilePage = () => {
   };
 
   // Function to ban a user
-  const handleBanUser = () => {
-    if (confirmBan) {
-      setToastType("error");
-      setToastMessage("User has been banned successfully");
-      setShowToast(true);
-      setShowBanDialog(false);
-      setConfirmBan(false);
-      setTimeout(() => setShowToast(false), 3000);
+  const handleBanUser = async () => {
+    if (confirmBan && id) {
+      try {
+        await fetch(`http://localhost:8000/admin/api/users/${id}/ban?reason=${encodeURIComponent("Banned during ID verification review")}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken") || ""}`,
+          },
+        });
+        setToastType("error");
+        setToastMessage("User account has been banned successfully.");
+        setShowToast(true);
+        setShowBanDialog(false);
+        setConfirmBan(false);
+        setTimeout(() => setShowToast(false), 3000);
+      } catch (err) {
+        console.error("Error banning user:", err);
+        alert("Failed to ban user.");
+      }
     }
   };
 

@@ -1,7 +1,5 @@
-"use client";
 import React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, useLocation } from "react-router-dom";
 import { Users, AlertTriangle, FileText, CheckCircle, Shield } from "lucide-react";
 
 export default function DashboardLayout({
@@ -9,7 +7,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
+  const { pathname } = useLocation();
 
   const navItems = [
     {

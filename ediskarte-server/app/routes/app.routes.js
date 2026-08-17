@@ -21,6 +21,7 @@ import {
   hasUnreadNotifications,
   getClientCompletedJobs,
   getAllUsers,
+  getPublicJobTags,
 } from "../controllers/app.controller.js";
 import multer from "multer";
 import {
@@ -103,6 +104,8 @@ router.patch(
   jre.array("jobImage", 3),
   editClientListings
 );
+router.get("/user/job-tags", getPublicJobTags);
+router.get("/api/public/job-tags", getPublicJobTags);
 router.get("/api/job-requests", authenticateToken, getJobRequests);
 router.get("/api/job-requests/:id", authenticateToken, getJobRequestById);
 router.get("/api/job-seeker/tags", authenticateToken, getJobSeekerTags);

@@ -7,6 +7,7 @@ export interface Report {
   reporter: string;
   reason: string;
   status: string;
+  imageEvidence?: string;
   dateReported: string; // Corrected field name to match backend model alias
   dateApproved?: string; // Added optional field for approval date
   reporterName?: string; // Added for user-friendly display, matches backend alias

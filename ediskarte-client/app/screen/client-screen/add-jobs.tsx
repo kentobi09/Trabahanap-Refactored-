@@ -23,6 +23,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system";
 import * as Location from 'expo-location';
+import { fetchPublicJobTags } from "@/api/profile-request";
 
 const jobCategories = [
   {
@@ -86,6 +87,30 @@ export default function AddJobScreen() {
   const [durationUnit, setDurationUnit] = useState("");
   const [showDurationUnitModal, setShowDurationUnitModal] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  const [categoriesList, setCategoriesList] = useState(jobCategories);
+
+  useEffect(() => {
+    fetchPublicJobTags()
+      .then((tags) => {
+        if (Array.isArray(tags) && tags.length > 0) {
+          const categoryMap: { [catName: string]: string[] } = {};
+          tags.forEach((t: any) => {
+            const catName = t.category || "General";
+            if (!categoryMap[catName]) categoryMap[catName] = [];
+            const displayLabel = t.label || t.tagId;
+            if (!categoryMap[catName].includes(displayLabel)) {
+              categoryMap[catName].push(displayLabel);
+            }
+          });
+          const grouped = Object.keys(categoryMap).map((catName) => ({
+            title: catName,
+            tags: categoryMap[catName],
+          }));
+          setCategoriesList(grouped);
+        }
+      })
+      .catch((e) => console.log("Error loading dynamic categories in add-jobs:", e));
+  }, []);
 
   const [showTagPicker, setShowTagPicker] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
@@ -579,7 +604,7 @@ export default function AddJobScreen() {
             </View>
 
             <FlatList
-              data={jobCategories}
+              data={categoriesList}
               keyExtractor={(item) => item.title}
               renderItem={({ item }) => (
                 <View>

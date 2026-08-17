@@ -26,6 +26,9 @@ import {
   Eye,
   Ban,
   Loader2,
+  Clock,
+  ShieldCheck,
+  RotateCcw,
 } from "lucide-react";
 import { Checkbox } from "../../components/ui/checkbox";
 import {
@@ -54,15 +57,20 @@ interface User {
   emailAddress: string;
   userType: string;
   verificationStatus: "pending" | "verified" | "rejected";
+  accountStatus?: "active" | "suspended" | "banned";
+  banReason?: string;
+  suspendReason?: string;
 }
 
-type FilterStatus = "All" | "Pending" | "Verified" | "Rejected";
+type FilterStatus = "All" | "Pending" | "Verified" | "Rejected" | "Banned" | "Suspended";
 type UserTypeFilter = "All" | "Job-seeker" | "Employer";
 
 const VerificationPage = () => {
-  const [activeFilter, setActiveFilter] = useState<FilterStatus>("All");
+  const [activeFilter, setActiveFilter] = useState<FilterStatus>("Pending");
   const [userTypeFilter, setUserTypeFilter] = useState<UserTypeFilter>("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
@@ -72,6 +80,10 @@ const VerificationPage = () => {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [confirmBan, setConfirmBan] = useState(false);
   const [isBanMode, setIsBanMode] = useState(false);
+  const [isSuspendMode, setIsSuspendMode] = useState(false);
+  const [showSuspendDialog, setShowSuspendDialog] = useState(false);
+  const [suspendDays, setSuspendDays] = useState(7);
+  const [suspendReason, setSuspendReason] = useState("Temporary suspension by Admin");
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,6 +119,9 @@ const VerificationPage = () => {
             | "pending"
             | "verified"
             | "rejected",
+          accountStatus: (applicant.accountStatus || (applicant.isBanned ? "banned" : applicant.isSuspended ? "suspended" : "active")) as "active" | "suspended" | "banned",
+          banReason: applicant.banReason,
+          suspendReason: applicant.suspendReason,
         }));
 
         console.log(transformedData);
@@ -218,19 +233,30 @@ const VerificationPage = () => {
     setSearchQuery(e.target.value);
   };
 
-  const handleBanUsers = () => {
+  const handleBanUsers = async () => {
     if (confirmBan && selectedUsers.length > 0) {
-      // TODO: Implement actual ban functionality with API call
-      console.log("Banning users:", selectedUsers);
-      setShowBanDialog(false);
-      setConfirmBan(false);
-      setSelectedUsers([]);
-      setIsBanMode(false);
-      // Show success message
-      setShowSuccessPopup(true);
-      setTimeout(() => {
-        setShowSuccessPopup(false);
-      }, 2000);
+      try {
+        for (const userId of selectedUsers) {
+          await fetch(`http://localhost:8000/admin/api/users/${userId}/ban?reason=${encodeURIComponent("Banned by Admin via Verification Manager")}`, {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("authToken") || ""}`,
+            },
+          });
+        }
+        setSuccessMessage(`Successfully banned ${selectedUsers.length} user(s).`);
+        setShowBanDialog(false);
+        setConfirmBan(false);
+        setSelectedUsers([]);
+        setIsBanMode(false);
+        setShowSuccessPopup(true);
+        setTimeout(() => {
+          setShowSuccessPopup(false);
+        }, 3000);
+      } catch (err) {
+        console.error("Error banning users:", err);
+        alert("Failed to ban selected users. Please try again.");
+      }
     }
   };
 
@@ -250,8 +276,60 @@ const VerificationPage = () => {
     }
   };
 
+  const handleSuspendUsers = async () => {
+    if (selectedUsers.length > 0) {
+      try {
+        for (const userId of selectedUsers) {
+          await fetch(
+            `http://localhost:8000/admin/api/users/${userId}/suspend?days=${suspendDays}&reason=${encodeURIComponent(suspendReason)}`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("authToken") || ""}`,
+              },
+            }
+          );
+        }
+        setSuccessMessage(`Successfully suspended ${selectedUsers.length} user(s) for ${suspendDays} days.`);
+        setShowSuspendDialog(false);
+        setSelectedUsers([]);
+        setIsSuspendMode(false);
+        setShowSuccessPopup(true);
+        setTimeout(() => setShowSuccessPopup(false), 3000);
+      } catch (err) {
+        console.error("Error suspending users:", err);
+        alert("Failed to suspend selected users. Please try again.");
+      }
+    }
+  };
+
+  const handleUnbanUser = async (userId: string, email: string) => {
+    try {
+      const response = await fetch(`http://localhost:8000/admin/api/users/${userId}/unban`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to unban user");
+
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId ? { ...u, accountStatus: "active" as const } : u
+        )
+      );
+      setSuccessMessage(`User ${email} status has been reset to Active.`);
+      setShowSuccessPopup(true);
+      setTimeout(() => setShowSuccessPopup(false), 3000);
+    } catch (err) {
+      console.error("Error unbanning user:", err);
+      alert("Failed to unban user. Please try again.");
+    }
+  };
+
   const handleCancelBanMode = () => {
     setIsBanMode(false);
+    setIsSuspendMode(false);
     setSelectedUsers([]);
   };
 
@@ -264,19 +342,22 @@ const VerificationPage = () => {
   };
 
   const filteredUsers = users.filter((user) => {
-    // Convert from camelCase status in the database to PascalCase for display
-    const statusMapping = {
-      pending: "Pending",
-      verified: "Verified",
-      rejected: "Rejected",
-    };
-
-    const displayStatus = statusMapping[user.verificationStatus] as
-      | "Pending"
-      | "Verified"
-      | "Rejected";
-    const matchesStatus =
-      activeFilter === "All" ? true : displayStatus === activeFilter;
+    let matchesStatus = false;
+    if (activeFilter === "All") {
+      matchesStatus = true;
+    } else if (activeFilter === "Banned") {
+      matchesStatus = user.accountStatus === "banned";
+    } else if (activeFilter === "Suspended") {
+      matchesStatus = user.accountStatus === "suspended";
+    } else {
+      const statusMapping = {
+        pending: "Pending",
+        verified: "Verified",
+        rejected: "Rejected",
+      };
+      const displayStatus = statusMapping[user.verificationStatus] as "Pending" | "Verified" | "Rejected";
+      matchesStatus = displayStatus === activeFilter;
+    }
 
     // Map the filter values to database values for comparison
     let matchesUserType = false;
@@ -328,15 +409,48 @@ const VerificationPage = () => {
                   Ban Selected ({selectedUsers.length})
                 </Button>
               </>
+            ) : isSuspendMode ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleCancelBanMode}
+                  className="flex items-center gap-2 hover:bg-gray-100"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => setShowSuspendDialog(true)}
+                  disabled={selectedUsers.length === 0}
+                  className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-sm"
+                >
+                  <Clock className="w-4 h-4" />
+                  Suspend Selected ({selectedUsers.length})
+                </Button>
+              </>
             ) : (
-              <Button
-                variant="destructive"
-                onClick={() => setIsBanMode(true)}
-                className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white shadow-sm px-6 py-2 rounded-md transition-colors duration-200"
-              >
-                <Ban className="w-4 h-4" />
-                Ban Users
-              </Button>
+              <>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setIsBanMode(true);
+                    setIsSuspendMode(false);
+                  }}
+                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white shadow-sm px-5 py-2 rounded-md transition-colors duration-200"
+                >
+                  <Ban className="w-4 h-4" />
+                  Ban Users
+                </Button>
+                <Button
+                  onClick={() => {
+                    setIsSuspendMode(true);
+                    setIsBanMode(false);
+                  }}
+                  className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-sm px-5 py-2 rounded-md transition-colors duration-200"
+                >
+                  <Clock className="w-4 h-4" />
+                  Suspend Users
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -444,6 +558,24 @@ const VerificationPage = () => {
                   Rejected
                 </span>
               </SelectItem>
+              <SelectItem
+                value="Banned"
+                className="hover:bg-gray-50 cursor-pointer"
+              >
+                <span className="flex items-center gap-2 text-rose-600 font-medium">
+                  <Ban className="w-4 h-4 text-rose-600" />
+                  Banned
+                </span>
+              </SelectItem>
+              <SelectItem
+                value="Suspended"
+                className="hover:bg-gray-50 cursor-pointer"
+              >
+                <span className="flex items-center gap-2 text-amber-600 font-medium">
+                  <Clock className="w-4 h-4 text-amber-600" />
+                  Suspended
+                </span>
+              </SelectItem>
             </SelectContent>
           </Select>
           <Select
@@ -536,143 +668,185 @@ const VerificationPage = () => {
               <p className="text-gray-500 text-center">{error}</p>
             </div>
           ) : filteredUsers.length > 0 ? (
-            <Table>
-              <TableHeader>
-                {isBanMode && (
+            <>
+              <Table>
+                <TableHeader>
+                  {(isBanMode || isSuspendMode) && (
+                    <TableRow className="bg-gray-50">
+                      <TableHead className="w-[50px]">
+                        <Checkbox
+                          checked={selectedUsers.length === filteredUsers.length}
+                          onCheckedChange={handleSelectAll}
+                        />
+                      </TableHead>
+                    </TableRow>
+                  )}
                   <TableRow className="bg-gray-50">
-                    <TableHead className="w-[50px]">
-                      <Checkbox
-                        checked={selectedUsers.length === filteredUsers.length}
-                        onCheckedChange={handleSelectAll}
-                      />
+                    <TableHead className="font-semibold text-gray-700">
+                      Full Name
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700">
+                      Age
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700">
+                      User Type
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700">
+                      Address
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700">
+                      Verification Status
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-right">
+                      Actions
                     </TableHead>
                   </TableRow>
-                )}
-                <TableRow className="bg-gray-50">
-                  <TableHead className="font-semibold text-gray-700">
-                    Full Name
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700">
-                    Age
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700">
-                    Gender
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700">
-                    Email
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700">
-                    User Type
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700">
-                    Address
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700">
-                    Verification Status
-                  </TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-right">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id} className="hover:bg-gray-50">
-                    {isBanMode && (
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedUsers.includes(user.id)}
-                          onCheckedChange={() => handleSelectUser(user.id)}
-                        />
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers
+                    .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                    .map((user) => (
+                    <TableRow key={user.id} className="hover:bg-gray-50">
+                      {(isBanMode || isSuspendMode) && (
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedUsers.includes(user.id)}
+                            onCheckedChange={() => handleSelectUser(user.id)}
+                          />
+                        </TableCell>
+                      )}
+                      <TableCell className="font-medium text-gray-900">
+                        {`${user.firstName} ${
+                          user.middleName ? user.middleName + " " : ""
+                        }${user.lastName}${
+                          user.suffixName ? " " + user.suffixName : ""
+                        }`}
                       </TableCell>
-                    )}
-                    <TableCell className="font-medium text-gray-900">
-                      {`${user.firstName} ${
-                        user.middleName ? user.middleName + " " : ""
-                      }${user.lastName}${
-                        user.suffixName ? " " + user.suffixName : ""
-                      }`}
-                    </TableCell>
-                    <TableCell className="text-gray-600">{user.age}</TableCell>
-                    <TableCell className="text-gray-600">
-                      {user.gender.charAt(0).toUpperCase() +
-                        user.gender.slice(1)}
-                    </TableCell>
-                    <TableCell className="text-gray-600">
-                      {user.emailAddress}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          user.userType.toLowerCase() === "admin"
-                            ? "bg-purple-100 text-purple-800"
-                            : user.userType.toLowerCase() === "client"
-                            ? "bg-blue-100 text-blue-800"
-                            : user.userType.toLowerCase() === "job-seeker"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {/* Display 'Employer' for 'client' user type */}
-                        {getUserTypeDisplay(user.userType)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-gray-600">{`${
-                      user.houseNumber ? user.houseNumber + ", " : ""
-                    }${user.street}, ${user.barangay}`}</TableCell>
-                    <TableCell>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          user.verificationStatus === "verified"
-                            ? "bg-green-100 text-green-800"
-                            : user.verificationStatus === "rejected"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}
-                      >
-                        {user.verificationStatus === "verified"
-                          ? "Verified"
-                          : user.verificationStatus === "rejected"
-                          ? "Rejected"
-                          : "Pending"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right space-x-3">
-                      <div className="flex space-x-3">
-                        <button
-                          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                          title="View Details"
-                          onClick={() => handleViewProfile(user)}
+                      <TableCell className="text-gray-600">{user.age}</TableCell>
+                      <TableCell>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            user.userType.toLowerCase() === "admin"
+                              ? "bg-purple-100 text-purple-800"
+                              : user.userType.toLowerCase() === "client"
+                              ? "bg-blue-100 text-blue-800"
+                              : user.userType.toLowerCase() === "job-seeker"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
                         >
-                          <Eye size={24} className="text-blue-600" />
-                        </button>
-                        {user.verificationStatus === "pending" && (
-                          <>
+                          {/* Display 'Employer' for 'client' user type */}
+                          {getUserTypeDisplay(user.userType)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-gray-600">{`${
+                        user.houseNumber ? user.houseNumber + ", " : ""
+                      }${user.street}, ${user.barangay}`}</TableCell>
+                      <TableCell>
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                            user.accountStatus === "banned"
+                              ? "bg-rose-100 text-rose-800 border border-rose-200"
+                              : user.accountStatus === "suspended"
+                              ? "bg-amber-100 text-amber-800 border border-amber-200"
+                              : user.verificationStatus === "verified"
+                              ? "bg-green-100 text-green-800"
+                              : user.verificationStatus === "rejected"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {user.accountStatus === "banned"
+                            ? "Banned"
+                            : user.accountStatus === "suspended"
+                            ? "Suspended"
+                            : user.verificationStatus === "verified"
+                            ? "Verified"
+                            : user.verificationStatus === "rejected"
+                            ? "Rejected"
+                            : "Pending"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right space-x-3">
+                        <div className="flex space-x-3 justify-end">
+                          <button
+                            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            title="View Details"
+                            onClick={() => handleViewProfile(user)}
+                          >
+                            <Eye size={24} className="text-blue-600" />
+                          </button>
+                          {user.verificationStatus === "pending" && (
+                            <>
+                              <button
+                                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                title="Approve"
+                                onClick={() => handleAccept(user)}
+                              >
+                                <CheckCircle2
+                                  size={24}
+                                  className="text-green-600"
+                                />
+                              </button>
+                              <button
+                                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                title="Reject"
+                                onClick={() => handleReject(user)}
+                              >
+                                <XCircle size={24} className="text-red-600" />
+                              </button>
+                            </>
+                          )}
+                          {(user.accountStatus === "banned" || user.accountStatus === "suspended") && (
                             <button
-                              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                              title="Approve"
-                              onClick={() => handleAccept(user)}
+                              className="p-2 hover:bg-emerald-50 rounded-full transition-colors"
+                              title="Unban / Restore Access"
+                              onClick={() => handleUnbanUser(user.id, user.emailAddress)}
                             >
-                              <CheckCircle2
-                                size={24}
-                                className="text-green-600"
-                              />
+                              <ShieldCheck size={24} className="text-emerald-600" />
                             </button>
-                            <button
-                              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                              title="Reject"
-                              onClick={() => handleReject(user)}
-                            >
-                              <XCircle size={24} className="text-red-600" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Pagination Footer */}
+              {filteredUsers.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200 gap-4">
+                  <div className="text-sm text-gray-700">
+                    Showing <span className="font-semibold">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
+                    <span className="font-semibold">{Math.min(currentPage * itemsPerPage, filteredUsers.length)}</span> of{" "}
+                    <span className="font-semibold">{filteredUsers.length}</span> applicants
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="bg-white border-gray-300 hover:bg-gray-100 disabled:opacity-50"
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm font-medium text-gray-700 px-2">
+                      Page {currentPage} of {Math.ceil(filteredUsers.length / itemsPerPage) || 1}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(filteredUsers.length / itemsPerPage)))}
+                      disabled={currentPage >= Math.ceil(filteredUsers.length / itemsPerPage)}
+                      className="bg-white border-gray-300 hover:bg-gray-100 disabled:opacity-50"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center py-12 px-4">
               <Users className="h-12 w-12 text-gray-400 mb-4" />
@@ -699,8 +873,8 @@ const VerificationPage = () => {
 
       {/* Accept Modal */}
       {showAcceptModal && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl border border-gray-100">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Confirm Verification
             </h3>
@@ -730,8 +904,8 @@ const VerificationPage = () => {
 
       {/* Reject Modal */}
       {showRejectModal && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl border border-gray-100">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Confirm Rejection
             </h3>
@@ -803,6 +977,58 @@ const VerificationPage = () => {
               className="bg-red-600 hover:bg-red-700 text-white shadow-sm"
             >
               Ban Users
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Suspend Confirmation Dialog */}
+      <Dialog open={showSuspendDialog} onOpenChange={setShowSuspendDialog}>
+        <DialogContent className="bg-white border-none shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-amber-600 text-xl font-semibold flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Suspend Users Confirmation
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-gray-600">
+              You are about to suspend <span className="font-bold text-gray-900">{selectedUsers.length}</span> selected user(s).
+            </p>
+            <div>
+              <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Suspension Duration (Days)</label>
+              <input
+                type="number"
+                min={1}
+                max={365}
+                value={suspendDays}
+                onChange={(e) => setSuspendDays(Number(e.target.value))}
+                className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Reason for Suspension</label>
+              <textarea
+                value={suspendReason}
+                onChange={(e) => setSuspendReason(e.target.value)}
+                rows={2}
+                className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowSuspendDialog(false)}
+              className="hover:bg-gray-100"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSuspendUsers}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-sm"
+            >
+              Confirm Suspension
             </Button>
           </DialogFooter>
         </DialogContent>

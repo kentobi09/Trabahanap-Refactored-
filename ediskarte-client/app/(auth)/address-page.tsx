@@ -74,11 +74,9 @@ export default function AddressEntryScreen() {
     }
 
     SignUpData({
-      address: {
-        barangay: formData.barangay,
-        street: formData.street,
-        houseNumber: formData.houseNumber,
-      },
+      barangay: formData.barangay,
+      street: formData.street,
+      houseNumber: formData.houseNumber,
     });
 
     router.push({

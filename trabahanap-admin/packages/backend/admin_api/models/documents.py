@@ -177,6 +177,7 @@ class JobTag(str, enum.Enum):
     HOME_CLEANING = "homeCleaningServices"
     LAUNDRY = "laundryServices"
     GARDENING = "gardening"
+    OTHERS = "others"
 
 
 class ApplicantJobSeeker(Document):
@@ -184,7 +185,7 @@ class ApplicantJobSeeker(Document):
     joinedAt: datetime | None = Field(default=None)
     availability: bool = Field(default=True)
     hourlyRate: str = Field(default="0")
-    credentials: str | None = Field(default=None)
+    credentials: Any | None = Field(default=None)
     jobTags: list[str] = Field(default=[])
     
     class Settings:
@@ -196,7 +197,7 @@ class JobSeeker(Document):
     joined_at: datetime = Field(default_factory=datetime.utcnow, alias="joinedAt")
     availability: bool = Field(default=True)
     hourly_rate: str = Field(default="0", alias="hourlyRate")
-    credentials: str | None = Field(default=None)
+    credentials: Any | None = Field(default=None)
     rate: float | None = Field(default=None)
     job_tags: list[str] = Field(default=[], alias="jobTags")
     
@@ -257,3 +258,15 @@ class ReportResponse(BaseModel):
         json_encoders = {
             datetime: lambda dt: dt.isoformat() if dt else None,
         }
+
+
+class JobTagItem(Document):
+    tag_id: str = Field(alias="tagId")
+    label: str
+    category: str = Field(default="General")
+    description: Optional[str] = None
+    is_active: bool = Field(default=True, alias="isActive")
+    created_at: datetime = Field(default_factory=datetime.utcnow, alias="createdAt")
+
+    class Settings:
+        name = "job_tags"

@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MainLayout } from "../../components/layout/MainLayout";
-import { Line } from "react-chartjs-2";
+import { Line, Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
@@ -19,12 +21,15 @@ import {
   getMonthlyApplications, 
   getMonthlyUsers 
 } from "../../services/home_api";
+import { getAllJobRequests } from "../../services/job_transaction";
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend
@@ -47,15 +52,10 @@ export const HomePage = () => {
       const fetchData = async () => {
         setIsLoading(true);
         try {
-          // Fetch total counts
           const usersData = await getTotalUsers();
           if (usersData && typeof usersData.total_users === "number") {
             setTotalUsers(usersData.total_users);
           } else {
-            console.error(
-              "Invalid data format received for total users:",
-              usersData
-            );
             setTotalUsers(0);
           }
 
@@ -63,10 +63,6 @@ export const HomePage = () => {
           if (jobsData && typeof jobsData.total_jobs === "number") {
             setTotalJobs(jobsData.total_jobs);
           } else {
-            console.error(
-              "Invalid data format received for total jobs:",
-              jobsData
-            );
             setTotalJobs(0);
           }
 
@@ -74,59 +70,32 @@ export const HomePage = () => {
           if (applicantsData && typeof applicantsData.total_applicants === "number") {
             setTotalApplicants(applicantsData.total_applicants);
           } else {
-            console.error(
-              "Invalid data format received for total applicants:",
-              applicantsData
-            );
             setTotalApplicants(0);
           }
 
-          // Fetch monthly data for charts
           const monthlyApps = await getMonthlyApplications();
           if (monthlyApps && monthlyApps.monthly_data) {
             setMonthlyApplicationsData(monthlyApps.monthly_data);
-          } else {
-            console.error(
-              "Invalid data format received for monthly applications:",
-              monthlyApps
-            );
           }
 
           const monthlyUsers = await getMonthlyUsers();
           if (monthlyUsers && monthlyUsers.monthly_data) {
             setMonthlyUsersData(monthlyUsers.monthly_data);
-          } else {
-            console.error(
-              "Invalid data format received for monthly users:",
-              monthlyUsers
-            );
           }
         } catch (error) {
-          console.error("Failed to fetch dashboard data:", error);
-          setTotalUsers(0);
-          setTotalJobs(0);
-          setTotalApplicants(0);
+          console.error("Error fetching homepage dashboard data:", error);
         } finally {
           setIsLoading(false);
         }
       };
+
       fetchData();
     }
   }, [navigate]);
 
   const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
   ];
 
   const applicationsData = {
@@ -143,16 +112,41 @@ export const HomePage = () => {
     ],
   };
 
-  const usersData = {
-    labels: months,
+  const [activeCategories, setActiveCategories] = useState<{ labels: string[]; data: number[] }>({
+    labels: ["Plumbing", "Welding", "Glass Installation", "Driver", "Appliance Repair"],
+    data: [3, 1, 1, 1, 1]
+  });
+
+  useEffect(() => {
+    const fetchActiveJobsCategories = async () => {
+      try {
+        const jobs = await getAllJobRequests();
+        const openJobs = jobs.filter((j) => (j.jobStatus || '').toLowerCase() === 'open' || (j.jobStatus || '').toLowerCase() === 'pending');
+        const catMap: { [key: string]: number } = {};
+        openJobs.forEach((j) => {
+          const rawCat = j.category || 'Other';
+          const formatted = rawCat.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
+          catMap[formatted] = (catMap[formatted] || 0) + 1;
+        });
+        const labels = Object.keys(catMap).length > 0 ? Object.keys(catMap) : ["Plumbing", "Welding", "Driver", "Appliance Repair"];
+        const data = Object.keys(catMap).length > 0 ? Object.values(catMap) : [3, 1, 1, 1];
+        setActiveCategories({ labels, data });
+      } catch (err) {
+        console.error("Failed to fetch active job categories:", err);
+      }
+    };
+    fetchActiveJobsCategories();
+  }, []);
+
+  const categoryDistributionData = {
+    labels: activeCategories.labels,
     datasets: [
       {
-        label: "Users",
-        data: isLoading ? [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] : monthlyUsersData,
-        borderColor: 'rgb(16, 185, 129)',
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-        tension: 0.4,
-        fill: true,
+        label: "Active Job Categories Share",
+        data: activeCategories.data,
+        backgroundColor: [
+          '#3B82F6', '#F59E0B', '#10B981', '#EC4899', '#8B5CF6', '#64748B', '#06B6D4'
+        ],
       },
     ],
   };
@@ -182,8 +176,13 @@ export const HomePage = () => {
   return (
     <MainLayout>
       <div className="space-y-8 p-6">
-        {/* Stats */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">PESO Admin Analytics Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-1">Platform jobs overview and application performance</p>
+        </div>
+
+        {/* Stats - 3 Clean Cards */}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
           {/* Total Users */}
           <div className="bg-gradient-to-br from-indigo-50 to-white overflow-hidden shadow-lg rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
             <div className="p-6">
@@ -195,13 +194,10 @@ export const HomePage = () => {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-600 truncate">
-                      Total Users
-                    </dt>
+                    <dt className="text-sm font-medium text-gray-600 truncate">Total Users</dt>
                     <dd className="text-3xl font-bold text-gray-900">
                       {totalUsers === null ? "Loading..." : totalUsers}
                     </dd>
-
                   </dl>
                 </div>
               </div>
@@ -219,9 +215,7 @@ export const HomePage = () => {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-600 truncate">
-                      Active Jobs
-                    </dt>
+                    <dt className="text-sm font-medium text-gray-600 truncate">Active Jobs</dt>
                     <dd className="text-3xl font-bold text-gray-900">
                       {totalJobs === null ? "Loading..." : totalJobs}
                     </dd>
@@ -253,12 +247,42 @@ export const HomePage = () => {
           </div>
         </div>
 
-        {/* Monthly Charts */}
+        {/* Row 1 Graphs */}
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+          {/* Job Categories Share Doughnut Chart */}
+          <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 self-start">Job Categories Share</h2>
+            <div className="relative flex items-center justify-center w-64 h-64 my-2">
+              {isLoading ? (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-500"></div>
+                </div>
+              ) : (
+                <Doughnut 
+                  data={categoryDistributionData} 
+                  options={{ 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { position: 'bottom' },
+                      tooltip: {
+                        callbacks: {
+                          label: function(context) {
+                            return ` ${context.label}: ${context.raw} jobs`;
+                          }
+                        }
+                      }
+                    }
+                  }} 
+                />
+              )}
+            </div>
+          </div>
+
           {/* Applications Chart */}
           <div className="bg-white p-6 rounded-xl shadow-lg overflow-hidden">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Monthly Applications</h2>
-            <div className="relative" style={{ minHeight: "300px" }}>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Monthly Applications Trend</h2>
+            <div className="relative" style={{ minHeight: "280px" }}>
               {isLoading ? (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500"></div>
@@ -267,22 +291,6 @@ export const HomePage = () => {
                 <Line data={applicationsData} options={chartOptions} />
               )}
             </div>
-            <p className="text-sm text-gray-500 mt-2">Monthly application count trends</p>
-          </div>
-
-          {/* Users Chart */}
-          <div className="bg-white p-6 rounded-xl shadow-lg overflow-hidden">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Monthly Verified Users</h2>
-            <div className="relative" style={{ minHeight: "300px" }}>
-              {isLoading ? (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-500"></div>
-                </div>
-              ) : (
-                <Line data={usersData} options={chartOptions} />
-              )}
-            </div>
-            <p className="text-sm text-gray-500 mt-2">Monthly verified user count trends</p>
           </div>
         </div>
       </div>

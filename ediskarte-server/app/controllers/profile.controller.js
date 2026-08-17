@@ -21,66 +21,140 @@ export const getUserProfile = async (req, res) => {
     const { userType } = req.query;
 
     if (userType === "client") {
-      const client = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          firstName: true,
-          middleName: true,
-          lastName: true,
-          suffixName: true,
-          profileImage: true,
-          emailAddress: true,
-          phoneNumber: true,
-          phoneVisibility: true,
-          barangay: true,
-          street: true,
-          houseNumber: true,
-          gender: true,
-          birthday: true,
-          verificationStatus: true,
-        },
-      });
+      try {
+        const client = await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            firstName: true,
+            middleName: true,
+            lastName: true,
+            suffixName: true,
+            profileImage: true,
+            emailAddress: true,
+            phoneNumber: true,
+            phoneVisibility: true,
+            barangay: true,
+            street: true,
+            houseNumber: true,
+            gender: true,
+            birthday: true,
+            verificationStatus: true,
+          },
+        });
 
-      return res.status(200).json({
-        userType: "client",
-        ...client,
-      });
+        if (client) {
+          return res.status(200).json({
+            userType: "client",
+            ...client,
+          });
+        }
+      } catch (e) {
+        console.warn("[getUserProfile] Prisma client lookup failed, falling back to Native DB:", e.message);
+      }
+
+      // Native DB Fallback for Client
+      const db = await getNativeDb();
+      let uObj; try { uObj = new ObjectId(userId); } catch (err) { uObj = userId; }
+      const userDoc = await db.collection("users").findOne({ $or: [{ _id: uObj }, { id: userId }] });
+      if (userDoc) {
+        return res.status(200).json({
+          userType: "client",
+          id: userDoc._id.toString(),
+          firstName: userDoc.firstName || "",
+          middleName: userDoc.middleName || "",
+          lastName: userDoc.lastName || "",
+          suffixName: userDoc.suffixName || "",
+          profileImage: userDoc.profileImage || null,
+          emailAddress: userDoc.emailAddress || "",
+          phoneNumber: userDoc.phoneNumber || "",
+          barangay: userDoc.barangay || "",
+          street: userDoc.street || "",
+          houseNumber: userDoc.houseNumber || "",
+          gender: userDoc.gender || "",
+          birthday: userDoc.birthday || null,
+          verificationStatus: userDoc.verificationStatus || "",
+        });
+      }
     }
 
     if (userType === "job-seeker") {
-      const jobSeeker = await prisma.jobSeeker.findUnique({
-        where: { userId },
-        include: {
-          user: {
-            select: {
-              id: true,
-              firstName: true,
-              middleName: true,
-              lastName: true,
-              suffixName: true,
-              profileImage: true,
-              emailAddress: true,
-              phoneNumber: true,
-              phoneVisibility: true,
-              barangay: true,
-              street: true,
-              houseNumber: true,
-              gender: true,
-              birthday: true,
-              verificationStatus: true,
+      try {
+        const jobSeeker = await prisma.jobSeeker.findUnique({
+          where: { userId },
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                middleName: true,
+                lastName: true,
+                suffixName: true,
+                profileImage: true,
+                emailAddress: true,
+                phoneNumber: true,
+                phoneVisibility: true,
+                barangay: true,
+                street: true,
+                houseNumber: true,
+                gender: true,
+                birthday: true,
+                verificationStatus: true,
+              },
             },
+            achievement: true,
           },
-          achievement: true,
-        },
+        });
+
+        if (jobSeeker) {
+          const { user, ...jobSeekerData } = jobSeeker;
+          return res.status(200).json({
+            userType: "job-seeker",
+            ...user,
+            ...jobSeekerData,
+          });
+        }
+      } catch (e) {
+        console.warn("[getUserProfile] Prisma jobSeeker lookup failed, falling back to Native DB:", e.message);
+      }
+
+      // Native DB Fallback for JobSeeker
+      const db = await getNativeDb();
+      let uObj; try { uObj = new ObjectId(userId); } catch (err) { uObj = userId; }
+      let seekerDoc = await db.collection("jobseekers").findOne({
+        $or: [{ userId: userId }, { userId: uObj }, { _id: uObj }, { id: userId }]
       });
 
-      if (jobSeeker) {
-        const { user, ...jobSeekerData } = jobSeeker;
+      if (seekerDoc) {
+        let targetUserId = seekerDoc.userId || seekerDoc._id;
+        let tObj; try { tObj = new ObjectId(targetUserId); } catch (err) { tObj = targetUserId; }
+        let userDoc = await db.collection("users").findOne({
+          $or: [{ _id: tObj }, { id: targetUserId.toString() }]
+        });
+
         return res.status(200).json({
           userType: "job-seeker",
-          ...user,
-          ...jobSeekerData,
+          id: userDoc ? userDoc._id.toString() : seekerDoc._id.toString(),
+          jobSeekerId: seekerDoc._id.toString(),
+          firstName: userDoc?.firstName || "",
+          middleName: userDoc?.middleName || "",
+          lastName: userDoc?.lastName || "",
+          suffixName: userDoc?.suffixName || "",
+          profileImage: userDoc?.profileImage || null,
+          emailAddress: userDoc?.emailAddress || "",
+          phoneNumber: userDoc?.phoneNumber || "",
+          phoneVisibility: userDoc?.phoneVisibility || "public",
+          barangay: userDoc?.barangay || "",
+          street: userDoc?.street || "",
+          houseNumber: userDoc?.houseNumber || "",
+          gender: userDoc?.gender || "",
+          birthday: userDoc?.birthday || null,
+          verificationStatus: userDoc?.verificationStatus || "",
+          availability: seekerDoc.availability ?? true,
+          credentials: seekerDoc.credentials || [],
+          hourlyRate: seekerDoc.hourlyRate || "0",
+          rate: seekerDoc.rate || null,
+          jobTags: seekerDoc.jobTags || [],
         });
       }
     }
@@ -223,49 +297,15 @@ export const updateJobTags = async (req, res) => {
 
 export const getJobSeekerProfileByUserId = async (req, res) => {
   try {
-    const userId = req.params.userId || req.params.jobSeekerId; // This is the User.id
+    const userId = req.params.userId || req.params.jobSeekerId;
     console.log(
       `[getJobSeekerProfileByUserId] Received request for User ID: ${userId}`
-    ); // Added log
+    );
 
-    let jobSeeker = await prisma.jobSeeker.findUnique({
-      where: { userId: userId }, // Find JobSeeker by the unique userId (foreign key to User table)
-      include: {
-        user: {
-          // Include related User data
-          select: {
-            id: true,
-            firstName: true,
-            middleName: true,
-            lastName: true,
-            suffixName: true,
-            profileImage: true,
-            emailAddress: true,
-            phoneNumber: true,
-            phoneVisibility: true,
-            barangay: true,
-            street: true,
-            houseNumber: true,
-            gender: true,
-            birthday: true,
-            bio: true,
-            userType: true,
-            jobsDone: true,
-            joinedAt: true,
-            verificationStatus: true,
-          },
-        },
-        // You can include other JobSeeker specific relations here if needed
-        // e.g., achievement: true, jobTags: true (jobTags is an enum array, handled differently)
-      },
-    });
-
-    if (!jobSeeker) {
-      console.log(
-        `[getJobSeekerProfileByUserId] No JobSeeker found by userId ${userId}. Trying JobSeeker id lookup.`
-      );
+    let jobSeeker = null;
+    try {
       jobSeeker = await prisma.jobSeeker.findUnique({
-        where: { id: userId }, // Try finding by JobSeeker's own id (which maps to _id)
+        where: { userId: userId },
         include: {
           user: {
             select: {
@@ -292,45 +332,115 @@ export const getJobSeekerProfileByUserId = async (req, res) => {
           },
         },
       });
+
+      if (!jobSeeker) {
+        console.log(
+          `[getJobSeekerProfileByUserId] No JobSeeker found by userId ${userId}. Trying JobSeeker id lookup.`
+        );
+        jobSeeker = await prisma.jobSeeker.findUnique({
+          where: { id: userId },
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                middleName: true,
+                lastName: true,
+                suffixName: true,
+                profileImage: true,
+                emailAddress: true,
+                phoneNumber: true,
+                phoneVisibility: true,
+                barangay: true,
+                street: true,
+                houseNumber: true,
+                gender: true,
+                birthday: true,
+                bio: true,
+                userType: true,
+                jobsDone: true,
+                joinedAt: true,
+                verificationStatus: true,
+              },
+            },
+          },
+        });
+      }
+    } catch (e) {
+      console.warn("[getJobSeekerProfileByUserId] Prisma lookup failed, falling back to Native DB:", e.message);
     }
 
-    console.log(
-      `[getJobSeekerProfileByUserId] Prisma query result:`,
-      jobSeeker
-    ); // Added log
+    if (jobSeeker) {
+      const isPhonePrivate = jobSeeker.user?.phoneVisibility === "private";
+      const userCopy = jobSeeker.user ? {
+        ...jobSeeker.user,
+        phoneNumber: isPhonePrivate ? "Private" : (jobSeeker.user.phoneNumber || ""),
+      } : null;
 
-    if (!jobSeeker) {
-      console.log(
-        `[getJobSeekerProfileByUserId] No JobSeeker found for User ID: ${userId}. Returning 404.`
-      ); // Added log
-      return res.status(404).json({ message: "Job seeker profile not found" });
+      const responsePayload = {
+        jobSeekerId: jobSeeker.id,
+        availability: jobSeeker.availability,
+        credentials: jobSeeker.credentials,
+        hourlyRate: jobSeeker.hourlyRate,
+        rate: jobSeeker.rate,
+        jobTags: jobSeeker.jobTags,
+        user: userCopy,
+      };
+
+      return res.status(200).json(responsePayload);
     }
 
-    // Mask the phone number if it is marked as private
-    const isPhonePrivate = jobSeeker.user?.phoneVisibility === "private";
-    const userCopy = jobSeeker.user ? {
-      ...jobSeeker.user,
-      phoneNumber: isPhonePrivate ? "Private" : (jobSeeker.user.phoneNumber || ""),
-    } : null;
+    // Native DB Fallback for JobSeeker
+    const db = await getNativeDb();
+    let uObj; try { uObj = new ObjectId(userId); } catch (err) { uObj = userId; }
+    let seekerDoc = await db.collection("jobseekers").findOne({
+      $or: [{ userId: userId }, { userId: uObj }, { _id: uObj }, { id: userId }]
+    });
 
-    // Combine user data and jobSeeker specific data
-    const responsePayload = {
-      jobSeekerId: jobSeeker.id, // This is the JobSeeker's own _id
-      availability: jobSeeker.availability,
-      credentials: jobSeeker.credentials,
-      hourlyRate: jobSeeker.hourlyRate,
-      rate: jobSeeker.rate,
-      jobTags: jobSeeker.jobTags, // This is an array of enum JobTag
-      // ... other JobSeeker specific fields
-      user: userCopy, // Contains all the selected user fields
-    };
+    if (seekerDoc) {
+      let targetUserId = seekerDoc.userId || seekerDoc._id;
+      let tObj; try { tObj = new ObjectId(targetUserId); } catch (err) { tObj = targetUserId; }
+      let userDoc = await db.collection("users").findOne({
+        $or: [{ _id: tObj }, { id: targetUserId.toString() }]
+      });
 
-    return res.status(200).json(responsePayload);
+      const isPhonePrivate = userDoc?.phoneVisibility === "private";
+      const userCopy = userDoc ? {
+        id: userDoc._id.toString(),
+        firstName: userDoc.firstName || "",
+        middleName: userDoc.middleName || "",
+        lastName: userDoc.lastName || "",
+        suffixName: userDoc.suffixName || "",
+        profileImage: userDoc.profileImage || null,
+        emailAddress: userDoc.emailAddress || "",
+        phoneNumber: isPhonePrivate ? "Private" : (userDoc.phoneNumber || ""),
+        phoneVisibility: userDoc.phoneVisibility || "public",
+        barangay: userDoc.barangay || "",
+        street: userDoc.street || "",
+        houseNumber: userDoc.houseNumber || "",
+        gender: userDoc.gender || "",
+        birthday: userDoc.birthday || null,
+        bio: userDoc.bio || "",
+        userType: userDoc.userType || "job-seeker",
+        jobsDone: userDoc.jobsDone || 0,
+        joinedAt: userDoc.joinedAt || null,
+        verificationStatus: userDoc.verificationStatus || "",
+      } : null;
+
+      return res.status(200).json({
+        jobSeekerId: seekerDoc._id.toString(),
+        availability: seekerDoc.availability ?? true,
+        credentials: seekerDoc.credentials || [],
+        hourlyRate: seekerDoc.hourlyRate || "0",
+        rate: seekerDoc.rate || null,
+        jobTags: seekerDoc.jobTags || [],
+        user: userCopy,
+      });
+    }
+
+    return res.status(404).json({ message: "Job seeker profile not found" });
   } catch (error) {
-    console.error(
-      "[getJobSeekerProfileByUserId] Error fetching job seeker profile:",
-      error
-    ); // Enhanced log
+    console.error("[getJobSeekerProfileByUserId] Error fetching job seeker profile:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };

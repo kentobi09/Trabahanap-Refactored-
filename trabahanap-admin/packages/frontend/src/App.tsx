@@ -13,6 +13,7 @@ import JobUsersPage from "./pages/jobs/JobUsersPage";
 import ReportsPage from "./pages/reports";
 import JobRequestPage from "./pages/job-request";
 import JobRequestDetailsPage from "./pages/job-request/[id]";
+import JobTagsPage from "./pages/job-tags";
 import { AuthProvider } from "./context/AuthContext";
 import { NotificationProvider } from "./context/NotificationContext";
 import { ToastContainer } from 'react-toastify';
@@ -33,6 +34,7 @@ function App() {
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/job-request" element={<JobRequestPage />} />
             <Route path="/job-request/:id" element={<JobRequestDetailsPage />} />
+            <Route path="/job-tags" element={<JobTagsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <ToastContainer

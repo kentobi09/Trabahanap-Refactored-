@@ -42,12 +42,15 @@ import {
 
 const ReportsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all"); // Default to all
+  const [statusFilter, setStatusFilter] = useState("pending"); // Default to pending
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [reports, setReports] = useState<Report[]>([]);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [sanctionType, setSanctionType] = useState<"warn" | "suspend" | "ban">("warn");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,15 +73,74 @@ const ReportsPage: React.FC = () => {
     fetchReports();
   }, []); // Empty dependency array: fetch only on mount
 
+  const resolveImageUrl = (img?: string) => {
+    if (!img) return "";
+    if (img.startsWith("data:") || img.startsWith("http:") || img.startsWith("https:")) {
+      return img;
+    }
+    const cleanPath = img.replace(/^\\+|^\\+/, "");
+    if (cleanPath.startsWith("assets/report_evidence")) {
+      return `http://localhost:3000/${cleanPath}`;
+    }
+    return `http://localhost:8000/${cleanPath}`;
+  };
+
+  const renderEvidenceImages = (evidence?: any) => {
+    if (!evidence) {
+      return <p className="text-xs text-gray-400 italic mt-1">No image evidence attached</p>;
+    }
+
+    let images: string[] = [];
+    if (Array.isArray(evidence)) {
+      images = evidence;
+    } else if (typeof evidence === "string") {
+      const trimmed = evidence.trim();
+      if (trimmed.startsWith("[")) {
+        try {
+          images = JSON.parse(trimmed);
+        } catch (e) {
+          images = [trimmed];
+        }
+      } else if (trimmed.includes(",")) {
+        images = trimmed.split(",").map((s) => s.trim());
+      } else {
+        images = [trimmed];
+      }
+    }
+
+    if (images.length === 0) {
+      return <p className="text-xs text-gray-400 italic mt-1">No image evidence attached</p>;
+    }
+
+    return (
+      <div className="flex flex-wrap gap-2 mt-1">
+        {images.map((img, idx) => {
+          const url = resolveImageUrl(img);
+          return (
+            <div key={idx} className="border rounded p-1 bg-gray-50">
+              <img
+                src={url}
+                alt={`Evidence ${idx + 1}`}
+                className="h-24 w-24 rounded object-cover cursor-pointer hover:opacity-90 shadow-sm"
+                onClick={() => window.open(url, '_blank')}
+              />
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "pending":
         return "bg-yellow-100 text-yellow-800";
       case "approved":
         return "bg-green-100 text-green-800";
+      case "warning":
+        return "bg-amber-100 text-amber-800 font-bold border border-amber-300";
       case "rejected":
         return "bg-red-100 text-red-800";
-      // Removed 'under review' and 'resolved' as they are not standard backend statuses
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -128,12 +190,20 @@ const ReportsPage: React.FC = () => {
     if (!selectedReport) return;
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/reports/${selectedReport.id}/approve?action=${action}`, {
+      let response = await fetch(`http://localhost:8000/admin/api/reports/${selectedReport.id}/approve?action=${action}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("authToken") || ""}`,
         },
       });
+      if (!response.ok) {
+        response = await fetch(`http://localhost:8000/api/reports/${selectedReport.id}/approve?action=${action}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken") || ""}`,
+          },
+        });
+      }
       if (!response.ok) throw new Error("Approval failed");
       const approvedReportData = await response.json();
       setReports((prevReports) =>
@@ -311,7 +381,9 @@ const ReportsPage: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody className="bg-white divide-y divide-gray-200">
-                {filteredReports.map((report) => (
+                {filteredReports
+                  .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                  .map((report) => (
                   <TableRow key={report.id} className="hover:bg-gray-50">
                     <TableCell
                       className="px-6 py-4 text-sm text-gray-900"
@@ -388,12 +460,46 @@ const ReportsPage: React.FC = () => {
                 ))}
               </TableBody>
             </Table>
+
+            {/* Pagination Footer */}
+            {filteredReports.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200 gap-4">
+                <div className="text-sm text-gray-700">
+                  Showing <span className="font-semibold">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
+                  <span className="font-semibold">{Math.min(currentPage * itemsPerPage, filteredReports.length)}</span> of{" "}
+                  <span className="font-semibold">{filteredReports.length}</span> reports
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="bg-white border-gray-300 hover:bg-gray-100 disabled:opacity-50"
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm font-medium text-gray-700 px-2">
+                    Page {currentPage} of {Math.ceil(filteredReports.length / itemsPerPage) || 1}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(filteredReports.length / itemsPerPage)))}
+                    disabled={currentPage >= Math.ceil(filteredReports.length / itemsPerPage)}
+                    className="bg-white border-gray-300 hover:bg-gray-100 disabled:opacity-50"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* Modals */}
         <Dialog open={showViewModal} onOpenChange={setShowViewModal}>
-          <DialogContent className="bg-white border-none shadow-xl">
+          <DialogContent className="bg-white border-none shadow-xl max-h-[90vh] overflow-y-auto w-full max-w-lg">
             <DialogHeader>
               <DialogTitle className="text-xl font-semibold text-gray-900">
                 Report Details
@@ -452,6 +558,10 @@ const ReportsPage: React.FC = () => {
                     </div>
                   )}
                 <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">Image Evidence</h3>
+                  {renderEvidenceImages(selectedReport.imageEvidence)}
+                </div>
+                <div>
                   <h3 className="text-sm font-medium text-gray-500">Status</h3>
                   <span
                     className={`inline-block mt-1 px-2 py-1 text-xs rounded-full ${getStatusColor(
@@ -471,41 +581,56 @@ const ReportsPage: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Accept Report Modal */}
+        {/* Action Report Modal */}
         <Dialog open={showAcceptModal} onOpenChange={setShowAcceptModal}>
-          <DialogContent className="bg-white border-none shadow-xl">
+          <DialogContent className="bg-white border-none shadow-xl max-h-[90vh] overflow-y-auto w-full max-w-lg">
             <DialogHeader>
               <DialogTitle className="text-xl font-semibold text-gray-900">
-                Approve Report
+                Action Reported User
               </DialogTitle>
             </DialogHeader>
             {selectedReport && (
               <div className="py-4 space-y-4">
                 <p className="text-gray-600">
-                  Are you sure you want to approve this report? This action will
-                  mark the report as approved and create a final record.
+                  Select the appropriate sanction for the reported user/content based on your review:
                 </p>
-                <div className="space-y-2 p-2 border rounded-md bg-gray-50">
-                  <h3 className="text-sm font-medium text-gray-700">
-                    Report Details:
-                  </h3>
-                  <p className="text-sm text-gray-900">
-                    <strong>ID:</strong> {selectedReport.id}
+                <div className="space-y-2 p-3 border rounded-md bg-gray-50 text-sm">
+                  <p className="text-gray-900">
+                    <strong>Report ID:</strong> {selectedReport.id}
                   </p>
-                  <p className="text-sm text-gray-900">
+                  <p className="text-gray-900">
                     <strong>Reporter:</strong>{" "}
                     {selectedReport.reporterName || selectedReport.reporter}
                   </p>
-                  <p className="text-sm text-gray-900">
-                    <strong>Reported Object:</strong>{" "}
+                  <p className="text-gray-900">
+                    <strong>Reported User/Object:</strong>{" "}
                     {selectedReport.reportedObjectName ||
                       selectedReport.reportedObjectId}
                   </p>
-                  <p className="text-sm text-gray-900">
-                    <strong>Reason:</strong> {selectedReport.reason}
+                  <p className="text-gray-900">
+                    <strong>Reason Stated:</strong> {selectedReport.reason}
                   </p>
+                  <div className="mt-2">
+                    <strong>Image Evidence:</strong>
+                    {renderEvidenceImages(selectedReport.imageEvidence)}
+                  </div>
                 </div>
-                <DialogFooter className="flex flex-col sm:flex-row gap-2 w-full justify-end">
+                <div className="space-y-1.5 pt-2">
+                  <label className="text-sm font-semibold text-gray-700 block">
+                    Choose Sanction Action:
+                  </label>
+                  <select
+                    value={sanctionType}
+                    onChange={(e) => setSanctionType(e.target.value as "warn" | "suspend" | "ban")}
+                    className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white font-medium text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                  >
+                    <option value="warn">⚠️ Issue Official Warning Email</option>
+                    <option value="suspend">⏳ Suspend User Account (7 Days)</option>
+                    <option value="ban">🚫 Ban User Account Permanently</option>
+                  </select>
+                </div>
+
+                <DialogFooter className="flex flex-col sm:flex-row gap-2 w-full justify-end pt-3 border-t">
                   <Button
                     variant="outline"
                     onClick={() => setShowAcceptModal(false)}
@@ -514,25 +639,21 @@ const ReportsPage: React.FC = () => {
                     Cancel
                   </Button>
                   <Button
-                    onClick={() => handleConfirmAccept("none")}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                    onClick={() => handleConfirmAccept(sanctionType)}
+                    className={
+                      sanctionType === "warn"
+                        ? "bg-yellow-600 hover:bg-yellow-700 text-white font-bold"
+                        : sanctionType === "suspend"
+                        ? "bg-amber-600 hover:bg-amber-700 text-white font-bold"
+                        : "bg-red-600 hover:bg-red-700 text-white font-bold"
+                    }
                     disabled={isLoading}
                   >
-                    Approve Only
-                  </Button>
-                  <Button
-                    onClick={() => handleConfirmAccept("suspend")}
-                    className="bg-amber-600 hover:bg-amber-700 text-white font-bold"
-                    disabled={isLoading}
-                  >
-                    Approve & Suspend
-                  </Button>
-                  <Button
-                    onClick={() => handleConfirmAccept("ban")}
-                    className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
-                    disabled={isLoading}
-                  >
-                    Approve & Ban
+                    {sanctionType === "warn"
+                      ? "Confirm Warning"
+                      : sanctionType === "suspend"
+                      ? "Confirm Suspension"
+                      : "Confirm Ban"}
                   </Button>
                 </DialogFooter>
               </div>
@@ -545,34 +666,24 @@ const ReportsPage: React.FC = () => {
           <DialogContent className="bg-white border-none shadow-xl">
             <DialogHeader>
               <DialogTitle className="text-xl font-semibold text-gray-900">
-                Reject Report
+                Dismiss Report (No Issue Found)
               </DialogTitle>
             </DialogHeader>
             {selectedReport && (
               <div className="py-4 space-y-4">
                 <p className="text-gray-600">
-                  Are you sure you want to reject this report? This action will
-                  mark the report as rejected. No further action will be taken
-                  against the reported user/content based on this report.
+                  Dismiss this report as "No Issue Found"? The reporter will be notified that no policy violation was found after review.
                 </p>
-                <div className="space-y-2 p-2 border rounded-md bg-gray-50">
-                  <h3 className="text-sm font-medium text-gray-700">
-                    Report Details:
-                  </h3>
-                  <p className="text-sm text-gray-900">
-                    <strong>ID:</strong> {selectedReport.id}
+                <div className="space-y-2 p-3 border rounded-md bg-gray-50 text-sm">
+                  <p className="text-gray-900">
+                    <strong>Report ID:</strong> {selectedReport.id}
                   </p>
-                  <p className="text-sm text-gray-900">
+                  <p className="text-gray-900">
                     <strong>Reporter:</strong>{" "}
                     {selectedReport.reporterName || selectedReport.reporter}
                   </p>
-                  <p className="text-sm text-gray-900">
-                    <strong>Reported Object:</strong>{" "}
-                    {selectedReport.reportedObjectName ||
-                      selectedReport.reportedObjectId}
-                  </p>
-                  <p className="text-sm text-gray-900">
-                    <strong>Reason:</strong> {selectedReport.reason}
+                  <p className="text-gray-900">
+                    <strong>Reason Stated:</strong> {selectedReport.reason}
                   </p>
                 </div>
                 <DialogFooter>
@@ -580,16 +691,15 @@ const ReportsPage: React.FC = () => {
                     variant="outline"
                     onClick={() => setShowRejectModal(false)}
                     className="mr-2"
-                    disabled={isLoading}
                   >
                     Cancel
                   </Button>
                   <Button
                     onClick={handleConfirmReject}
-                    className="bg-red-600 hover:bg-red-700 text-white"
+                    className="bg-slate-600 hover:bg-slate-700 text-white font-bold"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Rejecting..." : "Reject Report"}
+                    No Issue Found (Dismiss)
                   </Button>
                 </DialogFooter>
               </div>

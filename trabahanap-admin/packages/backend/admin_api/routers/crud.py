@@ -242,13 +242,27 @@ async def update_verification_status(applicant_id: str, status: str, background_
                     "credentials": None,
                     "job_tags": []
                 }
+                raw_tags = applicant_job_seeker_data.get('jobTags', []) if applicant_job_seeker_data else []
+                if isinstance(raw_tags, str):
+                    raw_tags = [raw_tags]
+                sanitized_tags = []
+                valid_enum_values = [e.value for e in JobTag]
+                for tag in raw_tags:
+                    t_str = str(tag).strip()
+                    if t_str in valid_enum_values:
+                        sanitized_tags.append(t_str)
+                    elif t_str.lower() in ["others", "other"]:
+                        sanitized_tags.append("others")
+                    else:
+                        sanitized_tags.append("others")
+
                 if applicant_job_seeker_data:
                     job_seeker_payload.update({
                         "joined_at": applicant_job_seeker_data.get('joinedAt', datetime.utcnow()),
                         "availability": applicant_job_seeker_data.get('availability', True),
                         "hourly_rate": applicant_job_seeker_data.get('hourlyRate', "0"),
                         "credentials": applicant_job_seeker_data.get('credentials'),
-                        "job_tags": applicant_job_seeker_data.get('jobTags', [])
+                        "job_tags": sanitized_tags
                     })
                 
                 job_seeker = JobSeeker(**job_seeker_payload)
@@ -967,6 +981,151 @@ async def get_job_request_by_id(
         raise HTTPException(status_code=404, detail=f"Job request with ID {job_id} not found")
     return job
 # --- End Job Request Endpoints ---
+
+# --- Job Tags & Categories Management Endpoints ---
+from pydantic import BaseModel
+
+class JobTagCreate(BaseModel):
+    tagId: str
+    label: str
+    category: Optional[str] = "General"
+    description: Optional[str] = None
+    isActive: Optional[bool] = True
+
+class JobTagUpdate(BaseModel):
+    label: Optional[str] = None
+    category: Optional[str] = None
+    description: Optional[str] = None
+    isActive: Optional[bool] = None
+
+@router.get("/api/public/job_tags")
+async def get_public_job_tags():
+    from admin_api.models.documents import JobTagItem
+    tags = await JobTagItem.find(JobTagItem.is_active == True).to_list()
+    return [
+        {
+            "tagId": t.tag_id,
+            "label": t.label,
+            "category": t.category,
+            "description": t.description or ""
+        }
+        for t in tags
+    ]
+
+@router.get("/api/job_tags")
+async def get_all_job_tags(
+    current_admin: Admin = Depends(get_current_active_admin)
+):
+    from admin_api.models.documents import JobTagItem, JobSeeker
+    # Fetch registered tags
+    tags = await JobTagItem.find_all().to_list()
+    
+    # Query MongoDB motor collection directly for jobTags
+    collection = JobSeeker.get_motor_collection()
+    cursor = collection.find({}, {"jobTags": 1})
+    tag_counts: Dict[str, int] = {}
+    async for doc in cursor:
+        job_tags = doc.get("jobTags") or []
+        if isinstance(job_tags, list):
+            for tag in job_tags:
+                if isinstance(tag, str):
+                    tag_counts[tag] = tag_counts.get(tag, 0) + 1
+
+    registered_tag_ids = {t.tag_id for t in tags}
+    result = []
+    
+    for t in tags:
+        result.append({
+            "id": str(t.id),
+            "tagId": t.tag_id,
+            "label": t.label,
+            "category": t.category,
+            "description": t.description or "",
+            "isActive": t.is_active,
+            "usageCount": tag_counts.get(t.tag_id, 0),
+            "isCustom": False
+        })
+        
+    # Check for custom tags used by jobseekers that are not registered
+    for tag_str, count in tag_counts.items():
+        if tag_str not in registered_tag_ids:
+            result.append({
+                "id": f"custom_{tag_str}",
+                "tagId": tag_str,
+                "label": tag_str.capitalize(),
+                "category": "Custom User Tag",
+                "description": "User-added custom tag from registration/profile",
+                "isActive": True,
+                "usageCount": count,
+                "isCustom": True
+            })
+            
+    return result
+
+@router.post("/api/job_tags")
+async def create_job_tag(
+    tag_data: JobTagCreate,
+    current_admin: Admin = Depends(get_current_active_admin)
+):
+    from admin_api.models.documents import JobTagItem
+    existing = await JobTagItem.find_one(JobTagItem.tag_id == tag_data.tagId)
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Tag ID '{tag_data.tagId}' already exists.")
+    
+    new_tag = JobTagItem(
+        tagId=tag_data.tagId,
+        label=tag_data.label,
+        category=tag_data.category or "General",
+        description=tag_data.description,
+        isActive=tag_data.isActive if tag_data.isActive is not None else True
+    )
+    await new_tag.insert()
+    return {"message": "Job tag created successfully", "tag": tag_data}
+
+@router.put("/api/job_tags/{tag_id}")
+async def update_job_tag(
+    tag_id: str,
+    tag_data: JobTagUpdate,
+    current_admin: Admin = Depends(get_current_active_admin)
+):
+    from admin_api.models.documents import JobTagItem
+    tag = await JobTagItem.find_one(JobTagItem.tag_id == tag_id)
+    if not tag:
+        # If it was custom, create it as official
+        tag = JobTagItem(
+            tagId=tag_id,
+            label=tag_data.label or tag_id.capitalize(),
+            category=tag_data.category or "General",
+            description=tag_data.description,
+            isActive=tag_data.isActive if tag_data.isActive is not None else True
+        )
+        await tag.insert()
+        return {"message": "Custom tag promoted to official category"}
+
+    if tag_data.label is not None:
+        tag.label = tag_data.label
+    if tag_data.category is not None:
+        tag.category = tag_data.category
+    if tag_data.description is not None:
+        tag.description = tag_data.description
+    if tag_data.isActive is not None:
+        tag.is_active = tag_data.isActive
+        
+    await tag.save()
+    return {"message": "Job tag updated successfully"}
+
+@router.delete("/api/job_tags/{tag_id}")
+async def delete_job_tag(
+    tag_id: str,
+    current_admin: Admin = Depends(get_current_active_admin)
+):
+    from admin_api.models.documents import JobTagItem
+    tag = await JobTagItem.find_one(JobTagItem.tag_id == tag_id)
+    if not tag:
+        raise HTTPException(status_code=404, detail="Job tag not found")
+    await tag.delete()
+    return {"message": "Job tag deleted successfully"}
+# --- End Job Tags Endpoints ---
 
 
 @router.websocket("/ws/notifications")

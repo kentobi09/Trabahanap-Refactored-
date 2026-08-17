@@ -5,6 +5,13 @@ let formData = new FormData();
 export function SignUpData(params) {
   if (!params) return;
 
+  if (params.address && typeof params.address === "object") {
+    if (params.address.barangay) formData.append("barangay", params.address.barangay);
+    if (params.address.street) formData.append("street", params.address.street);
+    if (params.address.houseNumber) formData.append("houseNumber", params.address.houseNumber);
+    return;
+  }
+
   if ("profileImage" in params && params.profileImage) {
     const fileName = params.profileImage.split("/").pop() || "profile.jpg";
 
@@ -37,10 +44,18 @@ export function SignUpData(params) {
     }
   } else {
     Object.keys(params).forEach((key) => {
-      const value =
-        typeof params[key] === "string" ? params[key].trim() : params[key];
-      if (value !== undefined && value !== null) {
-        formData.append(key, value);
+      const val = params[key];
+      if (val !== undefined && val !== null) {
+        if (typeof val === "object" && !Array.isArray(val) && !(val instanceof Blob) && !val.uri) {
+          Object.keys(val).forEach((nestedKey) => {
+            if (val[nestedKey] !== undefined && val[nestedKey] !== null) {
+              formData.append(nestedKey, typeof val[nestedKey] === "string" ? val[nestedKey].trim() : val[nestedKey]);
+            }
+          });
+        } else {
+          const value = typeof val === "string" ? val.trim() : val;
+          formData.append(key, value);
+        }
       }
     });
   }
@@ -120,8 +135,7 @@ export const verifyApplicant = async () => {
 
     return response.data;
   } catch (error) {
-
-
-    return error.response?.data?.error || "Failed to create applicant";
+    const errMsg = error.response?.data?.error || error.response?.data?.details || error.message || "Failed to create applicant";
+    return { success: false, error: errMsg };
   }
 };

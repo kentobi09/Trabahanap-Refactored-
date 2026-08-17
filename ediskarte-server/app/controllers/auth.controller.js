@@ -42,11 +42,20 @@ transporter.verify(function (error, success) {
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required" });
+  }
 
-  // Check Native MongoDB for account status (banned / suspended)
+  const cleanEmail = email.trim();
+  const emailRegex = new RegExp(`^${cleanEmail}$`, "i");
+
   try {
     const db = await getNativeDb();
-    const nativeUser = await db.collection("users").findOne({ emailAddress: email });
+    console.log("Login check for email:", cleanEmail);
+    
+    // 1. Check Native MongoDB users collection
+    const nativeUser = await db.collection("users").findOne({ emailAddress: emailRegex });
+    console.log("nativeUser query result:", nativeUser ? nativeUser.emailAddress : "null");
     if (nativeUser) {
       if (nativeUser.accountStatus === "banned" || nativeUser.isBanned === true) {
         return res.status(403).json({
@@ -66,130 +75,134 @@ export const login = async (req, res) => {
           });
         }
       }
+
+      const passwordMatch = bcrypt.compareSync(String(password), nativeUser.password);
+      if (!passwordMatch) {
+        return res.status(401).json({ error: "Invalid password" });
+      }
+
+      const userIdStr = nativeUser._id.toString();
+      const token = jwt.sign(
+        { id: userIdStr, email: nativeUser.emailAddress, userType: nativeUser.userType },
+        process.env.JWT_SECRET,
+        { expiresIn: "7d" }
+      );
+
+      const userFormatted = {
+        id: userIdStr,
+        ...nativeUser,
+      };
+      delete userFormatted._id;
+      delete userFormatted.password;
+
+      return res.json({ message: "Login successful", token, user: userFormatted });
     }
+
+    // 2. Check Native MongoDB applicants collection
+    const nativeApplicant = await db.collection("applicants").findOne({ emailAddress: emailRegex });
+    if (nativeApplicant) {
+      const passwordMatch = bcrypt.compareSync(String(password), nativeApplicant.password);
+      if (!passwordMatch) {
+        return res.status(401).json({ error: "Invalid password" });
+      }
+
+      const userId = new ObjectId();
+      const achievementId = new ObjectId();
+
+      const userData = {
+        _id: userId,
+        firstName: nativeApplicant.firstName || "",
+        middleName: nativeApplicant.middleName || "",
+        lastName: nativeApplicant.lastName || "",
+        suffixName: nativeApplicant.suffixName || "",
+        gender: nativeApplicant.gender || "unspecified",
+        birthday: nativeApplicant.birthday || new Date("2000-01-01"),
+        age: nativeApplicant.age || 0,
+        emailAddress: nativeApplicant.emailAddress,
+        password: nativeApplicant.password,
+        profileImage: nativeApplicant.profileImage || "",
+        idValidationFrontImage: nativeApplicant.idValidationFrontImage || "",
+        idValidationBackImage: nativeApplicant.idValidationBackImage || "",
+        idType: nativeApplicant.idType || "national_id",
+        bio: nativeApplicant.bio || "",
+        barangay: nativeApplicant.barangay || "N/A",
+        street: nativeApplicant.street || "N/A",
+        houseNumber: nativeApplicant.houseNumber || "",
+        userType: nativeApplicant.userType || "job-seeker",
+        jobsDone: 0,
+        joinedAt: nativeApplicant.joinedAt || new Date(),
+        verificationStatus: nativeApplicant.verificationStatus || "pending",
+        accountStatus: "active",
+      };
+
+      if (nativeApplicant.userType === "job-seeker") {
+        userData.achievements = [new DBRef("achievements", achievementId)];
+      }
+
+      await db.collection("users").insertOne(userData);
+
+      if (nativeApplicant.userType === "job-seeker") {
+        const applicantJobSeekerData = await db.collection("applicant_jobseeker").findOne({
+          applicantId: nativeApplicant._id
+        });
+
+        const jobSeekerId = new ObjectId();
+        const milestoneId = new ObjectId();
+
+        await db.collection("jobseekers").insertOne({
+          _id: jobSeekerId,
+          userId: userId,
+          availability: applicantJobSeekerData?.availability !== undefined ? applicantJobSeekerData.availability : true,
+          hourlyRate: applicantJobSeekerData?.hourlyRate || "0",
+          credentials: [],
+          joinedAt: applicantJobSeekerData?.joinedAt || new Date(),
+          jobTags: applicantJobSeekerData?.jobTags || [],
+        });
+
+        await db.collection("achievements").insertOne({
+          _id: achievementId,
+          jobSeekerId: jobSeekerId,
+          userId: userId,
+          achievementName: "Created First Account",
+          jobRequired: "None",
+          requiredJobCount: 0,
+          achievementIcon: "./assets/achievements/starter.png",
+          description: "Successfully created your first account",
+          dateAchieved: new Date(),
+        });
+
+        await db.collection("milestones").insertOne({
+          _id: milestoneId,
+          jobSeekerId: jobSeekerId,
+          milestoneTitle: "Start of the Journey",
+          milestoneDescription: "Successfully created an account",
+          jobsCompleted: 0,
+          experienceLevel: "1",
+          achievedAt: new Date(),
+        });
+      }
+
+      const token = jwt.sign(
+        { id: userId.toString(), email: userData.emailAddress, userType: userData.userType },
+        process.env.JWT_SECRET,
+        { expiresIn: "7d" }
+      );
+
+      const userFormatted = {
+        id: userId.toString(),
+        ...userData,
+      };
+      delete userFormatted._id;
+      delete userFormatted.password;
+
+      return res.json({ message: "Login successful", token, user: userFormatted });
+    }
+
+    return res.status(401).json({ error: "User not found or pending verification" });
   } catch (err) {
-    console.error("Error checking account status in MongoDB:", err);
+    console.error("Error during login:", err);
+    return res.status(500).json({ error: "Login failed due to a server error", details: err.message });
   }
-
-  let user = await prisma.user.findFirst({
-    where: { emailAddress: email },
-  });
-
-  if (!user) {
-    // Check applicants table
-    const applicant = await prisma.applicants.findFirst({
-      where: { emailAddress: email },
-    });
-
-    if (!applicant) {
-      return res.status(401).json({ error: "User not found or pending verification" });
-    }
-
-    const passwordMatch = bcrypt.compareSync(password, applicant.password);
-    if (!passwordMatch) {
-      return res.status(401).json({ error: "Invalid password" });
-    }
-
-    const db = await getNativeDb();
-    const userId = new ObjectId();
-    const achievementId = new ObjectId();
-
-    const userData = {
-      _id: userId,
-      firstName: applicant.firstName,
-      middleName: applicant.middleName || "",
-      lastName: applicant.lastName,
-      suffixName: applicant.suffixName || "",
-      gender: applicant.gender,
-      birthday: applicant.birthday,
-      age: applicant.age,
-      emailAddress: applicant.emailAddress,
-      password: applicant.password,
-      profileImage: applicant.profileImage || "",
-      idValidationFrontImage: applicant.idValidationFrontImage || "",
-      idValidationBackImage: applicant.idValidationBackImage || "",
-      idType: applicant.idType,
-      bio: applicant.bio || "",
-      barangay: applicant.barangay,
-      street: applicant.street,
-      houseNumber: applicant.houseNumber || "",
-      userType: applicant.userType,
-      jobsDone: 0,
-      joinedAt: applicant.joinedAt || new Date(),
-      verificationStatus: applicant.verificationStatus || "pending",
-    };
-
-    if (applicant.userType === "job-seeker") {
-      userData.achievements = [
-        new DBRef("achievements", achievementId)
-      ];
-    }
-
-    // Insert user document via native MongoClient to bypass transactions
-    await db.collection("users").insertOne(userData);
-
-    user = {
-      id: userId.toString(),
-      ...userData,
-    };
-    delete user._id;
-
-    if (applicant.userType === "job-seeker") {
-      const applicantJobSeekerData = await db.collection("applicant_jobseeker").findOne({
-        applicantId: new ObjectId(applicant.id)
-      });
-
-      const jobSeekerId = new ObjectId();
-      const milestoneId = new ObjectId();
-
-      // Insert job seeker document
-      await db.collection("jobseekers").insertOne({
-        _id: jobSeekerId,
-        userId: userId,
-        availability: applicantJobSeekerData?.availability !== undefined ? applicantJobSeekerData.availability : true,
-        hourlyRate: applicantJobSeekerData?.hourlyRate || "0",
-        credentials: [],
-        joinedAt: applicantJobSeekerData?.joinedAt || new Date(),
-        jobTags: applicantJobSeekerData?.jobTags || [],
-      });
-
-      // Insert Achievement document
-      await db.collection("achievements").insertOne({
-        _id: achievementId,
-        jobSeekerId: jobSeekerId,
-        userId: userId,
-        achievementName: "Created First Account",
-        jobRequired: "None",
-        requiredJobCount: 0,
-        achievementIcon: "./assets/achievements/starter.png",
-        description: "Successfully created your first account",
-        dateAchieved: new Date(),
-      });
-
-      // Insert Milestone document
-      await db.collection("milestones").insertOne({
-        _id: milestoneId,
-        jobSeekerId: jobSeekerId,
-        milestoneTitle: "Start of the Journey",
-        milestoneDescription: "Successfully created an account",
-        jobsCompleted: 0,
-        experienceLevel: "1",
-        achievedAt: new Date(),
-      });
-    }
-  } else {
-    const passwordMatch = bcrypt.compareSync(password, user.password);
-    if (!passwordMatch) {
-      return res.status(401).json({ error: "Invalid password" });
-    }
-  }
-
-  const token = jwt.sign(
-    { id: user.id, email: user.emailAddress, userType: user.userType },
-    process.env.JWT_SECRET,
-    { expiresIn: "7d" }
-  );
-  res.json({ message: "Login successful", token, user });
 };
 
 export const signUp = async (req, res) => {
@@ -480,34 +493,72 @@ export const resetPassword = async (req, res) => {
 
 export const verifyApplicant = async (req, res) => {
   try {
-    // Create applicant record with basic data
-    console.log("received", req);
+    console.log("verifyApplicant received body:", req.body);
+
+    let birthdayDate = new Date("2000-01-01");
+    if (req.body.birthday) {
+      const parsed = new Date(req.body.birthday);
+      if (!isNaN(parsed.getTime())) {
+        birthdayDate = parsed;
+      }
+    }
+
+    let parsedAge = 0;
+    if (req.body.age) {
+      const parsed = parseInt(req.body.age, 10);
+      if (!isNaN(parsed)) {
+        parsedAge = parsed;
+      }
+    }
+
+    const rawPassword =
+      req.body.password !== undefined &&
+      req.body.password !== null &&
+      req.body.password !== ""
+        ? String(req.body.password)
+        : "DefaultPass123!";
+    const hashedPassword = bcrypt.hashSync(rawPassword, 10);
+
+    let profileImagePath = null;
+    let frontImagePath = null;
+    let backImagePath = null;
+
+    if (Array.isArray(req.files)) {
+      for (const file of req.files) {
+        if (["profileImage", "profile_image", "avatar"].includes(file.fieldname)) {
+          profileImagePath = file.path;
+        } else if (["idValidationFrontImage", "frontImage", "idFront", "idValidationFront"].includes(file.fieldname)) {
+          frontImagePath = file.path;
+        } else if (["idValidationBackImage", "backImage", "idBack", "idValidationBack"].includes(file.fieldname)) {
+          backImagePath = file.path;
+        }
+      }
+    } else if (req.files) {
+      if (req.files.profileImage) profileImagePath = req.files.profileImage[0]?.path || null;
+      if (req.files.idValidationFrontImage) frontImagePath = req.files.idValidationFrontImage[0]?.path || null;
+      if (req.files.idValidationBackImage) backImagePath = req.files.idValidationBackImage[0]?.path || null;
+    }
+
     const applicantData = {
-      firstName: req.body.firstName,
-      middleName: req.body.middleName,
-      lastName: req.body.lastName,
-      suffixName: req.body.suffixName,
-      gender: req.body.gender,
-      birthday: new Date(req.body.birthday),
-      age: parseInt(req.body.age),
-      emailAddress: req.body.emailAddress,
-      password: bcrypt.hashSync(req.body.password, 10),
+      firstName: req.body.firstName || "",
+      middleName: req.body.middleName || "",
+      lastName: req.body.lastName || "",
+      suffixName: req.body.suffixName || "",
+      gender: req.body.gender || "unspecified",
+      birthday: birthdayDate,
+      age: parsedAge,
+      emailAddress: req.body.emailAddress || "",
+      password: hashedPassword,
       phoneNumber: req.body.phoneNumber || null,
-      profileImage: req.files?.profileImage
-        ? req.files.profileImage[0].path
-        : null,
-      idValidationFrontImage: req.files?.idValidationFrontImage
-        ? req.files.idValidationFrontImage[0].path
-        : null,
-      idValidationBackImage: req.files?.idValidationBackImage
-        ? req.files.idValidationBackImage[0].path
-        : null,
-      idType: req.body.idType,
+      profileImage: profileImagePath,
+      idValidationFrontImage: frontImagePath,
+      idValidationBackImage: backImagePath,
+      idType: req.body.idType || "national_id",
       bio: req.body.bio || null,
-      barangay: req.body.barangay,
-      street: req.body.street,
-      houseNumber: req.body.houseNumber || null,
-      userType: req.body.userType,
+      barangay: req.body.barangay || req.body.address?.barangay || "N/A",
+      street: req.body.street || req.body.address?.street || "N/A",
+      houseNumber: req.body.houseNumber || req.body.address?.houseNumber || null,
+      userType: req.body.userType || "job-seeker",
       jobsDone: 0,
       joinedAt: new Date(),
       verificationStatus: "pending",
@@ -565,8 +616,6 @@ export const verifyApplicant = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating applicant:", error);
-
-    // Error handling
 
     return res.status(500).json({
       success: false,

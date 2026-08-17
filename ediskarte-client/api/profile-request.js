@@ -258,3 +258,18 @@ export async function deleteCredential(userId, credentialPath) {
 
   return response.data;
 }
+
+export async function fetchPublicJobTags() {
+  try {
+    const ip = process.env.EXPO_PUBLIC_IP_ADDRESS || "localhost";
+    try {
+      const response = await axios.get(`http://${ip}:3000/user/job-tags`);
+      if (Array.isArray(response.data) && response.data.length > 0) return response.data;
+    } catch (e) {}
+    const response2 = await axios.get(`http://${ip}:8000/admin/api/public/job_tags`);
+    return response2.data;
+  } catch (error) {
+    console.log("Could not fetch public job tags:", error.message);
+    return [];
+  }
+}

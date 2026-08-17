@@ -33,24 +33,7 @@ router.get("/decodeToken", decodeToken);
 router.post("/store-otp", storeOTP);
 router.post("/verify-otp", verifyOtpOnly);
 router.post("/reset-password", resetPassword);
-router.post(
-  "/signup",
-  signUpData.fields([
-    { name: "profileImage", maxCount: 1 },
-    { name: "idValidationFrontImage", maxCount: 1 },
-    { name: "idValidationBackImage", maxCount: 1 },
-  ]),
-  signUp
-);
-
-router.post(
-  "/verify-applicant",
-  signUpData.fields([
-    { name: "profileImage", maxCount: 1 },
-    { name: "idValidationFrontImage", maxCount: 1 },
-    { name: "idValidationBackImage", maxCount: 1 },
-  ]),
-  verifyApplicant
-);
+router.post("/signup", signUpData.any(), signUp);
+router.post("/verify-applicant", signUpData.any(), verifyApplicant);
 
 export default router;

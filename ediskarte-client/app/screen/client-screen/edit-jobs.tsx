@@ -17,9 +17,8 @@ import {
 } from "react-native";
 import { Ionicons, Feather, MaterialIcons } from "@expo/vector-icons";
 import { useRouter, useFocusEffect, useLocalSearchParams } from "expo-router";
-import * as ImagePicker from "expo-image-picker";
-import { fetchSingleJobListing, editJobListing } from "@/api/client-request";
 import * as FileSystem from "expo-file-system";
+import { fetchPublicJobTags } from "@/api/profile-request";
 const jobCategories = [
   {
     title: "🛠️ Repair and Maintenance",
@@ -99,8 +98,31 @@ export default function EditJobScreen() {
   const [location, setLocation] = useState("");
   const [duration, setDuration] = useState("");
   const [durationUnit, setDurationUnit] = useState("");
-  const [showDurationUnitModal, setShowDurationUnitModal] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  const [categoriesList, setCategoriesList] = useState(jobCategories);
+
+  useEffect(() => {
+    fetchPublicJobTags()
+      .then((tags) => {
+        if (Array.isArray(tags) && tags.length > 0) {
+          const categoryMap: { [catName: string]: string[] } = {};
+          tags.forEach((t: any) => {
+            const catName = t.category || "General";
+            if (!categoryMap[catName]) categoryMap[catName] = [];
+            const displayLabel = t.label || t.tagId;
+            if (!categoryMap[catName].includes(displayLabel)) {
+              categoryMap[catName].push(displayLabel);
+            }
+          });
+          const grouped = Object.keys(categoryMap).map((catName) => ({
+            title: catName,
+            tags: categoryMap[catName],
+          }));
+          setCategoriesList(grouped);
+        }
+      })
+      .catch((e) => console.log("Error loading dynamic categories in edit-jobs:", e));
+  }, []);
   const [showTagPicker, setShowTagPicker] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [titleError, setTitleError] = useState(false);
@@ -511,7 +533,7 @@ export default function EditJobScreen() {
             </View>
 
             <FlatList
-              data={jobCategories}
+              data={categoriesList}
               keyExtractor={(item) => item.title}
               renderItem={({ item }) => (
                 <View>
