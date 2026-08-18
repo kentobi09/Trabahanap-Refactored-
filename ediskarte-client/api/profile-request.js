@@ -270,16 +270,27 @@ export async function fetchPublicJobTags() {
     `http://10.0.2.2:8000/admin/api/public/job_tags`,
   ]));
 
-  for (const url of candidateUrls) {
-    try {
-      const response = await axios.get(url, { timeout: 3000 });
-      if (Array.isArray(response.data) && response.data.length > 0) {
-        await AsyncStorage.setItem("cached_job_tags_list", JSON.stringify(response.data)).catch(() => {});
-        return response.data;
-      }
-    } catch (e) {
-      // try next URL
+  const fetchUrl = (url) =>
+    new Promise((resolve, reject) => {
+      axios.get(url, { timeout: 2000 })
+        .then((res) => {
+          if (Array.isArray(res.data) && res.data.length > 0) {
+            resolve(res.data);
+          } else {
+            reject(new Error("Empty response"));
+          }
+        })
+        .catch(reject);
+    });
+
+  try {
+    const data = await Promise.any(candidateUrls.map(fetchUrl));
+    if (data && Array.isArray(data) && data.length > 0) {
+      await AsyncStorage.setItem("cached_job_tags_list", JSON.stringify(data)).catch(() => {});
+      return data;
     }
+  } catch (e) {
+    // ignore parallel errors, move to cache fallback
   }
 
   try {
@@ -290,5 +301,18 @@ export async function fetchPublicJobTags() {
     }
   } catch (e) {}
 
-  return [];
+  return [
+    { tagId: "plumbing", label: "Plumbing", category: "Home Repairs & Construction" },
+    { tagId: "electricalRepairs", label: "Electrical Repairs", category: "Home Repairs & Construction" },
+    { tagId: "carpentry", label: "Carpentry", category: "Home Repairs & Construction" },
+    { tagId: "roofRepair", label: "Roof Repair", category: "Home Repairs & Construction" },
+    { tagId: "paintingServices", label: "Painting Services", category: "Home Repairs & Construction" },
+    { tagId: "autoMechanic", label: "Auto Mechanic", category: "Automotive Services" },
+    { tagId: "carWash", label: "Car Wash", category: "Automotive Services" },
+    { tagId: "caregiver", label: "Caregiver", category: "Personal & Care Services" },
+    { tagId: "personalDriver", label: "Personal Driver", category: "Personal & Care Services" },
+    { tagId: "homeCleaningServices", label: "Home Cleaning", category: "Cleaning & Maintenance" },
+    { tagId: "bagger", label: "Bagger", category: "Retail & Customer Service" },
+    { tagId: "Promodicer", label: "Promodicer", category: "Retail & Customer Service" },
+  ];
 }

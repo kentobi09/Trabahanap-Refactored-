@@ -231,11 +231,13 @@ const UtilityWorkerProfile: React.FC = () => {
   const [editingCredentials, setEditingCredentials] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [serverJobTags, setServerJobTags] = useState<string[]>([]);
+  const [rawPublicTags, setRawPublicTags] = useState<any[]>([]);
 
   const loadServerTags = useCallback(() => {
     fetchPublicJobTags()
       .then((tags) => {
         if (Array.isArray(tags)) {
+          setRawPublicTags(tags);
           const allTags = new Set<string>();
           tags.forEach((t: any) => {
             if (t.tagId) allTags.add(t.tagId);
@@ -256,6 +258,81 @@ const UtilityWorkerProfile: React.FC = () => {
       loadServerTags();
     }, [loadServerTags])
   );
+
+  const getGroupedSkillsForEdit = useCallback(() => {
+    const categoryMap: { [catName: string]: { tagId: string; label: string }[] } = {};
+
+    const defaultCategoryMapping: { [key: string]: string } = {
+      plumbing: "Home Repairs & Construction",
+      electricalRepairs: "Home Repairs & Construction",
+      carpentry: "Home Repairs & Construction",
+      roofRepair: "Home Repairs & Construction",
+      paintingServices: "Home Repairs & Construction",
+      welding: "Home Repairs & Construction",
+      glassInstallation: "Home Repairs & Construction",
+      airconRepairAndCleaning: "Appliance & HVAC",
+      applianceRepair: "Appliance & HVAC",
+      pestControlServices: "Cleaning & Maintenance",
+      autoMechanic: "Automotive Services",
+      carWash: "Automotive Services",
+      motorcycleRepair: "Automotive Services",
+      carAirconRepair: "Automotive Services",
+      windowTinting: "Automotive Services",
+      caregiver: "Personal & Care Services",
+      personalDriver: "Personal & Care Services",
+      massageTherapy: "Personal & Care Services",
+      petGroomingAndPetCare: "Personal & Care Services",
+      homeCleaningServices: "Cleaning & Maintenance",
+      laundryServices: "Cleaning & Maintenance",
+      gardening: "Cleaning & Maintenance",
+      bagger: "Retail & Customer Service",
+      Promodicer: "Retail & Customer Service",
+      others: "General & Custom Skills",
+    };
+
+    rawPublicTags.forEach((t: any) => {
+      const catName = t.category || defaultCategoryMapping[t.tagId] || "General & Custom Skills";
+      if (!categoryMap[catName]) categoryMap[catName] = [];
+      const tagId = t.tagId || t.label;
+      const label = t.label || formatTagLabel(tagId);
+      if (!categoryMap[catName].some((item) => item.tagId === tagId)) {
+        categoryMap[catName].push({ tagId, label });
+      }
+    });
+
+    Object.keys(jobTagMetadata)
+      .filter((tagKey) => tagKey !== "default")
+      .forEach((tagKey) => {
+        const catName = defaultCategoryMapping[tagKey] || "General & Custom Skills";
+        if (!categoryMap[catName]) categoryMap[catName] = [];
+        if (!categoryMap[catName].some((item) => item.tagId === tagKey)) {
+          const { label } = getTagDisplayData(tagKey);
+          categoryMap[catName].push({ tagId: tagKey, label });
+        }
+      });
+
+    if (worker?.jobTags) {
+      worker.jobTags.forEach((tagKey: string) => {
+        let found = false;
+        for (const catName in categoryMap) {
+          if (categoryMap[catName].some((item) => item.tagId === tagKey || item.label === tagKey)) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          const catName = defaultCategoryMapping[tagKey] || "General & Custom Skills";
+          if (!categoryMap[catName]) categoryMap[catName] = [];
+          categoryMap[catName].push({ tagId: tagKey, label: formatTagLabel(tagKey) });
+        }
+      });
+    }
+
+    return Object.keys(categoryMap).map((catName) => ({
+      title: catName,
+      tags: categoryMap[catName],
+    }));
+  }, [rawPublicTags, worker?.jobTags]);
 
   const {
     data: worker,
@@ -556,62 +633,77 @@ const UtilityWorkerProfile: React.FC = () => {
                 )}
               </TouchableOpacity>
             </View>
-            <View style={styles.skillsContainer}>
-              {editingSkills
-                ? Array.from(
-                    new Set([
-                      ...Object.keys(jobTagMetadata).filter((tag) => tag !== "default"),
-                      ...serverJobTags,
-                      ...(worker?.jobTags || []),
-                    ])
-                  ).map((tag, index) => {
-                      const { label, Icon } = getTagDisplayData(tag);
-                      const isSelected = selectedSkills[tag];
-                      return (
-                        <TouchableOpacity
-                          key={index}
-                          style={[
-                            styles.skillTag,
-                            {
-                              backgroundColor: isSelected
-                                ? "#0B153C"
-                                : "#e0e0e0",
-                              borderWidth: 1,
-                              borderColor: isSelected ? "#0B153C" : "#cccccc",
-                            },
-                          ]}
-                          onPress={() => toggleSkill(tag)}
-                        >
-                          <Icon />
-                          <Text
+            {editingSkills ? (
+              <View style={{ width: "100%", marginTop: 8 }}>
+                {getGroupedSkillsForEdit().map((group, groupIdx) => (
+                  <View key={groupIdx} style={{ marginBottom: 14 }}>
+                    <Text style={styles.categorySubTitle}>
+                      {group.title}
+                    </Text>
+                    <View style={styles.skillsContainer}>
+                      {group.tags.map((item, index) => {
+                        const tagKey = item.tagId;
+                        const displayLabel = item.label;
+                        const { Icon } = getTagDisplayData(tagKey);
+                        const isSelected = !!selectedSkills[tagKey] || !!selectedSkills[displayLabel];
+
+                        return (
+                          <TouchableOpacity
+                            key={index}
                             style={[
-                              styles.skillText,
-                              { marginLeft: 5 },
-                              !isSelected && { color: "#666" },
+                              styles.skillTag,
+                              {
+                                backgroundColor: isSelected ? "#0B153C" : "#f1f5f9",
+                                borderWidth: 1,
+                                borderColor: isSelected ? "#0B153C" : "#cbd5e1",
+                                paddingVertical: 6,
+                                paddingHorizontal: 12,
+                              },
                             ]}
+                            onPress={() => toggleSkill(tagKey)}
                           >
-                            {label}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })
-                : displayedSkills.map((tag, index) => {
-                    const { label, Icon } = getTagDisplayData(tag);
-                    return (
-                      <View key={index} style={styles.skillTag}>
-                        <Icon />
-                        <Text style={[styles.skillText, { marginLeft: 5 }]}>
-                          {label}
-                        </Text>
-                      </View>
-                    );
-                  })}
-              {!editingSkills && displayedSkills.length === 0 && (
-                <Text style={styles.noDataText}>
-                  No skills or services listed.
-                </Text>
-              )}
-            </View>
+                            <Icon />
+                            <Text
+                              style={[
+                                styles.skillText,
+                                { marginLeft: 6 },
+                                isSelected ? { color: "#FFFFFF", fontWeight: "bold" } : { color: "#334155" },
+                              ]}
+                            >
+                              {displayLabel}
+                            </Text>
+                            {isSelected ? (
+                              <AntDesign name="check" size={14} color="#FFFFFF" style={{ marginLeft: 6 }} />
+                            ) : (
+                              <AntDesign name="plus" size={14} color="#64748B" style={{ marginLeft: 6 }} />
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.skillsContainer}>
+                {displayedSkills.map((tag, index) => {
+                  const { label, Icon } = getTagDisplayData(tag);
+                  return (
+                    <View key={index} style={styles.skillTag}>
+                      <Icon />
+                      <Text style={[styles.skillText, { marginLeft: 5 }]}>
+                        {label}
+                      </Text>
+                    </View>
+                  );
+                })}
+                {displayedSkills.length === 0 && (
+                  <Text style={styles.noDataText}>
+                    No skills or services listed.
+                  </Text>
+                )}
+              </View>
+            )}
           </View>
 
           <View style={styles.section}>
@@ -1188,6 +1280,15 @@ const styles = StyleSheet.create({
   imagePreviewModalImage: {
     width: Dimensions.get("window").width,
     height: Dimensions.get("window").width,
+  },
+  categorySubTitle: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: "#0B153C",
+    marginTop: 6,
+    marginBottom: 8,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
 });
 
