@@ -101,7 +101,7 @@ export default function EditJobScreen() {
   const [images, setImages] = useState<string[]>([]);
   const [categoriesList, setCategoriesList] = useState(jobCategories);
 
-  useEffect(() => {
+  const loadCategories = useCallback(() => {
     fetchPublicJobTags()
       .then((tags) => {
         if (Array.isArray(tags) && tags.length > 0) {
@@ -123,6 +123,16 @@ export default function EditJobScreen() {
       })
       .catch((e) => console.log("Error loading dynamic categories in edit-jobs:", e));
   }, []);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadCategories();
+    }, [loadCategories])
+  );
   const [showTagPicker, setShowTagPicker] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [titleError, setTitleError] = useState(false);

@@ -260,16 +260,35 @@ export async function deleteCredential(userId, credentialPath) {
 }
 
 export async function fetchPublicJobTags() {
-  try {
-    const ip = process.env.EXPO_PUBLIC_IP_ADDRESS || "localhost";
+  const ip = process.env.EXPO_PUBLIC_IP_ADDRESS || "localhost";
+  const candidateUrls = Array.from(new Set([
+    `http://${ip}:3000/user/job-tags`,
+    `http://localhost:3000/user/job-tags`,
+    `http://10.0.2.2:3000/user/job-tags`,
+    `http://${ip}:8000/admin/api/public/job_tags`,
+    `http://localhost:8000/admin/api/public/job_tags`,
+    `http://10.0.2.2:8000/admin/api/public/job_tags`,
+  ]));
+
+  for (const url of candidateUrls) {
     try {
-      const response = await axios.get(`http://${ip}:3000/user/job-tags`);
-      if (Array.isArray(response.data) && response.data.length > 0) return response.data;
-    } catch (e) {}
-    const response2 = await axios.get(`http://${ip}:8000/admin/api/public/job_tags`);
-    return response2.data;
-  } catch (error) {
-    console.log("Could not fetch public job tags:", error.message);
-    return [];
+      const response = await axios.get(url, { timeout: 3000 });
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        await AsyncStorage.setItem("cached_job_tags_list", JSON.stringify(response.data)).catch(() => {});
+        return response.data;
+      }
+    } catch (e) {
+      // try next URL
+    }
   }
+
+  try {
+    const cached = await AsyncStorage.getItem("cached_job_tags_list");
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+
+  return [];
 }

@@ -89,7 +89,7 @@ export default function AddJobScreen() {
   const [images, setImages] = useState<string[]>([]);
   const [categoriesList, setCategoriesList] = useState(jobCategories);
 
-  useEffect(() => {
+  const loadCategories = useCallback(() => {
     fetchPublicJobTags()
       .then((tags) => {
         if (Array.isArray(tags) && tags.length > 0) {
@@ -111,6 +111,16 @@ export default function AddJobScreen() {
       })
       .catch((e) => console.log("Error loading dynamic categories in add-jobs:", e));
   }, []);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadCategories();
+    }, [loadCategories])
+  );
 
   const [showTagPicker, setShowTagPicker] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);

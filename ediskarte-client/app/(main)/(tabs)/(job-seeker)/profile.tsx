@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   StyleSheet,
   View,
@@ -21,7 +21,7 @@ import {
   FontAwesome5,
   Entypo,
 } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { safePush, safeReplace, safeBack } from "../../../constants/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -254,15 +254,30 @@ const UtilityWorkerProfile: React.FC = () => {
   const [showRoleTooltip, setShowRoleTooltip] = useState(false);
   const [serverJobTags, setServerJobTags] = useState<string[]>([]);
 
-  useEffect(() => {
+  const loadServerTags = useCallback(() => {
     fetchPublicJobTags()
       .then((tags) => {
         if (Array.isArray(tags)) {
-          setServerJobTags(tags.map((t: any) => t.tagId).filter(Boolean));
+          const allTags = new Set<string>();
+          tags.forEach((t: any) => {
+            if (t.tagId) allTags.add(t.tagId);
+            if (t.label) allTags.add(t.label);
+          });
+          setServerJobTags(Array.from(allTags));
         }
       })
       .catch((e) => console.log("Failed to load server job tags:", e));
   }, []);
+
+  useEffect(() => {
+    loadServerTags();
+  }, [loadServerTags]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadServerTags();
+    }, [loadServerTags])
+  );
 
   const {
     data: worker,
