@@ -283,6 +283,8 @@ const UtilityWorkerProfile: React.FC = () => {
 
   const getGroupedSkillsForEdit = useCallback(() => {
     const categoryMap: { [catName: string]: { tagId: string; label: string }[] } = {};
+    const seenTagIds = new Set<string>();
+    const seenLabels = new Set<string>();
 
     const defaultCategoryMapping: { [key: string]: string } = {
       plumbing: "Home Repairs & Construction",
@@ -312,48 +314,56 @@ const UtilityWorkerProfile: React.FC = () => {
       others: "General & Custom Skills",
     };
 
-    rawPublicTags.forEach((t: any) => {
-      const catName = t.category || defaultCategoryMapping[t.tagId] || "General & Custom Skills";
+    const normalizeCategory = (cat?: string) => {
+      if (!cat) return "General & Custom Skills";
+      const c = cat.trim();
+      if (c === "Others" || c === "General" || c === "Other") return "General & Custom Skills";
+      return c;
+    };
+
+    const addTagToCategory = (catNameInput: string, tagId: string, label: string) => {
+      const catName = normalizeCategory(catNameInput);
+      const normTagId = (tagId || label).toLowerCase();
+      const normLabel = (label || tagId).toLowerCase();
+
+      if (seenTagIds.has(normTagId) || seenLabels.has(normLabel)) return;
+
+      seenTagIds.add(normTagId);
+      seenLabels.add(normLabel);
+
       if (!categoryMap[catName]) categoryMap[catName] = [];
+      categoryMap[catName].push({ tagId, label });
+    };
+
+    rawPublicTags.forEach((t: any) => {
       const tagId = t.tagId || t.label;
       const label = t.label || formatTagLabel(tagId);
-      if (!categoryMap[catName].some((item) => item.tagId === tagId)) {
-        categoryMap[catName].push({ tagId, label });
-      }
+      const catName = t.category || defaultCategoryMapping[t.tagId];
+      addTagToCategory(catName, tagId, label);
     });
 
     Object.keys(jobTagMetadata)
       .filter((tagKey) => tagKey !== "default")
       .forEach((tagKey) => {
-        const catName = defaultCategoryMapping[tagKey] || "General & Custom Skills";
-        if (!categoryMap[catName]) categoryMap[catName] = [];
-        if (!categoryMap[catName].some((item) => item.tagId === tagKey)) {
-          const { label } = getTagDisplayData(tagKey);
-          categoryMap[catName].push({ tagId: tagKey, label });
-        }
+        const { label } = getTagDisplayData(tagKey);
+        const catName = defaultCategoryMapping[tagKey];
+        addTagToCategory(catName, tagKey, label);
       });
 
     if (worker?.jobTags) {
       worker.jobTags.forEach((tagKey: string) => {
-        let found = false;
-        for (const catName in categoryMap) {
-          if (categoryMap[catName].some((item) => item.tagId === tagKey || item.label === tagKey)) {
-            found = true;
-            break;
-          }
-        }
-        if (!found) {
-          const catName = defaultCategoryMapping[tagKey] || "General & Custom Skills";
-          if (!categoryMap[catName]) categoryMap[catName] = [];
-          categoryMap[catName].push({ tagId: tagKey, label: formatTagLabel(tagKey) });
-        }
+        const label = formatTagLabel(tagKey);
+        const catName = defaultCategoryMapping[tagKey];
+        addTagToCategory(catName, tagKey, label);
       });
     }
 
-    return Object.keys(categoryMap).map((catName) => ({
-      title: catName,
-      tags: categoryMap[catName],
-    }));
+    return Object.keys(categoryMap)
+      .filter((catName) => categoryMap[catName].length > 0)
+      .map((catName) => ({
+        title: catName,
+        tags: categoryMap[catName],
+      }));
   }, [rawPublicTags, worker?.jobTags]);
 
   const {

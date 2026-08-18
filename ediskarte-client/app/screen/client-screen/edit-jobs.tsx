@@ -106,18 +106,33 @@ export default function EditJobScreen() {
       .then((tags) => {
         if (Array.isArray(tags) && tags.length > 0) {
           const categoryMap: { [catName: string]: string[] } = {};
+          const seenTags = new Set<string>();
+
+          const normalizeCategory = (cat?: string) => {
+            if (!cat) return "General & Custom Skills";
+            const c = cat.trim();
+            if (c === "Others" || c === "General" || c === "Other") return "General & Custom Skills";
+            return c;
+          };
+
           tags.forEach((t: any) => {
-            const catName = t.category || "General";
-            if (!categoryMap[catName]) categoryMap[catName] = [];
+            const catName = normalizeCategory(t.category);
             const displayLabel = t.label || t.tagId;
-            if (!categoryMap[catName].includes(displayLabel)) {
+            const normLabel = displayLabel.toLowerCase();
+
+            if (!seenTags.has(normLabel)) {
+              seenTags.add(normLabel);
+              if (!categoryMap[catName]) categoryMap[catName] = [];
               categoryMap[catName].push(displayLabel);
             }
           });
-          const grouped = Object.keys(categoryMap).map((catName) => ({
-            title: catName,
-            tags: categoryMap[catName],
-          }));
+
+          const grouped = Object.keys(categoryMap)
+            .filter((catName) => categoryMap[catName].length > 0)
+            .map((catName) => ({
+              title: catName,
+              tags: categoryMap[catName],
+            }));
           setCategoriesList(grouped);
         }
       })
