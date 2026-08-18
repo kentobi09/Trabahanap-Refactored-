@@ -316,3 +316,5 @@ export async function fetchPublicJobTags() {
     { tagId: "Promodicer", label: "Promodicer", category: "Retail & Customer Service" },
   ];
 }
+
+

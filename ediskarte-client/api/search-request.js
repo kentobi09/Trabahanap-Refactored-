@@ -48,3 +48,5 @@ export const searchJobSeekers = async (query, options = {}) => {
     throw error;
   }
 };
+
+

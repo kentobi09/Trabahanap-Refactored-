@@ -40,7 +40,9 @@ Write-Host "Updated .env and android/.env with IP $ip" -ForegroundColor Yellow
 
 # 3. Temporarily inline IP in source files to force hardcoded build (bypass worker caching issues)
 Write-Host "Inlining IP in source code..." -ForegroundColor Yellow
-$files = Get-ChildItem -Recurse -Include *.ts,*.tsx -Path (Join-Path $PSScriptRoot "app") -ErrorAction SilentlyContinue
+$appDir = Join-Path $PSScriptRoot "app"
+$apiDir = Join-Path $PSScriptRoot "api"
+$files = Get-ChildItem -Recurse -Include *.ts,*.tsx,*.js -Path $appDir, $apiDir -ErrorAction SilentlyContinue
 foreach ($file in $files) {
     $content = Get-Content $file.FullName -Raw
     if ($content -match 'process\.env\.EXPO_PUBLIC_IP_ADDRESS') {

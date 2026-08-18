@@ -36,29 +36,41 @@
 
 ## Connecting to the Server (Local Deployment)
 
-### 📲 Building the APK for Local Testing
-If you want to run the app on physical Android devices using your laptop as the local server, you can use the automated build script. It configures the endpoint configurations, builds a standalone release APK, and restores the codebase state automatically.
+### 📲 Building the APK for Local Testing & Different Networks
+If you want to run the app on physical Android devices using your laptop as the local server, you can use the automated build script `build_apk.ps1`. It auto-detects your network IP (or accepts a custom target IP), inlines it across all client API endpoints, builds the standalone APK, and restores the codebase state automatically.
 
-#### Option A: Windows Mobile Hotspot (Recommended - bypasses router blocking)
-If your WiFi router has AP/Client isolation enabled (common on home, mesh, or school networks), devices won't be able to communicate. You can bypass this by turning on your laptop's **Mobile Hotspot**:
-1. On your Windows laptop, go to **Settings > Network & Internet > Mobile Hotspot** and turn it **On**.
-2. Connect your testing phone(s) to this hotspot.
-3. Your laptop's IP on this network is always **`192.168.137.1`**.
-4. Open PowerShell in the client folder and run:
-   ```powershell
-   .\build_apk.ps1 -TargetIP 192.168.137.1
-   ```
-5. Install the resulting **`eDiskarte-192.168.137.1.apk`** on the phone.
+#### 1. Navigate to the Client Directory in CMD / PowerShell
+Open Command Prompt (`cmd.exe`) or PowerShell on your laptop and navigate to the `ediskarte-client` folder:
+```cmd
+cd C:\ediskarte\ediskarte-client
+```
 
-#### Option B: Normal local WiFi network
-If your router allows local device communication:
-1. Make sure your phone is connected to the same WiFi network as your laptop.
-2. Open PowerShell in the client folder and run:
+#### 2. Build the APK based on your Network Connection
+
+##### 📶 Option A: Auto-Detect Wi-Fi IP (Same Network)
+If your phone and laptop are connected to the same Wi-Fi network:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build_apk.ps1 -BuildType Release
+```
+*(The script auto-detects your active Wi-Fi IPv4 address and exports `eDiskarte-<IP>.apk` directly into `C:\ediskarte\ediskarte-client`)*.
+
+##### 📡 Option B: Connecting to a Different Network / Custom IP
+If you switch to a different Wi-Fi network, router, or hotspot and want to specify the target laptop IP manually:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build_apk.ps1 -TargetIP "192.168.X.X" -BuildType Release
+```
+*(Replace `192.168.X.X` with your laptop's IPv4 address on that network)*.
+
+##### 📱 Option C: Windows Mobile Hotspot (Bypasses Router Blocking)
+If your Wi-Fi router has Client/AP Isolation enabled (common on public or school Wi-Fi), devices cannot talk to each other directly. Use Windows Mobile Hotspot instead:
+1. Turn on **Mobile Hotspot** in Windows (**Settings > Network & Internet > Mobile Hotspot**).
+2. Connect your Android phone to your laptop's Wi-Fi hotspot.
+3. Your laptop's IP on Mobile Hotspot is always **`192.168.137.1`**.
+4. Run:
    ```powershell
-   .\build_apk.ps1
+   powershell -ExecutionPolicy Bypass -File .\build_apk.ps1 -TargetIP "192.168.137.1" -BuildType Release
    ```
-   *(The script will auto-detect your current WiFi IP)*
-3. Install the resulting **`eDiskarte-<WiFi_IP>.apk`** on the phone.
+5. Install **`eDiskarte-192.168.137.1.apk`** on your phone.
 
 ### 🛠️ Manual Configuration (Development Mode)
 1. Check your IP address:

@@ -139,3 +139,5 @@ export const verifyApplicant = async () => {
     return { success: false, error: errMsg };
   }
 };
+
+

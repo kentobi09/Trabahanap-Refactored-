@@ -173,12 +173,28 @@ npx prisma studio
 
 ---
 
-## 📦 Building Mobile Release APK
+## 📦 Building Standalone Mobile Release APK
 
-To generate an installable Android `.apk` binary:
-```bash
-cd ediskarte-client/android
-.\gradlew clean
-.\gradlew assembleRelease
-```
-*Binary generated at: `ediskarte-client/android/app/build/outputs/apk/release/app-release.apk`*
+To build a standalone Android `.apk` for testing on physical devices (without needing Metro running):
+
+1. **Navigate to the Client Directory in CMD / PowerShell**:
+   ```cmd
+   cd C:\ediskarte\ediskarte-client
+   ```
+
+2. **Run `build_apk.ps1` based on your Network Connection**:
+
+   - **Same Wi-Fi Network (Auto-Detect IP)**:
+     ```powershell
+     powershell -ExecutionPolicy Bypass -File .\build_apk.ps1 -BuildType Release
+     ```
+   - **Different Network / Custom IP**:
+     ```powershell
+     powershell -ExecutionPolicy Bypass -File .\build_apk.ps1 -TargetIP "192.168.X.X" -BuildType Release
+     ```
+   - **Windows Mobile Hotspot (`192.168.137.1`)**:
+     ```powershell
+     powershell -ExecutionPolicy Bypass -File .\build_apk.ps1 -TargetIP "192.168.137.1" -BuildType Release
+     ```
+
+*The generated APK is exported directly to `C:\ediskarte\ediskarte-client\eDiskarte-<IP>.apk`.*
