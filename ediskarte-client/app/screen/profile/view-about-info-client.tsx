@@ -34,20 +34,19 @@ interface WorkerInfo {
 
 const AboutInfoPage: React.FC = () => {
   const router = useRouter();
-  const { otherParticipantId } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const rawId = params.otherParticipantId || params.jobseekerId || params.userId || params.clientId || params.id;
+  const jobseekerId = Array.isArray(rawId) ? rawId[0] : rawId;
+
   const [workerInfo, setWorkerInfo] = useState<WorkerInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const jobseekerId = Array.isArray(otherParticipantId)
-    ? otherParticipantId[0]
-    : otherParticipantId;
 
   useEffect(() => {
     if (jobseekerId) {
       fetchUserProfile();
     } else {
-      setError("No jobseeker ID provided");
+      setError("No user ID provided");
       setLoading(false);
     }
   }, [jobseekerId]);

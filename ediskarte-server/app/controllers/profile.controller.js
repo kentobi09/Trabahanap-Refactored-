@@ -356,186 +356,69 @@ export const updateJobTags = async (req, res) => {
 export const getJobSeekerProfileByUserId = async (req, res) => {
   try {
     const userId = req.params.userId || req.params.jobSeekerId;
-    console.log(
-      `[getJobSeekerProfileByUserId] Received request for User ID: ${userId}`
-    );
+    console.log(`[getJobSeekerProfileByUserId] Received request for User ID: ${userId}`);
 
-    let jobSeeker = null;
-    try {
-      jobSeeker = await prisma.jobSeeker.findUnique({
-        where: { userId: userId },
-        include: {
-          user: {
-            select: {
-              id: true,
-              firstName: true,
-              middleName: true,
-              lastName: true,
-              suffixName: true,
-              profileImage: true,
-              emailAddress: true,
-              phoneNumber: true,
-              phoneVisibility: true,
-              barangay: true,
-              street: true,
-              houseNumber: true,
-              gender: true,
-              birthday: true,
-              bio: true,
-              userType: true,
-              jobsDone: true,
-              joinedAt: true,
-              verificationStatus: true,
-            },
-          },
-        },
-      });
-
-      if (!jobSeeker) {
-        console.log(
-          `[getJobSeekerProfileByUserId] No JobSeeker found by userId ${userId}. Trying JobSeeker id lookup.`
-        );
-        jobSeeker = await prisma.jobSeeker.findUnique({
-          where: { id: userId },
-          include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                middleName: true,
-                lastName: true,
-                suffixName: true,
-                profileImage: true,
-                emailAddress: true,
-                phoneNumber: true,
-                phoneVisibility: true,
-                barangay: true,
-                street: true,
-                houseNumber: true,
-                gender: true,
-                birthday: true,
-                bio: true,
-                userType: true,
-                jobsDone: true,
-                joinedAt: true,
-                verificationStatus: true,
-              },
-            },
-          },
-        });
-      }
-    } catch (e) {
-      console.warn("[getJobSeekerProfileByUserId] Prisma lookup failed, falling back to Native DB:", e.message);
+    if (!userId || userId === "undefined" || userId === "null") {
+      return res.status(400).json({ message: "User ID is required" });
     }
 
-    if (jobSeeker) {
-      const isPhonePrivate = jobSeeker.user?.phoneVisibility === "private";
-      const userCopy = jobSeeker.user ? {
-        ...jobSeeker.user,
-        phoneNumber: isPhonePrivate ? "Private" : (jobSeeker.user.phoneNumber || ""),
-      } : null;
-
-      const responsePayload = {
-        jobSeekerId: jobSeeker.id,
-        availability: jobSeeker.availability,
-        credentials: jobSeeker.credentials,
-        hourlyRate: jobSeeker.hourlyRate,
-        rate: jobSeeker.rate,
-        jobTags: jobSeeker.jobTags,
-        user: userCopy,
-      };
-
-      return res.status(200).json(responsePayload);
-    }
-
-    // Native DB Fallback for JobSeeker
     const db = await getNativeDb();
     let uObj; try { uObj = new ObjectId(userId); } catch (err) { uObj = userId; }
+
+    // 1. Search in users collection first
+    let userDoc = await db.collection("users").findOne({
+      $or: [{ _id: uObj }, { id: userId }]
+    });
+
+    // 2. Search in jobseekers collection
     let seekerDoc = await db.collection("jobseekers").findOne({
       $or: [{ userId: userId }, { userId: uObj }, { _id: uObj }, { id: userId }]
     });
 
-    if (seekerDoc) {
+    if (!userDoc && seekerDoc) {
       let targetUserId = seekerDoc.userId || seekerDoc._id;
       let tObj; try { tObj = new ObjectId(targetUserId); } catch (err) { tObj = targetUserId; }
-      let userDoc = await db.collection("users").findOne({
+      userDoc = await db.collection("users").findOne({
         $or: [{ _id: tObj }, { id: targetUserId.toString() }]
-      });
-
-      const isPhonePrivate = userDoc?.phoneVisibility === "private";
-      const userCopy = userDoc ? {
-        id: userDoc._id.toString(),
-        firstName: userDoc.firstName || "",
-        middleName: userDoc.middleName || "",
-        lastName: userDoc.lastName || "",
-        suffixName: userDoc.suffixName || "",
-        profileImage: userDoc.profileImage || null,
-        emailAddress: userDoc.emailAddress || "",
-        phoneNumber: isPhonePrivate ? "Private" : (userDoc.phoneNumber || ""),
-        phoneVisibility: userDoc.phoneVisibility || "public",
-        barangay: userDoc.barangay || "",
-        street: userDoc.street || "",
-        houseNumber: userDoc.houseNumber || "",
-        gender: userDoc.gender || "",
-        birthday: userDoc.birthday || null,
-        bio: userDoc.bio || "",
-        userType: userDoc.userType || "job-seeker",
-        jobsDone: userDoc.jobsDone || 0,
-        joinedAt: userDoc.joinedAt || null,
-        verificationStatus: userDoc.verificationStatus || "",
-      } : null;
-      return res.status(200).json({
-        jobSeekerId: seekerDoc._id.toString(),
-        availability: seekerDoc.availability ?? true,
-        credentials: seekerDoc.credentials || [],
-        hourlyRate: seekerDoc.hourlyRate || "0",
-        rate: seekerDoc.rate || null,
-        jobTags: seekerDoc.jobTags || [],
-        user: userCopy,
       });
     }
 
-    // Fallback for Client / Employer profile lookup
-    let clientDoc = await db.collection("users").findOne({
-      $or: [{ _id: uObj }, { id: userId }]
-    });
-
-    if (clientDoc) {
-      const isPhonePrivate = clientDoc.phoneVisibility === "private";
+    if (userDoc) {
+      const isPhonePrivate = userDoc.phoneVisibility === "private";
       return res.status(200).json({
-        jobSeekerId: clientDoc._id.toString(),
-        availability: true,
-        credentials: [],
-        hourlyRate: "0",
-        rate: null,
-        jobTags: [],
+        jobSeekerId: seekerDoc ? seekerDoc._id.toString() : userDoc._id.toString(),
+        availability: seekerDoc?.availability ?? true,
+        credentials: seekerDoc?.credentials || [],
+        hourlyRate: seekerDoc?.hourlyRate || "0",
+        rate: seekerDoc?.rate || null,
+        jobTags: seekerDoc?.jobTags || [],
         user: {
-          id: clientDoc._id.toString(),
-          firstName: clientDoc.firstName || "",
-          middleName: clientDoc.middleName || "",
-          lastName: clientDoc.lastName || "",
-          suffixName: clientDoc.suffixName || "",
-          profileImage: clientDoc.profileImage || null,
-          emailAddress: clientDoc.emailAddress || "",
-          phoneNumber: isPhonePrivate ? "Private" : (clientDoc.phoneNumber || ""),
-          phoneVisibility: clientDoc.phoneVisibility || "public",
-          barangay: clientDoc.barangay || "",
-          street: clientDoc.street || "",
-          houseNumber: clientDoc.houseNumber || "",
-          gender: clientDoc.gender || "",
-          birthday: clientDoc.birthday || null,
-          bio: clientDoc.bio || "",
-          userType: clientDoc.userType || "client",
-          jobsDone: clientDoc.jobsDone || 0,
-          joinedAt: clientDoc.joinedAt || null,
-          verificationStatus: clientDoc.verificationStatus || "",
+          id: userDoc._id.toString(),
+          firstName: userDoc.firstName || "",
+          middleName: userDoc.middleName || "",
+          lastName: userDoc.lastName || "",
+          suffixName: userDoc.suffixName || "",
+          profileImage: userDoc.profileImage || null,
+          emailAddress: userDoc.emailAddress || "",
+          phoneNumber: isPhonePrivate ? "Private" : (userDoc.phoneNumber || ""),
+          phoneVisibility: userDoc.phoneVisibility || "public",
+          barangay: userDoc.barangay || "",
+          street: userDoc.street || "",
+          houseNumber: userDoc.houseNumber || "",
+          gender: userDoc.gender || "",
+          birthday: userDoc.birthday || null,
+          bio: userDoc.bio || "",
+          userType: userDoc.userType || "client",
+          jobsDone: userDoc.jobsDone || 0,
+          joinedAt: userDoc.joinedAt || null,
+          verificationStatus: userDoc.verificationStatus || "",
         },
       });
     }
 
-    return res.status(404).json({ message: "Job seeker profile not found" });
+    return res.status(404).json({ message: "Profile not found" });
   } catch (error) {
-    console.error("[getJobSeekerProfileByUserId] Error fetching job seeker profile:", error);
+    console.error("[getJobSeekerProfileByUserId] Error fetching profile:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
