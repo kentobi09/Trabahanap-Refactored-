@@ -47,10 +47,22 @@ import { Audio } from 'expo-av';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const getFilePart = (path: string | undefined | null) => {
-  if (!path || typeof path !== 'string' || !path.includes('messages_files/')) {
+  if (!path || typeof path !== 'string') {
     return '';
   }
-  return path.split('messages_files/')[1] || '';
+  if (path.includes('messages_files/')) {
+    return path.split('messages_files/')[1] || '';
+  }
+  if (path.includes('uploads/messages/')) {
+    return path.split('uploads/messages/')[1] || '';
+  }
+  if (path.includes('/')) {
+    return path.split('/').pop() || path;
+  }
+  if (path.includes('\\')) {
+    return path.split('\\').pop() || path;
+  }
+  return path;
 };
 
 type Message = {
@@ -2994,6 +3006,14 @@ callMessageSubtext: {
 });
 
 export default ChatScreen;
+
+
+
+
+
+
+
+
 
 
 

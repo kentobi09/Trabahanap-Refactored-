@@ -262,7 +262,7 @@ export async function deleteCredential(userId, credentialPath) {
 export async function fetchPublicJobTags() {
   const ip = process.env.EXPO_PUBLIC_IP_ADDRESS || "localhost";
   const candidateUrls = Array.from(new Set([
-    `http://${ip}:3000/user/job-tags`,
+    `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/job-tags`,
     `http://localhost:3000/user/job-tags`,
     `http://10.0.2.2:3000/user/job-tags`,
     `http://${ip}:8000/admin/api/public/job_tags`,
@@ -316,5 +316,13 @@ export async function fetchPublicJobTags() {
     { tagId: "Promodicer", label: "Promodicer", category: "Retail & Customer Service" },
   ];
 }
+
+
+
+
+
+
+
+
 
 

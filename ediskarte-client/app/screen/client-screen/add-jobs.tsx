@@ -340,6 +340,8 @@ export default function AddJobScreen() {
   };
 
   const handleSave = async () => {
+    if (isLoading) return;
+
     if (!validateForm()) {
       Alert.alert(
         "Missing Information",
@@ -350,18 +352,34 @@ export default function AddJobScreen() {
       return;
     }
 
-    AddJobRequest({
-      client: await handleCheckToken(),
-      jobTitle: jobTitle,
-      jobDescription: description,
-      category: camelCase(position),
-      budget: budget,
-      jobDuration: duration + " " + durationUnit,
-      jobLocation: location,
-      jobImage: images,
-    });
+    setIsLoading(true);
+    try {
+      const clientInfo = await handleCheckToken();
+      let formattedDuration = "";
+      if (duration && duration.trim()) {
+        const trimmedDur = duration.trim();
+        const trimmedUnit = durationUnit ? durationUnit.trim() : "Days";
+        formattedDuration = `${trimmedDur} ${trimmedUnit}`;
+      }
 
-    setSuccessModal(true);
+      await AddJobRequest({
+        client: clientInfo,
+        jobTitle: jobTitle.trim(),
+        jobDescription: description.trim(),
+        category: camelCase(position),
+        budget: budget.trim(),
+        jobDuration: formattedDuration || "Not Specified",
+        jobLocation: location.trim(),
+        jobImage: images,
+      });
+
+      setSuccessModal(true);
+    } catch (err) {
+      console.error("Error posting job:", err);
+      Alert.alert("Post Failed", "Could not post job. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCheckToken = async () => {
@@ -393,8 +411,12 @@ export default function AddJobScreen() {
           <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.topHeaderTitle}>Post a New Job</Text>
-        <TouchableOpacity style={styles.saveHeaderButton} onPress={handleSave}>
-          <Text style={styles.saveHeaderButtonText}>Post</Text>
+        <TouchableOpacity 
+          style={[styles.saveHeaderButton, isLoading && { opacity: 0.5 }]} 
+          onPress={handleSave}
+          disabled={isLoading}
+        >
+          <Text style={styles.saveHeaderButtonText}>{isLoading ? "Posting..." : "Post"}</Text>
         </TouchableOpacity>
       </View>
 
@@ -1056,5 +1078,13 @@ const styles = StyleSheet.create({
     color: '#666666',
   },
 });
+
+
+
+
+
+
+
+
 
 

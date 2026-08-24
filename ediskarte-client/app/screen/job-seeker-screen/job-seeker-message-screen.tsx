@@ -39,10 +39,22 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 import { Audio } from 'expo-av';
 
 const getFilePart = (path: string | undefined | null) => {
-  if (!path || typeof path !== 'string' || !path.includes('messages_files/')) {
+  if (!path || typeof path !== 'string') {
     return '';
   }
-  return path.split('messages_files/')[1] || '';
+  if (path.includes('messages_files/')) {
+    return path.split('messages_files/')[1] || '';
+  }
+  if (path.includes('uploads/messages/')) {
+    return path.split('uploads/messages/')[1] || '';
+  }
+  if (path.includes('/')) {
+    return path.split('/').pop() || path;
+  }
+  if (path.includes('\\')) {
+    return path.split('\\').pop() || path;
+  }
+  return path;
 };
 type Message = {
   id: string;
@@ -748,19 +760,11 @@ const ChatScreen: React.FC<ChatProps> = ({
       return m.messageType === "image";
     });
     const imageArray = imageMessages.map((msg) => {
-      return `http://${
-        process.env.EXPO_PUBLIC_IP_ADDRESS
-      }:3000/uploads/messages/${
-        getFilePart(msg.messageContent)
-      }`;
+      return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/messages/${getFilePart(msg.messageContent)}`;
     });
 
     if (item.messageType === "image") {
-      const imageUrl = `http://${
-        process.env.EXPO_PUBLIC_IP_ADDRESS
-      }:3000/uploads/messages/${
-        getFilePart(item.messageContent)
-      }`;
+      const imageUrl = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/messages/${getFilePart(item.messageContent)}`;
 
       const isDeletedForEveryone =
         item.deletedBySender === "yes" && item.deletedByReceiver === "yes";
@@ -2631,6 +2635,14 @@ const styles = StyleSheet.create({
 });
 
 export default ChatScreen;
+
+
+
+
+
+
+
+
 
 
 

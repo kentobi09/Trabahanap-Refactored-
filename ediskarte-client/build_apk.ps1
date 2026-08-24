@@ -38,15 +38,45 @@ Set-Content -Path $envFile -Value $envContent
 Set-Content -Path $androidEnvFile -Value $envContent
 Write-Host "Updated .env and android/.env with IP $ip" -ForegroundColor Yellow
 
-# 3. Temporarily inline IP in source files to force hardcoded build (bypass worker caching issues)
-Write-Host "Inlining IP in source code..." -ForegroundColor Yellow
+# 3. Temporarily inline IP/Domain in source files to force hardcoded build (bypass worker caching issues)
+Write-Host "Inlining IP/Domain in source code..." -ForegroundColor Yellow
 $appDir = Join-Path $PSScriptRoot "app"
 $apiDir = Join-Path $PSScriptRoot "api"
 $files = Get-ChildItem -Recurse -Include *.ts,*.tsx,*.js -Path $appDir, $apiDir -ErrorAction SilentlyContinue
+
+$isDomain = $ip -match "[a-zA-Z]" -or $ip -match "trycloudflare\.com|loca\.lt|ngrok"
+$protocol = if ($isDomain) { "https" } else { "http" }
+$baseUrl = if ($isDomain) { "https://$ip" } else { "http://${ip}:3000" }
+
 foreach ($file in $files) {
     $content = Get-Content $file.FullName -Raw
-    if ($content -match 'process\.env\.EXPO_PUBLIC_IP_ADDRESS') {
-        $content = $content -replace 'process\.env\.EXPO_PUBLIC_IP_ADDRESS', "`"$ip`""
+    $modified = $false
+
+    if ($isDomain) {
+        if ($content -match 'http://[\s\r\n]*\$\{[\s\r\n]*process\.env\.EXPO_PUBLIC_IP_ADDRESS[\s\r\n]*\}[\s\r\n]*:3000') {
+            $content = $content -replace 'http://[\s\r\n]*\$\{[\s\r\n]*process\.env\.EXPO_PUBLIC_IP_ADDRESS[\s\r\n]*\}[\s\r\n]*:3000', $baseUrl
+            $modified = $true
+        }
+        if ($content -match 'http://[\s\r\n]*\$\{[\s\r\n]*host[\s\r\n]*\}[\s\r\n]*:3000') {
+            $content = $content -replace 'http://[\s\r\n]*\$\{[\s\r\n]*host[\s\r\n]*\}[\s\r\n]*:3000', $baseUrl
+            $modified = $true
+        }
+        if ($content -match 'http://[\s\r\n]*\$\{[\s\r\n]*ip[\s\r\n]*\}[\s\r\n]*:3000') {
+            $content = $content -replace 'http://[\s\r\n]*\$\{[\s\r\n]*ip[\s\r\n]*\}[\s\r\n]*:3000', $baseUrl
+            $modified = $true
+        }
+        if ($content -match 'process\.env\.EXPO_PUBLIC_IP_ADDRESS') {
+            $content = $content -replace 'process\.env\.EXPO_PUBLIC_IP_ADDRESS', "`"$ip`""
+            $modified = $true
+        }
+    } else {
+        if ($content -match 'process\.env\.EXPO_PUBLIC_IP_ADDRESS') {
+            $content = $content -replace 'process\.env\.EXPO_PUBLIC_IP_ADDRESS', "`"$ip`""
+            $modified = $true
+        }
+    }
+
+    if ($modified) {
         Set-Content $file.FullName $content
         Write-Host "Inlined in: $($file.Name)"
     }
@@ -67,7 +97,7 @@ Push-Location (Join-Path $PSScriptRoot "android")
 $gradleTask = if ($BuildType -eq "Debug") { ":app:assembleDebug" } else { ":app:assembleRelease" }
 Write-Host "Starting Gradle $BuildType Build..." -ForegroundColor Green
 $env:EXPO_PUBLIC_IP_ADDRESS = $ip
-$env:EXPO_PUBLIC_API_URL = "http://$ip:3000"
+$env:EXPO_PUBLIC_API_URL = $baseUrl
 .\gradlew $gradleTask --no-build-cache
 
 Pop-Location
@@ -76,8 +106,23 @@ Pop-Location
 Write-Host "Restoring source code (cleaning up temporary inlining)..." -ForegroundColor Yellow
 foreach ($file in $files) {
     $content = Get-Content $file.FullName -Raw
-    if ($content -match "`"$ip`"") {
-        $content = $content -replace "`"$ip`"", 'process.env.EXPO_PUBLIC_IP_ADDRESS'
+    $modified = $false
+    if ($isDomain) {
+        if ($content -match [regex]::Escape($baseUrl)) {
+            $content = $content -replace [regex]::Escape($baseUrl), 'http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000'
+            $modified = $true
+        }
+        if ($content -match "`"$ip`"") {
+            $content = $content -replace "`"$ip`"", 'process.env.EXPO_PUBLIC_IP_ADDRESS'
+            $modified = $true
+        }
+    } else {
+        if ($content -match "`"$ip`"") {
+            $content = $content -replace "`"$ip`"", 'process.env.EXPO_PUBLIC_IP_ADDRESS'
+            $modified = $true
+        }
+    }
+    if ($modified) {
         Set-Content $file.FullName $content
     }
 }

@@ -44,31 +44,49 @@ class Achievement(Document):
 
 class User(Document):
     achievements: List[Link["Achievement"]] = Field(default_factory=list)
-    first_name: str = Field(alias="firstName")
+    first_name: str | None = Field(default="N/A", alias="firstName")
     middle_name: str | None = Field(default=None, alias="middleName")
-    last_name: str = Field(alias="lastName")
+    last_name: str | None = Field(default="N/A", alias="lastName")
     suffix_name: str | None = Field(default=None, alias="suffixName")
-    gender: str
-    birth_date: datetime = Field(alias="birthday")
-    age: int
+    gender: str | None = Field(default="unspecified")
+    birth_date: datetime | None = Field(default=None, alias="birthday")
+    age: int | None = Field(default=0)
     email: EmailStr = Field(alias="emailAddress")
-    password: str
+    password: str | None = Field(default="")
     profile_picture: str | None = Field(default=None, alias="profileImage")
-    barangay: str
-    street: str
+    barangay: str | None = Field(default="N/A")
+    street: str | None = Field(default="N/A")
     house_number: str | None = Field(default=None, alias="houseNumber")
-    user_type: str = Field(alias="userType")
+    user_type: str | None = Field(default="client", alias="userType")
     id_validation_front_image: str | None = Field(default=None, alias="idValidationFrontImage")
     id_validation_back_image: str | None = Field(default=None, alias="idValidationBackImage")
     id_type: str | None = Field(default=None, alias="idType")
     jobs_done: int = Field(default=0, alias="jobsDone")
-    joined_at: datetime = Field(alias="joinedAt")
-    verification_status: str = Field(alias="verificationStatus")
+    joined_at: datetime | None = Field(default=None, alias="joinedAt")
+    verification_status: str | None = Field(default="pending", alias="verificationStatus")
     verified_at: datetime | None = Field(default=None, alias="verifiedAt") # Set when verified
     account_status: str = Field(default="active", alias="accountStatus") # "active", "suspended", "banned"
     ban_reason: str | None = Field(default=None, alias="banReason")
     suspend_reason: str | None = Field(default=None, alias="suspendReason")
     suspended_until: datetime | None = Field(default=None, alias="suspendedUntil")
+
+    @field_validator(
+        "first_name", "middle_name", "last_name", "suffix_name", "gender", 
+        "password", "profile_picture", "barangay", "street", "house_number", 
+        "user_type", "id_validation_front_image", "id_validation_back_image", 
+        "id_type", "verification_status", "account_status", "ban_reason", 
+        "suspend_reason", mode="before", check_fields=False
+    )
+    @classmethod
+    def convert_list_or_none_to_string(cls, v: Any) -> Optional[str]:
+        if isinstance(v, list):
+            for item in v:
+                if item is not None and isinstance(item, str) and item.strip():
+                    return item.strip()
+            return None
+        if v is None:
+            return None
+        return str(v)
 
     class Settings:
         name = "users"
@@ -141,6 +159,25 @@ class Applicant(Document):
     ban_reason: str | None = Field(default=None, alias="banReason")
     suspend_reason: str | None = Field(default=None, alias="suspendReason")
     suspended_until: datetime | None = Field(default=None, alias="suspendedUntil")
+
+    @field_validator(
+        "first_name", "middle_name", "last_name", "suffix_name", "gender", 
+        "email", "password", "phone_number", "profile_picture", "bio", 
+        "barangay", "street", "house_number", "user_type", 
+        "id_validation_front_image", "id_validation_back_image", 
+        "id_type", "verification_status", "account_status", "ban_reason", 
+        "suspend_reason", mode="before", check_fields=False
+    )
+    @classmethod
+    def convert_list_or_none_to_string(cls, v: Any) -> Optional[str]:
+        if isinstance(v, list):
+            for item in v:
+                if item is not None and isinstance(item, str) and item.strip():
+                    return item.strip()
+            return None
+        if v is None:
+            return None
+        return str(v)
 
     class Settings:
         name = "applicants"

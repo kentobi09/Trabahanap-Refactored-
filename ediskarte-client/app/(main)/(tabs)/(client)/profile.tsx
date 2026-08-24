@@ -979,16 +979,29 @@ const UtilityWorkerProfile: React.FC = () => {
   // --- Loading and Error States ---
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0B153C" />
+      <View style={styles.mainContainer}>
+        <StatusBar barStyle="light-content" backgroundColor="#0B153C" />
+        <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
+          <Text style={styles.topHeaderTitle}>Profile</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0B153C" />
+          <Text style={{ marginTop: 12, color: '#64748B', fontSize: 14 }}>Loading profile...</Text>
+        </View>
       </View>
     );
   }
 
   if (isError || !worker) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.errorText}>Failed to load profile data.</Text>
+      <View style={styles.mainContainer}>
+        <StatusBar barStyle="light-content" backgroundColor="#0B153C" />
+        <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
+          <Text style={styles.topHeaderTitle}>Profile</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>Failed to load profile data.</Text>
+        </View>
       </View>
     );
   }
@@ -1328,5 +1341,13 @@ const UtilityWorkerProfile: React.FC = () => {
 };
 
 export default UtilityWorkerProfile;
+
+
+
+
+
+
+
+
 
 

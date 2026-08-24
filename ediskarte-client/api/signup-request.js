@@ -65,7 +65,7 @@ export const handleFormData = async () => {
   try {
     const host = process.env.EXPO_PUBLIC_IP_ADDRESS || 'localhost';
     const response = await axios.post(
-      `http://${host}:3000/signup`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/signup`,
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },
@@ -82,7 +82,7 @@ export const storeOTPRequest = async (email) => {
   try {
     const host = process.env.EXPO_PUBLIC_IP_ADDRESS || 'localhost';
     const response = await axios.post(
-      `http://${host}:3000/store-otp`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/store-otp`,
       { email },
       {
         headers: { "Content-Type": "application/json" },
@@ -101,7 +101,7 @@ export const verifyOTPRequest = async (email, otp) => {
   try {
     const host = process.env.EXPO_PUBLIC_IP_ADDRESS || 'localhost';
     const response = await axios.post(
-      `http://${host}:3000/verify-otp`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/verify-otp`,
       { email, otp },
       {
         headers: { "Content-Type": "application/json" },
@@ -126,7 +126,7 @@ export const verifyApplicant = async () => {
   try {
     const host = process.env.EXPO_PUBLIC_IP_ADDRESS || 'localhost';
     const response = await axios.post(
-      `http://${host}:3000/verify-applicant`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/verify-applicant`,
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },
@@ -139,5 +139,13 @@ export const verifyApplicant = async () => {
     return { success: false, error: errMsg };
   }
 };
+
+
+
+
+
+
+
+
 
 

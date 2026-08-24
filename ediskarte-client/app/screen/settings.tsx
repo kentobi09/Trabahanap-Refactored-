@@ -14,6 +14,7 @@ import { Ionicons, MaterialIcons, AntDesign, Feather } from '@expo/vector-icons'
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { safePush, safeReplace, safeBack } from '../constants/navigation';
+import { disconnectSocket } from '../services/socket';
 
 const SettingsScreen = () => {
   const router = useRouter();
@@ -39,9 +40,10 @@ const SettingsScreen = () => {
 
   const handleConfirmLogout = async () => {
     try {
-      await AsyncStorage.multiRemove(['token', 'currentUserId', 'userType', 'verificationStatus']);
-    } catch (e) {
+      disconnectSocket();
       await AsyncStorage.clear();
+    } catch (e) {
+      console.error("Error clearing data on logout:", e);
     }
     router.replace('/(auth)/option');
   };

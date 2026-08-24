@@ -11,17 +11,20 @@ import {
   ScrollView,
   Platform,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { safePush, safeReplace, safeBack } from "../constants/navigation";
 import io, { Socket } from "socket.io-client";
+import { disconnectSocket } from "@/app/services/socket";
 
 export default function SignInScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -40,32 +43,35 @@ export default function SignInScreen() {
   };
 
   const handleLogin = async () => {
+    if (loading) return;
+
+    // Validate empty fields
+    if (!email.trim() && !password.trim()) {
+      setMessage("Please enter both email and password");
+      return;
+    }
+
+    if (!email.trim()) {
+      setMessage("Please enter your email");
+      return;
+    }
+
+    if (!password.trim()) {
+      setMessage("Please enter your password");
+      return;
+    }
+
+    // Validate email format
+    if (!validateEmail(email)) {
+      setMessage("Please enter a valid email address");
+      return;
+    }
+
+    setLoading(true);
     try {
-      // Validate empty fields
-      if (!email.trim() && !password.trim()) {
-        setMessage("Please enter both email and password");
-        return;
-      }
-
-      if (!email.trim()) {
-        setMessage("Please enter your email");
-        return;
-      }
-
-      if (!password.trim()) {
-        setMessage("Please enter your password");
-        return;
-      }
-
-      // Validate email format
-      if (!validateEmail(email)) {
-        setMessage("Please enter a valid email address");
-        return;
-      }
-
       const host = process.env.EXPO_PUBLIC_IP_ADDRESS || "localhost";
       const response = await fetch(
-        `http://${host}:3000/login`,
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/login`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -105,11 +111,15 @@ export default function SignInScreen() {
       await AsyncStorage.setItem("currentUserId", data.user.id);
       await AsyncStorage.setItem("userType", data.user.userType);
       await AsyncStorage.setItem("verificationStatus", data.user.verificationStatus || "");
+      await AsyncStorage.multiRemove(['cached_user_chats_client', 'cached_user_chats_jobseeker']);
 
       setCurrentUserId(data.user.id);
       setMessage("Login successful!");
 
-      // Initialize socket and register user
+      // Disconnect any stale socket session
+      disconnectSocket();
+
+      // Initialize fresh socket and register new user
       const newSocket = io(
         `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000`,
         {
@@ -119,8 +129,7 @@ export default function SignInScreen() {
         }
       );
 
-        newSocket.emit("register_user", data.user.id);
-      
+      newSocket.emit("register_user", data.user.id);
 
       setSocket(newSocket);
 
@@ -133,6 +142,8 @@ export default function SignInScreen() {
       );
     } catch (error) {
       setMessage("An error occurred. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -229,8 +240,19 @@ export default function SignInScreen() {
           </Text>
         ) : null}
 
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.loginButtonText}>Login</Text>
+        <TouchableOpacity
+          style={[styles.loginButton, loading && styles.loginButtonDisabled]}
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#0B153C" />
+              <Text style={styles.loginButtonText}>Logging in...</Text>
+            </View>
+          ) : (
+            <Text style={styles.loginButtonText}>Login</Text>
+          )}
         </TouchableOpacity>
 
         <View style={styles.signUpContainer}>
@@ -420,6 +442,15 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
+  loginButtonDisabled: {
+    opacity: 0.7,
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
   loginButtonText: {
     color: "#0B153C",
     fontSize: 16,
@@ -551,5 +582,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
+
+
+
+
+
+
+
+
 
 

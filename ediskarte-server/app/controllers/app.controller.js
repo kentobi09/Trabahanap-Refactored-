@@ -808,30 +808,50 @@ export const searchJobSeekers = async (req, res) => {
     const pageNum = parseInt(page, 10);
     const limitNum = parseInt(limit, 10);
 
-    const whereClause = {
-      userType: "job-seeker",
-    };
+    const db = await getNativeDb();
+    
+    // Fetch users of type job-seeker from Native Mongo
+    const rawSeekerUsers = await db.collection("users").find({
+      userType: "job-seeker"
+    }).toArray();
 
-    // Fetch ALL job seekers
-    let allMatchingJobSeekers = await prisma.user.findMany({
-      where: whereClause,
-      include: {
-        jobSeeker: true,
-      },
-      orderBy: {
-        firstName: "asc",
-      },
+    // Fetch all jobseeker profiles from Native Mongo
+    const seekerDocs = await db.collection("jobseekers").find({}).toArray();
+    const seekerMap = new Map();
+    seekerDocs.forEach(s => {
+      if (s.userId) seekerMap.set(s.userId.toString(), s);
+      if (s._id) seekerMap.set(s._id.toString(), s);
     });
 
-    let filteredJobSeekers = allMatchingJobSeekers;
+    const allJobSeekerObjects = rawSeekerUsers.map(u => {
+      const uIdStr = u._id.toString();
+      const sDoc = seekerMap.get(uIdStr) || seekerMap.get(u.id);
+      return {
+        id: uIdStr,
+        firstName: u.firstName || "",
+        middleName: u.middleName || "",
+        lastName: u.lastName || "",
+        suffixName: u.suffixName || "",
+        profileImage: u.profileImage || null,
+        userType: u.userType,
+        jobSeeker: sDoc ? {
+          id: sDoc._id.toString(),
+          jobTags: sDoc.jobTags || [],
+          hourlyRate: sDoc.hourlyRate || "0",
+          availability: sDoc.availability ?? true,
+        } : { jobTags: [] }
+      };
+    });
 
-    // Apply combined filtering in application code
+    let filteredJobSeekers = allJobSeekerObjects;
+
+    // Apply combined filtering
     if (query || category) {
-      const lowerCaseQuery = query?.toLowerCase();
-      const lowerCaseCategory = category?.toLowerCase();
+      const lowerCaseQuery = query?.toLowerCase().trim();
+      const lowerCaseCategory = category?.toLowerCase().trim();
 
-      filteredJobSeekers = allMatchingJobSeekers.filter((user) => {
-        let queryMatch = !query; // Pass if no query is provided
+      filteredJobSeekers = allJobSeekerObjects.filter((user) => {
+        let queryMatch = !lowerCaseQuery;
         if (lowerCaseQuery) {
           const nameMatches =
             user.firstName?.toLowerCase().includes(lowerCaseQuery) ||
@@ -840,34 +860,31 @@ export const searchJobSeekers = async (req, res) => {
 
           const queryTagMatches = user.jobSeeker?.jobTags?.some((tag) =>
             tag.toLowerCase().includes(lowerCaseQuery)
-          ); // Use includes() for partial match
+          );
 
-          queryMatch = nameMatches || queryTagMatches; // Must match name OR query-as-tag
+          queryMatch = nameMatches || queryTagMatches;
         }
 
-        let categoryMatch = !category; // Pass if no category filter is provided
-        if (lowerCaseCategory) {
+        let categoryMatch = !lowerCaseCategory;
+        if (lowerCaseCategory && lowerCaseCategory !== "all") {
           categoryMatch = user.jobSeeker?.jobTags?.some((tag) =>
             tag.toLowerCase().includes(lowerCaseCategory)
-          ); // Use includes() for partial match
+          );
         }
 
-        return queryMatch && categoryMatch; // Must satisfy both applicable conditions
+        return queryMatch && categoryMatch;
       });
     }
 
-    // Manual Pagination on the filtered users first
     const totalJobSeekers = filteredJobSeekers.length;
     const paginatedUsers = filteredJobSeekers.slice(
       (pageNum - 1) * limitNum,
       pageNum * limitNum
     );
 
-    const db = await getNativeDb();
-    // Format results to match the frontend expectations and load ratings dynamically
     const paginatedJobSeekers = await Promise.all(paginatedUsers.map(async (user) => {
       let rating = null;
-      if (user.jobSeeker) {
+      if (user.jobSeeker?.id) {
         let seekerIdObj;
         try { seekerIdObj = new ObjectId(user.jobSeeker.id); } catch (e) { seekerIdObj = user.jobSeeker.id; }
         const userReviews = await db.collection("reviews").find({ reviewedId: seekerIdObj }).toArray();
@@ -877,8 +894,7 @@ export const searchJobSeekers = async (req, res) => {
         }
       }
 
-      // Get primary category (first tag) if available
-      const category =
+      const primaryCategory =
         user.jobSeeker?.jobTags?.length > 0
           ? user.jobSeeker.jobTags[0]
           : "General";
@@ -889,24 +905,32 @@ export const searchJobSeekers = async (req, res) => {
         middleName: user.middleName || "",
         lastName: user.lastName || "",
         profileImage: user.profileImage,
-        category: category,
+        category: primaryCategory,
         rating: rating,
       };
     }));
 
-    // Get top categories for filters (count occurrences of each tag)
+    // Aggregate category counts
     const tagCounts = {};
-    allMatchingJobSeekers.forEach((user) => {
+    allJobSeekerObjects.forEach((user) => {
       if (user.jobSeeker?.jobTags) {
         user.jobSeeker.jobTags.forEach((tag) => {
-          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+          if (tag) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
         });
       }
     });
 
-    // Convert to array, sort by count (descending), and limit to top 10
+    const defaultCategories = [
+      "Plumbing", "Electrical Repairs", "Carpentry", "Aircon Repair & Cleaning",
+      "Home Cleaning", "Caregiver", "Personal Driver", "Auto Mechanic", "Massage Therapy"
+    ];
+
+    defaultCategories.forEach(cat => {
+      if (!tagCounts[cat]) tagCounts[cat] = 0;
+    });
+
     const topCategories = Object.entries(tagCounts)
-      .map(([category, count]) => ({ category, count }))
+      .map(([cat, count]) => ({ category: cat, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
@@ -916,7 +940,7 @@ export const searchJobSeekers = async (req, res) => {
         page: pageNum,
         limit: limitNum,
         total: totalJobSeekers,
-        totalPages: Math.ceil(totalJobSeekers / limitNum),
+        totalPages: Math.ceil(totalJobSeekers / limitNum) || 1,
       },
       categories: topCategories,
     });

@@ -94,11 +94,11 @@ const AboutInfoPage: React.FC = () => {
           <Text style={styles.sectionTitle}>Contact Information</Text>
 
           <View style={styles.infoItem}>
-            <View style={[styles.iconCircle, { backgroundColor: '#DBEAFE' }]}>
+            <View style={[styles.iconCircle, { backgroundColor: '#EEF2FF' }]}>
               <MaterialCommunityIcons
                 name="email-outline"
                 size={20}
-                color="#2563EB"
+                color="#0B153C"
               />
             </View>
             <View style={styles.infoContent}>
@@ -110,11 +110,11 @@ const AboutInfoPage: React.FC = () => {
           <View style={styles.divider} />
 
           <View style={styles.infoItem}>
-            <View style={[styles.iconCircle, { backgroundColor: '#FEF3C7' }]}>
+            <View style={[styles.iconCircle, { backgroundColor: '#EEF2FF' }]}>
               <MaterialCommunityIcons
                 name="phone-outline"
                 size={20}
-                color="#D97706"
+                color="#0B153C"
               />
             </View>
             <View style={styles.infoContent}>
@@ -128,11 +128,11 @@ const AboutInfoPage: React.FC = () => {
           <Text style={styles.sectionTitle}>Personal Details</Text>
 
           <View style={styles.infoItem}>
-            <View style={[styles.iconCircle, { backgroundColor: '#D1FAE5' }]}>
+            <View style={[styles.iconCircle, { backgroundColor: '#EEF2FF' }]}>
               <MaterialCommunityIcons
                 name="gender-male-female"
                 size={20}
-                color="#10B981"
+                color="#0B153C"
               />
             </View>
             <View style={styles.infoContent}>
@@ -146,11 +146,11 @@ const AboutInfoPage: React.FC = () => {
           <View style={styles.divider} />
 
           <View style={styles.infoItem}>
-            <View style={[styles.iconCircle, { backgroundColor: '#FEE2E2' }]}>
+            <View style={[styles.iconCircle, { backgroundColor: '#EEF2FF' }]}>
               <Ionicons
                 name="calendar-outline"
                 size={20}
-                color="#EF4444"
+                color="#0B153C"
               />
             </View>
             <View style={styles.infoContent}>
@@ -166,11 +166,11 @@ const AboutInfoPage: React.FC = () => {
           <Text style={styles.sectionTitle}>Address Details</Text>
 
           <View style={styles.infoItem}>
-            <View style={[styles.iconCircle, { backgroundColor: '#DBEAFE' }]}>
+            <View style={[styles.iconCircle, { backgroundColor: '#EEF2FF' }]}>
               <Ionicons
                 name="location-outline"
                 size={20}
-                color="#2563EB"
+                color="#0B153C"
               />
             </View>
             <View style={styles.infoContent}>
@@ -309,5 +309,13 @@ const styles = StyleSheet.create({
 });
 
 export default AboutInfoPage;
+
+
+
+
+
+
+
+
 
 

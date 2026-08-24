@@ -176,12 +176,12 @@ const SearchScreen = () => {
 
   useEffect(() => {
     fetchTopCategories();
+    fetchJobSeekers("", "all");
   }, []);
 
-  // Initial loading of job seekers based on filters
+  // Debounced search when query or selectedFilter changes
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      // Always fetch job seekers when a filter is selected, even if search query is empty
       fetchJobSeekers(searchQuery, selectedFilter);
     }, 300);
 
@@ -255,32 +255,6 @@ const SearchScreen = () => {
                 </TouchableOpacity>
               ))}
             </ScrollView>
-
-            {/* Show Popular Categories only in initial state (no search/filter active, no results from active search) */}
-            {!isLoading && searchResults.length === 0 && !searchQuery && selectedFilter === "all" && (
-              filters.length > 1 ? (
-                <View style={[styles.recentSearchesContainer, { paddingHorizontal: 16 }]}>
-                  <Text style={styles.recentSearchesTitle}>Popular Categories</Text>
-                  {filters.slice(1, 6).map((filter) => (
-                    <TouchableOpacity
-                      key={filter.id}
-                      style={styles.recentSearchItem}
-                      onPress={() => handleFilterSelect(filter.id)}
-                    >
-                      <Ionicons name="time-outline" size={20} color="#666" />
-                      <Text style={styles.recentSearchText}>
-                        {filter.label} {filter.count ? `(${filter.count})` : ""}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              ) : (
-                // This case (no popular categories to show initially) might need a different message or be null
-                <View style={[styles.noResultsContainer, { paddingHorizontal: 16 }]}>
-                  <Text style={styles.noResultsText}>Loading categories...</Text>
-                </View>
-              )
-            )}
           </>
         }
         data={searchResults}
@@ -472,5 +446,13 @@ const styles = StyleSheet.create({
 });
 
 export default SearchScreen;
+
+
+
+
+
+
+
+
 
 

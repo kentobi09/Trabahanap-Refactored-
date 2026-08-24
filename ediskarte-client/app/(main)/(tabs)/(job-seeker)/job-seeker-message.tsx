@@ -64,6 +64,21 @@ const ChatScreen: React.FC = () => {
   const [isVerified, setIsVerified] = useState<boolean>(true);
 
   useEffect(() => {
+    const loadCachedChats = async () => {
+      try {
+        const cached = await AsyncStorage.getItem('cached_user_chats_jobseeker');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setChats(parsed);
+            setLoading(false);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading cached chats:", err);
+      }
+    };
+
     const checkVerification = async () => {
       const status = await AsyncStorage.getItem("verificationStatus");
       setIsVerified(status === "verified");
@@ -86,6 +101,7 @@ const ChatScreen: React.FC = () => {
         console.error("Error updating verification status in chats:", err);
       }
     };
+    loadCachedChats();
     checkVerification();
   }, []);
 
@@ -213,13 +229,13 @@ const ChatScreen: React.FC = () => {
         });
 
         newSocket.on('user_chats_fetched', (fetchedChats: Chat[]) => {
-          setChats(
-            fetchedChats.sort((a, b) => {
-              const aTime = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : new Date(a.createdAt).getTime();
-              const bTime = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : new Date(b.createdAt).getTime();
-              return bTime - aTime;
-            })
-          );
+          const sorted = fetchedChats.sort((a, b) => {
+            const aTime = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : new Date(a.createdAt).getTime();
+            const bTime = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : new Date(b.createdAt).getTime();
+            return bTime - aTime;
+          });
+          setChats(sorted);
+          AsyncStorage.setItem('cached_user_chats_jobseeker', JSON.stringify(sorted)).catch(() => {});
           setLoading(false);
           setRefreshing(false);
         });
@@ -401,7 +417,7 @@ const ChatScreen: React.FC = () => {
         }}
       >
         <View style={styles.modalOptionIcon}>
-          <Text style={styles.modalOptionIconText}>📬</Text>
+          <Ionicons name="chatbubbles-outline" size={22} color="#0B153C" />
         </View>
         <Text style={styles.modalOptionText}>All Chats</Text>
       </TouchableOpacity>
@@ -413,7 +429,7 @@ const ChatScreen: React.FC = () => {
         }}
       >
         <View style={styles.modalOptionIcon}>
-          <Text style={styles.modalOptionIconText}>✅</Text>
+          <Ionicons name="checkmark-circle-outline" size={22} color="#10B981" />
         </View>
         <Text style={styles.modalOptionText}>Active Chats</Text>
       </TouchableOpacity>
@@ -425,7 +441,7 @@ const ChatScreen: React.FC = () => {
         }}
       >
         <View style={styles.modalOptionIcon}>
-          <Text style={styles.modalOptionIconText}>⏳</Text>
+          <Ionicons name="time-outline" size={22} color="#F59E0B" />
         </View>
         <Text style={styles.modalOptionText}>Pending Chats</Text>
       </TouchableOpacity>
@@ -437,7 +453,7 @@ const ChatScreen: React.FC = () => {
         }}
       >
         <View style={styles.modalOptionIcon}>
-          <Text style={styles.modalOptionIconText}>❌</Text>
+          <Ionicons name="close-circle-outline" size={22} color="#EF4444" />
         </View>
         <Text style={styles.modalOptionText}>Rejected Chats</Text>
       </TouchableOpacity>
@@ -501,20 +517,27 @@ const ChatScreen: React.FC = () => {
         </View>
       </View>
 
+      {loading && chats.length === 0 ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0B153C" />
+          <Text style={styles.loadingText}>Loading messages...</Text>
+        </View>
+      ) : (
         <FlatList
-        data={searchQuery ? filteredSearchedChats : filteredChats}
-        renderItem={renderChatItem}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>No chats available</Text>
-        }
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-          />
-        }
-      />
+          data={searchQuery ? filteredSearchedChats : filteredChats}
+          renderItem={renderChatItem}
+          keyExtractor={(item) => item.id}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>No chats available</Text>
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+            />
+          }
+        />
+      )}
 
       <Modal
         transparent={true}
@@ -726,7 +749,26 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#64748B',
+  },
 });
 
 export default ChatScreen;
+
+
+
+
+
+
+
+
 

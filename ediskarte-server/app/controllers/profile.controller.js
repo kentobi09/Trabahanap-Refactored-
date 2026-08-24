@@ -157,6 +157,64 @@ export const getUserProfile = async (req, res) => {
           jobTags: seekerDoc.jobTags || [],
         });
       }
+
+      // If no seekerDoc found, fallback to users collection so profile always loads
+      let userDoc = await db.collection("users").findOne({
+        $or: [{ _id: uObj }, { id: userId }]
+      });
+
+      if (userDoc) {
+        return res.status(200).json({
+          userType: "job-seeker",
+          id: userDoc._id.toString(),
+          jobSeekerId: userDoc._id.toString(),
+          firstName: userDoc.firstName || "",
+          middleName: userDoc.middleName || "",
+          lastName: userDoc.lastName || "",
+          suffixName: userDoc.suffixName || "",
+          profileImage: userDoc.profileImage || null,
+          emailAddress: userDoc.emailAddress || "",
+          phoneNumber: userDoc.phoneNumber || "",
+          phoneVisibility: userDoc.phoneVisibility || "public",
+          barangay: userDoc.barangay || "",
+          street: userDoc.street || "",
+          houseNumber: userDoc.houseNumber || "",
+          gender: userDoc.gender || "",
+          birthday: userDoc.birthday || null,
+          verificationStatus: userDoc.verificationStatus || "pending",
+          availability: true,
+          credentials: [],
+          hourlyRate: "0",
+          rate: null,
+          jobTags: [],
+        });
+      }
+    }
+
+    // Final fallback for any user in users collection
+    const db = await getNativeDb();
+    let uObj; try { uObj = new ObjectId(userId); } catch (err) { uObj = userId; }
+    let anyUserDoc = await db.collection("users").findOne({
+      $or: [{ _id: uObj }, { id: userId }]
+    });
+    if (anyUserDoc) {
+      return res.status(200).json({
+        userType: anyUserDoc.userType || "client",
+        id: anyUserDoc._id.toString(),
+        firstName: anyUserDoc.firstName || "",
+        middleName: anyUserDoc.middleName || "",
+        lastName: anyUserDoc.lastName || "",
+        suffixName: anyUserDoc.suffixName || "",
+        profileImage: anyUserDoc.profileImage || null,
+        emailAddress: anyUserDoc.emailAddress || "",
+        phoneNumber: anyUserDoc.phoneNumber || "",
+        barangay: anyUserDoc.barangay || "",
+        street: anyUserDoc.street || "",
+        houseNumber: anyUserDoc.houseNumber || "",
+        gender: anyUserDoc.gender || "",
+        birthday: anyUserDoc.birthday || null,
+        verificationStatus: anyUserDoc.verificationStatus || "pending",
+      });
     }
 
     return res.status(404).json({ message: "User profile not found" });
@@ -426,7 +484,6 @@ export const getJobSeekerProfileByUserId = async (req, res) => {
         joinedAt: userDoc.joinedAt || null,
         verificationStatus: userDoc.verificationStatus || "",
       } : null;
-
       return res.status(200).json({
         jobSeekerId: seekerDoc._id.toString(),
         availability: seekerDoc.availability ?? true,
@@ -435,6 +492,44 @@ export const getJobSeekerProfileByUserId = async (req, res) => {
         rate: seekerDoc.rate || null,
         jobTags: seekerDoc.jobTags || [],
         user: userCopy,
+      });
+    }
+
+    // Fallback for Client / Employer profile lookup
+    let clientDoc = await db.collection("users").findOne({
+      $or: [{ _id: uObj }, { id: userId }]
+    });
+
+    if (clientDoc) {
+      const isPhonePrivate = clientDoc.phoneVisibility === "private";
+      return res.status(200).json({
+        jobSeekerId: clientDoc._id.toString(),
+        availability: true,
+        credentials: [],
+        hourlyRate: "0",
+        rate: null,
+        jobTags: [],
+        user: {
+          id: clientDoc._id.toString(),
+          firstName: clientDoc.firstName || "",
+          middleName: clientDoc.middleName || "",
+          lastName: clientDoc.lastName || "",
+          suffixName: clientDoc.suffixName || "",
+          profileImage: clientDoc.profileImage || null,
+          emailAddress: clientDoc.emailAddress || "",
+          phoneNumber: isPhonePrivate ? "Private" : (clientDoc.phoneNumber || ""),
+          phoneVisibility: clientDoc.phoneVisibility || "public",
+          barangay: clientDoc.barangay || "",
+          street: clientDoc.street || "",
+          houseNumber: clientDoc.houseNumber || "",
+          gender: clientDoc.gender || "",
+          birthday: clientDoc.birthday || null,
+          bio: clientDoc.bio || "",
+          userType: clientDoc.userType || "client",
+          jobsDone: clientDoc.jobsDone || 0,
+          joinedAt: clientDoc.joinedAt || null,
+          verificationStatus: clientDoc.verificationStatus || "",
+        },
       });
     }
 
