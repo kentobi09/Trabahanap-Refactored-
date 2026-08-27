@@ -651,7 +651,41 @@ export const getUserProfile = async (req, res) => {
     }
 
     if (!jobSeeker) {
-      return res.status(404).json({ message: "Job seeker not found" });
+      const db = await getNativeDb();
+      let uObj; try { uObj = new ObjectId(userId); } catch (err) { uObj = userId; }
+      const userDoc = await db.collection("users").findOne({
+        $or: [{ _id: uObj }, { id: userId }]
+      });
+
+      if (userDoc) {
+        const isPhonePrivate = userDoc.phoneVisibility === "private";
+        return res.status(200).json({
+          id: userDoc._id.toString(),
+          name: `${userDoc.firstName || ""} ${userDoc.middleName || ""} ${userDoc.lastName || ""}`.trim(),
+          firstName: userDoc.firstName || "",
+          lastName: userDoc.lastName || "",
+          profileImage: userDoc.profileImage || "",
+          address: `${userDoc.houseNumber || ""} ${userDoc.street || ""}, ${userDoc.barangay || ""}`.trim(),
+          rating: 5.0,
+          completedJobs: userDoc.jobsDone || 0,
+          yearsExperience: 1,
+          skills: [],
+          achievements: [],
+          email: userDoc.emailAddress || "",
+          phoneNumber: isPhonePrivate ? "Private" : (userDoc.phoneNumber || ""),
+          gender: userDoc.gender || "",
+          birthday: userDoc.birthday ? userDoc.birthday.toString() : "",
+          feedbacks: [],
+          jobsDone: userDoc.jobsDone || 0,
+          joinedAt: userDoc.joinedAt ? userDoc.joinedAt.toString() : null,
+          rate: null,
+          hourlyRate: "0",
+          isVerified: userDoc.verificationStatus === "verified",
+          credentials: [],
+        });
+      }
+
+      return res.status(404).json({ message: "Profile not found" });
     }
 
     // Fetch all reviews for this jobseeker (by jobRequest) using correct jobSeekerId

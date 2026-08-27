@@ -300,15 +300,43 @@ export const decodeToken = async (req, res) => {
     if (!token) {
       return res.status(400).json({ error: "Token is required" });
     }
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-    const getTokenData = await prisma.user.findUnique({
-      where: {
-        id: decodedToken.id,
-      },
-    });
-    res.json(getTokenData);
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET || "your_jwt_secret");
+    const userId = decodedToken.id || decodedToken.userId;
+
+    let getTokenData = null;
+    try {
+      getTokenData = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+    } catch (e) {
+      console.warn("[decodeToken] Prisma lookup failed:", e.message);
+    }
+
+    if (!getTokenData) {
+      const db = await getNativeDb();
+      let uObj; try { uObj = new ObjectId(userId); } catch (err) { uObj = userId; }
+      const userDoc = await db.collection("users").findOne({
+        $or: [{ _id: uObj }, { id: userId }]
+      });
+      if (userDoc) {
+        getTokenData = {
+          id: userDoc._id.toString(),
+          ...userDoc,
+        };
+      }
+    }
+
+    if (getTokenData) {
+      if (getTokenData._id && !getTokenData.id) {
+        getTokenData.id = getTokenData._id.toString();
+      }
+      return res.json(getTokenData);
+    }
+
+    return res.status(404).json({ error: "User not found" });
   } catch (error) {
-    res.status(401).send("Invalid or expired token");
+    console.error("decodeToken error:", error);
+    return res.status(401).send("Invalid or expired token");
   }
 };
 

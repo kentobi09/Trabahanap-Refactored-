@@ -73,20 +73,23 @@ const UtilityWorkerProfile: React.FC = () => {
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(
     null
   );
-  const { otherParticipantId,isFromChat } = useLocalSearchParams();
-  const [worker, setWorker] = useState<WorkerData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [credentialsModalVisible, setCredentialsModalVisible] = useState(false);
   const [selectedCredentialIndex, setSelectedCredentialIndex] = useState(0);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [showRoleTooltip, setShowRoleTooltip] = useState(false);
 
-  const jobseekerId = Array.isArray(otherParticipantId)
-    ? otherParticipantId[0]
-    : otherParticipantId;
+  const params = useLocalSearchParams();
+  const rawId = params.otherParticipantId || params.jobseekerId || params.userId || params.clientId || params.id;
+  const jobseekerId = Array.isArray(rawId) ? rawId[0] : rawId;
+
+  const [worker, setWorker] = useState<WorkerData | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchData();
+    if (jobseekerId) {
+      fetchData();
+    } else {
+      setLoading(false);
+    }
   }, [jobseekerId]);
 
   const fetchData = async () => {
@@ -119,43 +122,43 @@ const UtilityWorkerProfile: React.FC = () => {
       const profileData = await profileResponse.json();
       console.log("Received profile data:", profileData);
 
-      // Fetch job tags
-      const tagsResponse = await fetch(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/job-seeker/${jobseekerId}/tags`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+      // Fetch job tags silently
+      let tagsData = { jobTags: [] };
+      try {
+        const tagsResponse = await fetch(
+          `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/job-seeker/${jobseekerId}/tags`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (tagsResponse.ok) {
+          tagsData = await tagsResponse.json();
         }
-      );
-
-      if (!tagsResponse.ok) {
-        console.error("Tags response status:", tagsResponse.status);
-        throw new Error("Failed to fetch job tags");
+      } catch (e) {
+        console.log("No tags found for jobseeker:", e);
       }
 
-      const tagsData = await tagsResponse.json();
-      console.log("Received tags data:", tagsData);
-
-      // Fetch reviews
-      const reviewsResponse = await fetch(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/reviews/${jobseekerId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+      // Fetch reviews silently
+      let reviewsData = [];
+      try {
+        const reviewsResponse = await fetch(
+          `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/reviews/${jobseekerId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (reviewsResponse.ok) {
+          reviewsData = await reviewsResponse.json();
         }
-      );
-
-      if (!reviewsResponse.ok) {
-        console.error("Reviews response status:", reviewsResponse.status);
-        throw new Error("Failed to fetch reviews");
+      } catch (e) {
+        console.log("No reviews found for jobseeker:", e);
       }
-
-      const reviewsData = await reviewsResponse.json();
-      console.log("Received reviews data:", reviewsData);
 
       // Combine profile data with job tags and reviews
       const combinedData = {
@@ -1375,6 +1378,8 @@ const styles = StyleSheet.create({
 });
 
 export default UtilityWorkerProfile;
+
+
 
 
 

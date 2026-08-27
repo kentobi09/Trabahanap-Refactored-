@@ -198,11 +198,13 @@ const AboutInfoPage: React.FC = () => {
           <Text style={styles.sectionTitle}>Contact Information</Text>
 
           <View style={styles.infoItem}>
-            <MaterialCommunityIcons
-              name="email-outline"
-              size={24}
-              color="#0B153C"
-            />
+            <View style={styles.iconCircle}>
+              <MaterialCommunityIcons
+                name="email-outline"
+                size={20}
+                color="#0B153C"
+              />
+            </View>
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Email</Text>
               <Text style={styles.infoValue}>{workerInfo.email}</Text>
@@ -212,11 +214,13 @@ const AboutInfoPage: React.FC = () => {
           <View style={styles.divider} />
 
           <View style={styles.infoItem}>
-            <MaterialCommunityIcons
-              name="phone-outline"
-              size={24}
-              color="#0B153C"
-            />
+            <View style={styles.iconCircle}>
+              <MaterialCommunityIcons
+                name="phone-outline"
+                size={20}
+                color="#0B153C"
+              />
+            </View>
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Phone Number</Text>
               <Text style={styles.infoValue}>{workerInfo.phoneNumber || "Not Specified"}</Text>
@@ -226,11 +230,13 @@ const AboutInfoPage: React.FC = () => {
           <View style={styles.divider} />
 
           <View style={styles.infoItem}>
-            <MaterialCommunityIcons
-              name="home-outline"
-              size={24}
-              color="#0B153C"
-            />
+            <View style={styles.iconCircle}>
+              <Ionicons
+                name="location-outline"
+                size={20}
+                color="#0B153C"
+              />
+            </View>
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Address</Text>
               <Text style={styles.infoValue}>
@@ -328,8 +334,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 10,
   },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#EEF2FF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
   infoContent: {
-    marginLeft: 14,
+    marginLeft: 2,
     flex: 1,
   },
   infoLabel: {
@@ -366,6 +381,8 @@ const styles = StyleSheet.create({
 });
 
 export default AboutInfoPage;
+
+
 
 
 

@@ -65,16 +65,19 @@ const UtilityWorkerProfile: React.FC = () => {
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [showRoleTooltip, setShowRoleTooltip] = useState(false);
-  const { otherParticipantId } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const rawId = params.otherParticipantId || params.clientId || params.userId || params.jobseekerId || params.id;
+  const jobseekerId = Array.isArray(rawId) ? rawId[0] : rawId;
+
   const [worker, setWorker] = useState<WorkerData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const jobseekerId = Array.isArray(otherParticipantId)
-    ? otherParticipantId[0]
-    : otherParticipantId;
-
   useEffect(() => {
-    fetchData();
+    if (jobseekerId) {
+      fetchData();
+    } else {
+      setLoading(false);
+    }
   }, [jobseekerId]);
 
   const fetchData = async () => {
@@ -106,28 +109,26 @@ const UtilityWorkerProfile: React.FC = () => {
       const profileData = await profileResponse.json();
       console.log('Received profile data:', profileData);
 
-
-
-      // Fetch reviews
-      const reviewsResponse = await fetch(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/reviews/${jobseekerId}`,
-        {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
+      // Fetch reviews silently (fallback to [] if 404)
+      let reviewsData = [];
+      try {
+        const reviewsResponse = await fetch(
+          `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/reviews/${jobseekerId}`,
+          {
+            headers: { 
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+          }
+        );
+        if (reviewsResponse.ok) {
+          reviewsData = await reviewsResponse.json();
         }
-      );
-
-      if (!reviewsResponse.ok) {
-        console.error('Reviews response status:', reviewsResponse.status);
-        throw new Error('Failed to fetch reviews');
+      } catch (e) {
+        console.log("No reviews found for client:", e);
       }
 
-      const reviewsData = await reviewsResponse.json();
-      console.log('Received reviews data:', reviewsData);
-
-      // Combine profile data with job tags and reviews
+      // Combine profile data with reviews
       const combinedData = {
         ...profileData,
         profileImage: profileData.profileImage 
@@ -140,7 +141,7 @@ const UtilityWorkerProfile: React.FC = () => {
       
       setWorker(combinedData);
     } catch (error) {
-      // console.error("Error fetching data:", error);
+      console.error("Error fetching client profile data:", error);
     } finally {
       setLoading(false);
     }
@@ -1004,6 +1005,8 @@ const styles = StyleSheet.create({
 });
 
 export default UtilityWorkerProfile;
+
+
 
 
 

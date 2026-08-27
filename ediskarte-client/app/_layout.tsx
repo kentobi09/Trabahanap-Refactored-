@@ -109,7 +109,7 @@ export default function RootLayout() {
         await ringtoneSound.unloadAsync();
       }
       const { sound } = await Audio.Sound.createAsync(
-        require("assets/sounds/ringtone.mp3"),
+        require("../assets/sounds/ringtone.mp3"),
         { shouldPlay: true, isLooping: true }
       );
       setRingtoneSound(sound);
@@ -439,6 +439,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#34C759",
   },
 });
+
+
 
 
 
