@@ -168,6 +168,13 @@ const AboutInfoPage: React.FC = () => {
     );
   }
 
+  const formatProfileImage = (img: any) => {
+    if (!img || typeof img !== "string") return "https://via.placeholder.com/100";
+    if (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("data:")) return img;
+    const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
+    return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${cleanPath}`;
+  };
+
   return (
     <View style={styles.mainContainer}>
       <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
@@ -183,14 +190,12 @@ const AboutInfoPage: React.FC = () => {
         <View style={styles.profileSection}>
           <Image
             source={{
-              uri: workerInfo.profileImage 
-                ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${workerInfo.profileImage}`
-                : 'https://via.placeholder.com/100'
+              uri: formatProfileImage(workerInfo.profileImage || workerInfo.user?.profileImage)
             }}
             style={styles.profileImage}
           />
           <Text style={styles.profileName}>
-            {workerInfo.name}
+            {workerInfo.name || `${workerInfo.firstName || ""} ${workerInfo.lastName || ""}`.trim() || "User"}
           </Text>
         </View>
 
@@ -381,6 +386,8 @@ const styles = StyleSheet.create({
 });
 
 export default AboutInfoPage;
+
+
 
 
 

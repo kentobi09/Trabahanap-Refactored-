@@ -147,6 +147,13 @@ const AboutInfoPage: React.FC = () => {
     );
   }
 
+  const formatProfileImage = (img: any) => {
+    if (!img || typeof img !== "string") return "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
+    if (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("data:")) return img;
+    const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
+    return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${cleanPath}`;
+  };
+
   return (
     <View style={styles.mainContainer}>
       <View style={[styles.topHeader, Platform.OS === 'ios' && styles.iosHeader]}>
@@ -161,14 +168,12 @@ const AboutInfoPage: React.FC = () => {
         <View style={styles.profileSection}>
           <Image
             source={{
-              uri: workerInfo.profileImage 
-                ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${workerInfo.profileImage}`
-                : 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y'
+              uri: formatProfileImage(workerInfo.profileImage || workerInfo.user?.profileImage)
             }}
             style={styles.profileImage}
           />
           <Text style={styles.profileName}>
-            {workerInfo.name}
+            {workerInfo.name || `${workerInfo.firstName || ""} ${workerInfo.lastName || ""}`.trim() || "User"}
           </Text>
         </View>
 
@@ -340,6 +345,8 @@ const styles = StyleSheet.create({
 });
 
 export default AboutInfoPage;
+
+
 
 
 

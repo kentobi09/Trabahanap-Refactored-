@@ -128,12 +128,17 @@ const UtilityWorkerProfile: React.FC = () => {
         console.log("No reviews found for client:", e);
       }
 
+      const formatProfileImage = (img: any) => {
+        if (!img || typeof img !== "string") return "";
+        if (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("data:")) return img;
+        const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
+        return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${cleanPath}`;
+      };
+
       // Combine profile data with reviews
       const combinedData = {
         ...profileData,
-        profileImage: profileData.profileImage 
-          ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${profileData.profileImage.replace(/\\/g, "/")}`
-          : '',
+        profileImage: formatProfileImage(profileData.profileImage),
         feedbacks: reviewsData || [],
         joinedAt: profileData.joinedAt || '',
         isVerified: profileData.isVerified || false,
@@ -1005,6 +1010,8 @@ const styles = StyleSheet.create({
 });
 
 export default UtilityWorkerProfile;
+
+
 
 
 

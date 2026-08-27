@@ -97,41 +97,54 @@ const SearchScreen = () => {
   // Navigate to job seeker profile
   const handleJobSeekerSelect = (jobSeekerId: string) => {
     // Navigate to the specific job seeker view page
-    safePush("/screen/profile/view-profile/view-page-job-seeker", { otherParticipantId: jobSeekerId });
+    safePush("/screen/profile/view-profile/view-page-job-seeker", {
+      otherParticipantId: jobSeekerId,
+      jobseekerId: jobSeekerId,
+      userId: jobSeekerId,
+      id: jobSeekerId,
+    });
   };
 
   const handleGoBack = () => {
     safeBack();
   };
 
+  const formatImageUri = (img: any) => {
+    if (!img || typeof img !== "string") return null;
+    if (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("data:")) return img;
+    const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
+    return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${cleanPath}`;
+  };
+
   // Render individual job seeker search result
-  const renderSearchResult = ({ item }: { item: JobSeeker }) => (
-    <TouchableOpacity
-      style={styles.searchResultItem}
-      onPress={() => handleJobSeekerSelect(item.id)}
-    >
-      <Image
-        source={
-          item.profileImage
-            ? {
-                uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item.profileImage.replace(/\\/g, "/")}`,
-              }
-            : require("../../assets/images/default-user.png")
-        }
-        style={styles.resultImage}
-      />
-      <View style={styles.resultInfo}>
-        <Text style={styles.resultName}>
-          {item.firstName} {item.middleName} {item.lastName}
-        </Text>
-        <Text style={styles.resultCategory}>{item.category || "General"}</Text>
-        <View style={styles.ratingContainer}>
-          <Ionicons name="star" size={16} color="#FFD700" />
-          <Text style={styles.ratingText}>{item.rating || "No ratings"}</Text>
+  const renderSearchResult = ({ item }: { item: JobSeeker }) => {
+    const imgUri = formatImageUri(item.profileImage);
+    return (
+      <TouchableOpacity
+        style={styles.searchResultItem}
+        onPress={() => handleJobSeekerSelect(item.id)}
+      >
+        <Image
+          source={
+            imgUri
+              ? { uri: imgUri }
+              : require("../../assets/images/default-user.png")
+          }
+          style={styles.resultImage}
+        />
+        <View style={styles.resultInfo}>
+          <Text style={styles.resultName}>
+            {item.firstName} {item.middleName} {item.lastName}
+          </Text>
+          <Text style={styles.resultCategory}>{item.category || "General"}</Text>
+          <View style={styles.ratingContainer}>
+            <Ionicons name="star" size={16} color="#FFD700" />
+            <Text style={styles.ratingText}>{item.rating || "No ratings"}</Text>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   const fetchTopCategories = async () => {
     try {
@@ -446,6 +459,8 @@ const styles = StyleSheet.create({
 });
 
 export default SearchScreen;
+
+
 
 
 

@@ -160,17 +160,20 @@ const UtilityWorkerProfile: React.FC = () => {
         console.log("No reviews found for jobseeker:", e);
       }
 
+      const formatProfileImage = (img: any) => {
+        if (!img || typeof img !== "string") return "";
+        if (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("data:")) return img;
+        const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
+        return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${cleanPath}`;
+      };
+
       // Combine profile data with job tags and reviews
       const combinedData = {
         ...profileData,
         skills: tagsData.jobTags || [],
-        name: profileData.name || (profileData.user ? `${profileData.user.firstName} ${profileData.user.middleName || ""} ${profileData.user.lastName}`.trim() : ""),
+        name: profileData.name || (profileData.user ? `${profileData.user.firstName || ""} ${profileData.user.middleName || ""} ${profileData.user.lastName || ""}`.trim() : ""),
         address: profileData.address || (profileData.user ? `${profileData.user.houseNumber || ""} ${profileData.user.street || ""} ${profileData.user.barangay || ""}`.trim() : ""),
-        profileImage: profileData.profileImage
-          ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${profileData.profileImage.replace(/\\/g, "/")}`
-          : (profileData.user?.profileImage
-              ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${profileData.user.profileImage.replace(/\\/g, "/")}`
-              : ""),
+        profileImage: formatProfileImage(profileData.profileImage || profileData.user?.profileImage),
         feedbacks: reviewsData || [],
         jobsDone: profileData.jobsDone !== undefined ? profileData.jobsDone : (profileData.user?.jobsDone || 0),
         dateJoined: profileData.joinedAt || (profileData.user?.joinedAt || ""),
@@ -277,7 +280,7 @@ const UtilityWorkerProfile: React.FC = () => {
   };
 
   const handleAboutInfoPress = () => {
-    safePush("../view-about-info", { otherParticipantId });
+    safePush("../view-about-info", { otherParticipantId: jobseekerId, jobseekerId, userId: jobseekerId, id: jobseekerId });
   };
   const formatDate = (isoString: string) => {
     const date = new Date(isoString);
@@ -1378,6 +1381,8 @@ const styles = StyleSheet.create({
 });
 
 export default UtilityWorkerProfile;
+
+
 
 
 
