@@ -34,19 +34,20 @@ interface WorkerInfo {
 
 const AboutInfoPage: React.FC = () => {
   const router = useRouter();
-  const params = useLocalSearchParams();
-  const rawId = params.otherParticipantId || params.jobseekerId || params.userId || params.clientId || params.id;
-  const jobseekerId = Array.isArray(rawId) ? rawId[0] : rawId;
-
+  const { otherParticipantId } = useLocalSearchParams();
   const [workerInfo, setWorkerInfo] = useState<WorkerInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const jobseekerId = Array.isArray(otherParticipantId)
+    ? otherParticipantId[0]
+    : otherParticipantId;
 
   useEffect(() => {
     if (jobseekerId) {
       fetchUserProfile();
     } else {
-      setError("No user ID provided");
+      setError("No jobseeker ID provided");
       setLoading(false);
     }
   }, [jobseekerId]);
@@ -147,11 +148,11 @@ const AboutInfoPage: React.FC = () => {
     );
   }
 
-  const formatProfileImage = (img: any) => {
-    if (!img || typeof img !== "string") return "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
+  const getImageUrl = (img: any) => {
+    if (!img || typeof img !== "string") return 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
     if (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("data:")) return img;
-    const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
-    return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${cleanPath}`;
+    const clean = img.replace(/\\/g, "/").replace(/^\/+/, "");
+    return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${clean}`;
   };
 
   return (
@@ -168,12 +169,12 @@ const AboutInfoPage: React.FC = () => {
         <View style={styles.profileSection}>
           <Image
             source={{
-              uri: formatProfileImage(workerInfo.profileImage || workerInfo.user?.profileImage)
+              uri: getImageUrl(workerInfo.profileImage)
             }}
             style={styles.profileImage}
           />
           <Text style={styles.profileName}>
-            {workerInfo.name || `${workerInfo.firstName || ""} ${workerInfo.lastName || ""}`.trim() || "User"}
+            {workerInfo.name || "User"}
           </Text>
         </View>
 
@@ -345,17 +346,5 @@ const styles = StyleSheet.create({
 });
 
 export default AboutInfoPage;
-
-
-
-
-
-
-
-
-
-
-
-
 
 

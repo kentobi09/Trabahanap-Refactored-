@@ -65,19 +65,16 @@ const UtilityWorkerProfile: React.FC = () => {
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [showRoleTooltip, setShowRoleTooltip] = useState(false);
-  const params = useLocalSearchParams();
-  const rawId = params.otherParticipantId || params.clientId || params.userId || params.jobseekerId || params.id;
-  const jobseekerId = Array.isArray(rawId) ? rawId[0] : rawId;
-
+  const { otherParticipantId } = useLocalSearchParams();
   const [worker, setWorker] = useState<WorkerData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const jobseekerId = Array.isArray(otherParticipantId)
+    ? otherParticipantId[0]
+    : otherParticipantId;
+
   useEffect(() => {
-    if (jobseekerId) {
-      fetchData();
-    } else {
-      setLoading(false);
-    }
+    fetchData();
   }, [jobseekerId]);
 
   const fetchData = async () => {
@@ -90,9 +87,9 @@ const UtilityWorkerProfile: React.FC = () => {
 
       console.log('Fetching profile for ID:', jobseekerId);
       
-      // Fetch profile data
+      // Fetch profile data using /user/profile/:id/details endpoint
       const profileResponse = await fetch(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/clients/${jobseekerId}/profile`,
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/profile/${jobseekerId}/details`,
         {
           headers: { 
             Authorization: `Bearer ${token}`,
@@ -109,7 +106,7 @@ const UtilityWorkerProfile: React.FC = () => {
       const profileData = await profileResponse.json();
       console.log('Received profile data:', profileData);
 
-      // Fetch reviews silently (fallback to [] if 404)
+      // Fetch reviews (fallback silently to [] if missing)
       let reviewsData = [];
       try {
         const reviewsResponse = await fetch(
@@ -128,20 +125,25 @@ const UtilityWorkerProfile: React.FC = () => {
         console.log("No reviews found for client:", e);
       }
 
-      const formatProfileImage = (img: any) => {
-        if (!img || typeof img !== "string") return "";
-        if (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("data:")) return img;
-        const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
-        return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${cleanPath}`;
+      const userObj = profileData.user || profileData;
+
+      const formatImg = (imgStr: any) => {
+        if (!imgStr || typeof imgStr !== "string") return "";
+        if (imgStr.startsWith("http://") || imgStr.startsWith("https://") || imgStr.startsWith("data:")) return imgStr;
+        const clean = imgStr.replace(/\\/g, "/").replace(/^\/+/, "");
+        return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${clean}`;
       };
 
       // Combine profile data with reviews
       const combinedData = {
         ...profileData,
-        profileImage: formatProfileImage(profileData.profileImage),
+        id: userObj.id || profileData.jobSeekerId || jobseekerId,
+        name: `${userObj.firstName || ""} ${userObj.middleName || ""} ${userObj.lastName || ""}`.trim() || "Employer",
+        address: `${userObj.houseNumber || ""} ${userObj.street || ""} ${userObj.barangay || ""}`.trim() || "Not Specified",
+        profileImage: formatImg(userObj.profileImage || profileData.profileImage),
         feedbacks: reviewsData || [],
-        joinedAt: profileData.joinedAt || '',
-        isVerified: profileData.isVerified || false,
+        joinedAt: userObj.joinedAt || profileData.joinedAt || '',
+        isVerified: userObj.verificationStatus === "verified" || profileData.isVerified || false,
       };
       
       setWorker(combinedData);
@@ -211,7 +213,7 @@ const UtilityWorkerProfile: React.FC = () => {
   };
   
   const handleAboutInfoPress = () => {
-    safePush('../view-about-info-client', { otherParticipantId });
+    safePush('../view-about-info-client', { otherParticipantId: jobseekerId });
   };
   const formatDate = (isoString: string) => {
     const date = new Date(isoString);
@@ -1010,16 +1012,4 @@ const styles = StyleSheet.create({
 });
 
 export default UtilityWorkerProfile;
-
-
-
-
-
-
-
-
-
-
-
-
 

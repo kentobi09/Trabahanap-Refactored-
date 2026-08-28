@@ -39,19 +39,20 @@ interface WorkerInfo {
 
 const AboutInfoPage: React.FC = () => {
   const router = useRouter();
-  const params = useLocalSearchParams();
-  const rawId = params.otherParticipantId || params.jobseekerId || params.userId || params.clientId || params.id;
-  const jobseekerId = Array.isArray(rawId) ? rawId[0] : rawId;
-
+  const { otherParticipantId } = useLocalSearchParams();
   const [workerInfo, setWorkerInfo] = useState<WorkerInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const jobseekerId = Array.isArray(otherParticipantId)
+    ? otherParticipantId[0]
+    : otherParticipantId;
 
   useEffect(() => {
     if (jobseekerId) {
       fetchUserProfile();
     } else {
-      setError("No user ID provided");
+      setError("No jobseeker ID provided");
       setLoading(false);
     }
   }, [jobseekerId]);
@@ -168,11 +169,11 @@ const AboutInfoPage: React.FC = () => {
     );
   }
 
-  const formatProfileImage = (img: any) => {
-    if (!img || typeof img !== "string") return "https://via.placeholder.com/100";
+  const getImageUrl = (img: any) => {
+    if (!img || typeof img !== "string") return 'https://via.placeholder.com/100';
     if (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("data:")) return img;
-    const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
-    return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${cleanPath}`;
+    const clean = img.replace(/\\/g, "/").replace(/^\/+/, "");
+    return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${clean}`;
   };
 
   return (
@@ -190,12 +191,12 @@ const AboutInfoPage: React.FC = () => {
         <View style={styles.profileSection}>
           <Image
             source={{
-              uri: formatProfileImage(workerInfo.profileImage || workerInfo.user?.profileImage)
+              uri: getImageUrl(workerInfo.profileImage)
             }}
             style={styles.profileImage}
           />
           <Text style={styles.profileName}>
-            {workerInfo.name || `${workerInfo.firstName || ""} ${workerInfo.lastName || ""}`.trim() || "User"}
+            {workerInfo.name || "User"}
           </Text>
         </View>
 
@@ -203,13 +204,11 @@ const AboutInfoPage: React.FC = () => {
           <Text style={styles.sectionTitle}>Contact Information</Text>
 
           <View style={styles.infoItem}>
-            <View style={styles.iconCircle}>
-              <MaterialCommunityIcons
-                name="email-outline"
-                size={20}
-                color="#0B153C"
-              />
-            </View>
+            <MaterialCommunityIcons
+              name="email-outline"
+              size={24}
+              color="#0B153C"
+            />
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Email</Text>
               <Text style={styles.infoValue}>{workerInfo.email}</Text>
@@ -219,13 +218,11 @@ const AboutInfoPage: React.FC = () => {
           <View style={styles.divider} />
 
           <View style={styles.infoItem}>
-            <View style={styles.iconCircle}>
-              <MaterialCommunityIcons
-                name="phone-outline"
-                size={20}
-                color="#0B153C"
-              />
-            </View>
+            <MaterialCommunityIcons
+              name="phone-outline"
+              size={24}
+              color="#0B153C"
+            />
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Phone Number</Text>
               <Text style={styles.infoValue}>{workerInfo.phoneNumber || "Not Specified"}</Text>
@@ -235,13 +232,11 @@ const AboutInfoPage: React.FC = () => {
           <View style={styles.divider} />
 
           <View style={styles.infoItem}>
-            <View style={styles.iconCircle}>
-              <Ionicons
-                name="location-outline"
-                size={20}
-                color="#0B153C"
-              />
-            </View>
+            <MaterialCommunityIcons
+              name="home-outline"
+              size={24}
+              color="#0B153C"
+            />
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Address</Text>
               <Text style={styles.infoValue}>
@@ -339,17 +334,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 10,
   },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#EEF2FF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
   infoContent: {
-    marginLeft: 2,
+    marginLeft: 14,
     flex: 1,
   },
   infoLabel: {
@@ -386,17 +372,5 @@ const styles = StyleSheet.create({
 });
 
 export default AboutInfoPage;
-
-
-
-
-
-
-
-
-
-
-
-
 
 
