@@ -37,7 +37,7 @@ export default function JobDetailsScreen() {
     clientProfileImage: params.clientProfileImage as string,
     images: params.jobImages 
       ? (params.jobImages as string).split(',').map((imgPath) => ({
-          uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/${(imgPath + "").replace(/\\/g, "/").split('job_request_files/')[1]}`,
+          uri: `https://lip-balance-analyze-extends.trycloudflare.com/uploads/${(imgPath + "").replace(/\\/g, "/").split('job_request_files/')[1]}`,
         }))
       : [],
     isMyJob: params.isMyJob as string,
@@ -57,7 +57,7 @@ export default function JobDetailsScreen() {
         const token = await AsyncStorage.getItem("token");
         if (!token) return;
 
-        const response = await fetch(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/job/${params.id}/check-applied`, {
+        const response = await fetch(`https://lip-balance-analyze-extends.trycloudflare.com/job/${params.id}/check-applied`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -96,7 +96,7 @@ export default function JobDetailsScreen() {
         return;
       }
       
-      const response = await fetch(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/chat/create`, {
+      const response = await fetch(`https://lip-balance-analyze-extends.trycloudflare.com/api/chat/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -170,7 +170,7 @@ export default function JobDetailsScreen() {
           <Image
             source={
               jobData.review.reviewer.profileImage
-                ? { uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${jobData.review.reviewer.profileImage}` }
+                ? { uri: `https://lip-balance-analyze-extends.trycloudflare.com/${jobData.review.reviewer.profileImage}` }
                 : require("assets/images/default-user.png")
             }
             style={styles.reviewerImage}
@@ -208,7 +208,7 @@ export default function JobDetailsScreen() {
           <Image
             source={
               jobData.jobSeekerReview.reviewer.profileImage
-                ? { uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${jobData.jobSeekerReview.reviewer.profileImage}` }
+                ? { uri: `https://lip-balance-analyze-extends.trycloudflare.com/${jobData.jobSeekerReview.reviewer.profileImage}` }
                 : require("assets/images/default-user.png")
             }
             style={styles.reviewerImage}
@@ -261,7 +261,7 @@ export default function JobDetailsScreen() {
               <Image
                 source={
                   jobData.clientProfileImage
-                    ? { uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${jobData.clientProfileImage}` }
+                    ? { uri: `https://lip-balance-analyze-extends.trycloudflare.com/${jobData.clientProfileImage}` }
                     : require("assets/images/default-user.png")
                 }
                 style={styles.clientImage}
@@ -648,6 +648,7 @@ const styles = StyleSheet.create({
     height: width,
   },
 });
+
 
 
 

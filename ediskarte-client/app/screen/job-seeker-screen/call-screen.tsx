@@ -394,7 +394,7 @@ const CallScreen = () => {
         }
 
         // Initialize socket connection with authentication
-        socket.current = io(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000`, {
+        socket.current = io(`https://lip-balance-analyze-extends.trycloudflare.com`, {
           auth: { token },
           transports: ['websocket'],
           reconnection: true,
@@ -629,7 +629,7 @@ const CallScreen = () => {
           <Image
             source={{
               uri: receiverImage
-                ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${(receiverImage + "").split("profiles/")[1] || ""}`
+                ? `https://lip-balance-analyze-extends.trycloudflare.com/uploads/profiles/${(receiverImage + "").split("profiles/")[1] || ""}`
                 : undefined,
             }}
             style={styles.backgroundImage}
@@ -664,7 +664,7 @@ const CallScreen = () => {
             <Image
               source={{
                 uri: receiverImage
-                  ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${(receiverImage + "").split("profiles/")[1] || ""}`
+                  ? `https://lip-balance-analyze-extends.trycloudflare.com/uploads/profiles/${(receiverImage + "").split("profiles/")[1] || ""}`
                   : undefined,
               }}
               style={styles.receiverImage}
@@ -882,6 +882,7 @@ const styles = StyleSheet.create({
 });
 
 export default CallScreen;
+
 
 
 

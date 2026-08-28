@@ -1076,14 +1076,14 @@ const UtilityWorkerProfile: React.FC = () => {
         <TouchableOpacity
           onPress={() => {
             if (worker?.profileImage) {
-              setPreviewImage(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${worker.profileImage.replace(/\\/g, "/")}`);
+              setPreviewImage(`https://lip-balance-analyze-extends.trycloudflare.com/${worker.profileImage.replace(/\\/g, "/")}`);
             }
           }}
         >
           <Image
             source={{
               uri: worker.profileImage
-                ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${worker.profileImage.replace(/\\/g, "/")}`
+                ? `https://lip-balance-analyze-extends.trycloudflare.com/${worker.profileImage.replace(/\\/g, "/")}`
                 : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
             }}
             style={styles.profileImage}
@@ -1341,6 +1341,7 @@ const UtilityWorkerProfile: React.FC = () => {
 };
 
 export default UtilityWorkerProfile;
+
 
 
 

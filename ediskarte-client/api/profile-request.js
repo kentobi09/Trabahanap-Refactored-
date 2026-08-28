@@ -12,7 +12,7 @@ export async function fetchUserProfile() {
   }
 
   const response = await axios.get(
-    `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/profile/${data.id}`,
+    `https://lip-balance-analyze-extends.trycloudflare.com/user/profile/${data.id}`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -50,7 +50,7 @@ export async function updateUserProfile(data) {
   }
 
   const response = await axios.patch(
-    `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/profile/edit/${userId}`,
+    `https://lip-balance-analyze-extends.trycloudflare.com/user/profile/edit/${userId}`,
     data,
     {
       headers: headers,
@@ -68,7 +68,7 @@ export async function updateUserJobTags(data) {
   }
 
   const response = await axios.patch(
-    `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/profile/edit/job-tags/${data.id}`,
+    `https://lip-balance-analyze-extends.trycloudflare.com/user/profile/edit/job-tags/${data.id}`,
     data,
     {
       headers: {
@@ -94,7 +94,7 @@ export async function fetchUserAchievements(userId) {
 
   try {
     const response = await axios.get(
-      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/achievements/${userId}`,
+      `https://lip-balance-analyze-extends.trycloudflare.com/user/achievements/${userId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -168,7 +168,7 @@ export async function uploadCredential(
     Accept: "application/json",
   };
 
-  const url = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/profile/upload-credential/${userId}`;
+  const url = `https://lip-balance-analyze-extends.trycloudflare.com/user/profile/upload-credential/${userId}`;
   // No need to log the URL to keep console clean
 
   // Function to attempt the upload with exponential backoff (up to 5 retries)
@@ -245,7 +245,7 @@ export async function deleteCredential(userId, credentialPath) {
   }
 
   const response = await axios.delete(
-    `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/profile/credential/${userId}`,
+    `https://lip-balance-analyze-extends.trycloudflare.com/user/profile/credential/${userId}`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -260,9 +260,9 @@ export async function deleteCredential(userId, credentialPath) {
 }
 
 export async function fetchPublicJobTags() {
-  const ip = process.env.EXPO_PUBLIC_IP_ADDRESS || "localhost";
+  const ip = "lip-balance-analyze-extends.trycloudflare.com" || "localhost";
   const candidateUrls = Array.from(new Set([
-    `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/job-tags`,
+    `https://lip-balance-analyze-extends.trycloudflare.com/user/job-tags`,
     `http://localhost:3000/user/job-tags`,
     `http://10.0.2.2:3000/user/job-tags`,
     `http://${ip}:8000/admin/api/public/job_tags`,
@@ -316,6 +316,7 @@ export async function fetchPublicJobTags() {
     { tagId: "Promodicer", label: "Promodicer", category: "Retail & Customer Service" },
   ];
 }
+
 
 
 

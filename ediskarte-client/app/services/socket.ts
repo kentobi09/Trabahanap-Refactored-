@@ -6,7 +6,7 @@ const listeners = new Map<string, Set<(...args: any[]) => void>>();
 
 export const getSocket = (): Socket => {
   if (!socketInstance) {
-    socketInstance = io(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000`, {
+    socketInstance = io(`https://lip-balance-analyze-extends.trycloudflare.com`, {
       transports: ["websocket"],
       autoConnect: false,
     });
@@ -85,6 +85,7 @@ export const removeSocketListener = (event: string, callback: (...args: any[]) =
     }
   }
 };
+
 
 
 

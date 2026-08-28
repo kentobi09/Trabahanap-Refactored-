@@ -68,7 +68,7 @@ const AboutInfoPage: React.FC = () => {
       console.log('Fetching profile for ID:', jobseekerId);
       
       const response = await fetch(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/profile/${jobseekerId}/details`,
+        `https://lip-balance-analyze-extends.trycloudflare.com/user/profile/${jobseekerId}/details`,
         {
           headers: { 
             Authorization: `Bearer ${token}`,
@@ -173,7 +173,7 @@ const AboutInfoPage: React.FC = () => {
     if (!img || typeof img !== "string") return 'https://via.placeholder.com/100';
     if (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("data:")) return img;
     const clean = img.replace(/\\/g, "/").replace(/^\/+/, "");
-    return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${clean}`;
+    return `https://lip-balance-analyze-extends.trycloudflare.com/${clean}`;
   };
 
   return (
@@ -372,6 +372,7 @@ const styles = StyleSheet.create({
 });
 
 export default AboutInfoPage;
+
 
 
 

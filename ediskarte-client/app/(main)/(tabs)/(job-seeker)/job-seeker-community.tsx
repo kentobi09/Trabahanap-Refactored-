@@ -479,7 +479,7 @@ const SocialFeedScreen = () => {
 
         if (profileImagePath) {
           setUserProfileImage(
-            `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${profileImagePath.replace(/\\/g, "/")}`
+            `https://lip-balance-analyze-extends.trycloudflare.com/${profileImagePath.replace(/\\/g, "/")}`
           );
         }
         setUsername(userName);
@@ -579,7 +579,7 @@ const SocialFeedScreen = () => {
     const resolveUri = (img: string) =>
       img.startsWith("http") || img.startsWith("data:")
         ? img
-        : `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${img.replace(/^\\+|^\\+/, "")}`;
+        : `https://lip-balance-analyze-extends.trycloudflare.com/${img.replace(/^\\+|^\\+/, "")}`;
 
     const resolvedUris = images.map(resolveUri);
 
@@ -658,7 +658,7 @@ const SocialFeedScreen = () => {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsMultipleSelection: true,
         selectionLimit: remainingSlots,
-        quality: 0.8,
+        quality: 0.5,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
@@ -725,7 +725,7 @@ const SocialFeedScreen = () => {
 
   const handleShare = async (post: Post) => {
     try {
-      const postUrl = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/community/posts/${post.id}`;
+      const postUrl = `https://lip-balance-analyze-extends.trycloudflare.com/community/posts/${post.id}`;
       const message = `Check out this post from ${post.username}:\n\n${post.postContent}\n\n${postUrl}`;
 
       const result = await Share.share({
@@ -1112,7 +1112,7 @@ const SocialFeedScreen = () => {
       const token = await AsyncStorage.getItem("token");
       const currentUserId = await AsyncStorage.getItem("currentUserId");
       await fetch(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/report`,
+        `https://lip-balance-analyze-extends.trycloudflare.com/api/report`,
         {
           method: "POST",
           headers: {
@@ -1147,7 +1147,7 @@ const SocialFeedScreen = () => {
     setEditingPostDetails(post);
     setEditedContentText(post.postContent);
     const existingImageUrl = post.postImage
-      ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${post.postImage}`
+      ? `https://lip-balance-analyze-extends.trycloudflare.com/${post.postImage}`
       : null;
     setEditedImageDisplayUri(existingImageUrl);
     setNewLocalImageForEditUri(null);
@@ -1416,11 +1416,11 @@ const SocialFeedScreen = () => {
 
   const renderPost = ({ item }: { item: Post }) => {
     const imageUrl = item.postImage
-      ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item.postImage}`
+      ? `https://lip-balance-analyze-extends.trycloudflare.com/${item.postImage}`
       : null;
 
     const profileImageUrl = item.profileImage
-      ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item.profileImage.replace(/\\/g, "/")}`
+      ? `https://lip-balance-analyze-extends.trycloudflare.com/${item.profileImage.replace(/\\/g, "/")}`
       : null;
 
     return (
@@ -1905,7 +1905,7 @@ const SocialFeedScreen = () => {
                     source={
                       selectedPost.profileImage
                         ? {
-                            uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${selectedPost.profileImage}`,
+                            uri: `https://lip-balance-analyze-extends.trycloudflare.com/${selectedPost.profileImage}`,
                           }
                         : require("assets/images/default-user.png")
                     }
@@ -2744,6 +2744,7 @@ const styles = StyleSheet.create<Styles>({
 });
 
 export default SocialFeedScreen;
+
 
 
 

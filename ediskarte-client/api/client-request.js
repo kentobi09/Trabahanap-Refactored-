@@ -30,7 +30,7 @@ export async function AddJobRequest(params) {
   });
   try {
     const jobPost = await axios.post(
-      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/client-home/add-jobs`,
+      `https://lip-balance-analyze-extends.trycloudflare.com/client-home/add-jobs`,
       formData,
       {
         headers: {
@@ -47,7 +47,7 @@ export async function AddJobRequest(params) {
 export async function fetchJobListings() {
   const { data } = await decodeToken();
   const getClientListings = await axios.get(
-    `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/client-home/job-listings`,
+    `https://lip-balance-analyze-extends.trycloudflare.com/client-home/job-listings`,
     { params: { client: data.id } }
   );
   return getClientListings.data;
@@ -55,7 +55,7 @@ export async function fetchJobListings() {
 
 export async function fetchSingleJobListing(id) {
   const getSingleListing = await axios.get(
-    `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/client-home/job-listings/${id}`,
+    `https://lip-balance-analyze-extends.trycloudflare.com/client-home/job-listings/${id}`,
     { params: { jobID: id } }
   );
 
@@ -64,7 +64,7 @@ export async function fetchSingleJobListing(id) {
 
 export async function deleteJobListing(id) {
   const deleteListing = await axios.delete(
-    `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/client-home/delete-listing`,
+    `https://lip-balance-analyze-extends.trycloudflare.com/client-home/delete-listing`,
     { params: { jobID: id } }
   );
 
@@ -75,7 +75,7 @@ export async function editJobListing(params) {
   const formData = new FormData();
 
   const parsedImages = params.jobImage.map((img) =>
-    img.replace(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/`, "").trim()
+    img.replace(`https://lip-balance-analyze-extends.trycloudflare.com/`, "").trim()
   );
 
   if (params.jobImage.length != 0) {
@@ -99,7 +99,7 @@ export async function editJobListing(params) {
   });
 
   const editListing = await axios.patch(
-    `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/client-home/${params.id}/edit-listing`,
+    `https://lip-balance-analyze-extends.trycloudflare.com/client-home/${params.id}/edit-listing`,
     formData,
     {
       headers: {
@@ -109,6 +109,7 @@ export async function editJobListing(params) {
   );
   console.log("Successfully sent data to be edited", editListing.data);
 }
+
 
 
 

@@ -47,7 +47,7 @@ const NotificationScreen = () => {
         const storedUserType = await AsyncStorage.getItem('userType');
         setUserType(storedUserType as 'client' | 'jobseeker');
 
-        const response = await fetch(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/notifications`, {
+        const response = await fetch(`https://lip-balance-analyze-extends.trycloudflare.com/api/notifications`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -321,6 +321,7 @@ const styles = StyleSheet.create({
 });
 
 export default NotificationScreen; 
+
 
 
 

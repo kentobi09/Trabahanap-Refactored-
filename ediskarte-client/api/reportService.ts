@@ -1,7 +1,7 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const API_URL = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000`;
+const API_URL = `https://lip-balance-analyze-extends.trycloudflare.com`;
 
 interface ReportPayload {
   reporter: string; // ID of the user making the report
@@ -41,6 +41,7 @@ export const submitReport = async (
     throw error.response?.data || error;
   }
 };
+
 
 
 

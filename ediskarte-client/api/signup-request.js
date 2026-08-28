@@ -63,9 +63,9 @@ export function SignUpData(params) {
 
 export const handleFormData = async () => {
   try {
-    const host = process.env.EXPO_PUBLIC_IP_ADDRESS || 'localhost';
+    const host = "lip-balance-analyze-extends.trycloudflare.com" || 'localhost';
     const response = await axios.post(
-      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/signup`,
+      `https://lip-balance-analyze-extends.trycloudflare.com/signup`,
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },
@@ -80,9 +80,9 @@ export const handleFormData = async () => {
 
 export const storeOTPRequest = async (email) => {
   try {
-    const host = process.env.EXPO_PUBLIC_IP_ADDRESS || 'localhost';
+    const host = "lip-balance-analyze-extends.trycloudflare.com" || 'localhost';
     const response = await axios.post(
-      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/store-otp`,
+      `https://lip-balance-analyze-extends.trycloudflare.com/store-otp`,
       { email },
       {
         headers: { "Content-Type": "application/json" },
@@ -99,9 +99,9 @@ export const storeOTPRequest = async (email) => {
 
 export const verifyOTPRequest = async (email, otp) => {
   try {
-    const host = process.env.EXPO_PUBLIC_IP_ADDRESS || 'localhost';
+    const host = "lip-balance-analyze-extends.trycloudflare.com" || 'localhost';
     const response = await axios.post(
-      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/verify-otp`,
+      `https://lip-balance-analyze-extends.trycloudflare.com/verify-otp`,
       { email, otp },
       {
         headers: { "Content-Type": "application/json" },
@@ -124,9 +124,9 @@ export const clearFormData = () => {
 
 export const verifyApplicant = async () => {
   try {
-    const host = process.env.EXPO_PUBLIC_IP_ADDRESS || 'localhost';
+    const host = "lip-balance-analyze-extends.trycloudflare.com" || 'localhost';
     const response = await axios.post(
-      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/verify-applicant`,
+      `https://lip-balance-analyze-extends.trycloudflare.com/verify-applicant`,
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },
@@ -139,6 +139,7 @@ export const verifyApplicant = async () => {
     return { success: false, error: errMsg };
   }
 };
+
 
 
 

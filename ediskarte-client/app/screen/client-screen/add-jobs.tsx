@@ -268,7 +268,7 @@ export default function AddJobScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.8,
+        quality: 0.5,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
@@ -385,7 +385,7 @@ export default function AddJobScreen() {
   const handleCheckToken = async () => {
     const dataToken = await AsyncStorage.getItem("token");
     const decodedToken = await axios.get(
-      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/decodeToken`,
+      `https://lip-balance-analyze-extends.trycloudflare.com/decodeToken`,
       { params: { token: dataToken } }
     );
     return decodedToken.data;
@@ -1078,6 +1078,7 @@ const styles = StyleSheet.create({
     color: '#666666',
   },
 });
+
 
 
 

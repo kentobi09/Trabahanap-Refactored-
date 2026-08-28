@@ -89,7 +89,7 @@ const UtilityWorkerProfile: React.FC = () => {
       
       // Fetch profile data using /user/profile/:id/details endpoint
       const profileResponse = await fetch(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/profile/${jobseekerId}/details`,
+        `https://lip-balance-analyze-extends.trycloudflare.com/user/profile/${jobseekerId}/details`,
         {
           headers: { 
             Authorization: `Bearer ${token}`,
@@ -110,7 +110,7 @@ const UtilityWorkerProfile: React.FC = () => {
       let reviewsData = [];
       try {
         const reviewsResponse = await fetch(
-          `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/reviews/${jobseekerId}`,
+          `https://lip-balance-analyze-extends.trycloudflare.com/user/reviews/${jobseekerId}`,
           {
             headers: { 
               Authorization: `Bearer ${token}`,
@@ -131,7 +131,7 @@ const UtilityWorkerProfile: React.FC = () => {
         if (!imgStr || typeof imgStr !== "string") return "";
         if (imgStr.startsWith("http://") || imgStr.startsWith("https://") || imgStr.startsWith("data:")) return imgStr;
         const clean = imgStr.replace(/\\/g, "/").replace(/^\/+/, "");
-        return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${clean}`;
+        return `https://lip-balance-analyze-extends.trycloudflare.com/${clean}`;
       };
 
       const formatAddress = (pData: any, uObj: any) => {
@@ -408,7 +408,7 @@ const UtilityWorkerProfile: React.FC = () => {
               <Image
                 source={{
                   uri: feedback.avatar
-                    ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${feedback.avatar.replace(/\\/g, "/")}`
+                    ? `https://lip-balance-analyze-extends.trycloudflare.com/${feedback.avatar.replace(/\\/g, "/")}`
                     : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"
                 }}
                 style={styles.feedbackAvatar}
@@ -458,7 +458,7 @@ const UtilityWorkerProfile: React.FC = () => {
                   <Image
                     source={{
                       uri: selectedFeedback.avatar
-                        ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${selectedFeedback.avatar.replace(/\\/g, "/")}`
+                        ? `https://lip-balance-analyze-extends.trycloudflare.com/${selectedFeedback.avatar.replace(/\\/g, "/")}`
                         : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"
                     }}
                     style={styles.feedbackAvatar}
@@ -1031,6 +1031,7 @@ const styles = StyleSheet.create({
 });
 
 export default UtilityWorkerProfile;
+
 
 
 

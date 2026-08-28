@@ -79,7 +79,7 @@ const AboutInfoPage: React.FC = () => {
           <Image
             source={{
               uri: workerInfo?.profileImage
-                ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${workerInfo.profileImage}`
+                ? `https://lip-balance-analyze-extends.trycloudflare.com/${workerInfo.profileImage}`
                 : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
             }}
             style={styles.profileImage}
@@ -309,6 +309,7 @@ const styles = StyleSheet.create({
 });
 
 export default AboutInfoPage;
+
 
 
 

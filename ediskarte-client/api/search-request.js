@@ -33,7 +33,7 @@ export const searchJobSeekers = async (query, options = {}) => {
     }
 
     const response = await axios.get(
-      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/search/jobseekers`,
+      `https://lip-balance-analyze-extends.trycloudflare.com/api/search/jobseekers`,
       {
         params,
         headers: {
@@ -48,6 +48,7 @@ export const searchJobSeekers = async (query, options = {}) => {
     throw error;
   }
 };
+
 
 
 

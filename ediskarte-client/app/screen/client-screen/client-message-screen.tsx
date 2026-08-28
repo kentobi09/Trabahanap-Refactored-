@@ -118,7 +118,7 @@ const getProfileImageUri = (imagePath: any) => {
   if (!imagePath) return undefined;
   const normalized = (imagePath + "").replace(/\\/g, "/");
   const fileName = normalized.split("profiles/")[1] || "";
-  return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${fileName}`;
+  return `https://lip-balance-analyze-extends.trycloudflare.com/uploads/profiles/${fileName}`;
 };
 
 const ChatScreen: React.FC<ChatProps> = ({
@@ -208,7 +208,7 @@ const ChatScreen: React.FC<ChatProps> = ({
       const token = await AsyncStorage.getItem("token");
       const currentUserId = await AsyncStorage.getItem("currentUserId");
       await axios.post(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/report`,
+        `https://lip-balance-analyze-extends.trycloudflare.com/api/report`,
         {
           reason: reportReason,
           reportedObjectId: otherParticipantId || chatId,
@@ -326,7 +326,7 @@ const ChatScreen: React.FC<ChatProps> = ({
   const fetchInitialMessages = async (token: string) => {
     try {
       const response = await axios.get(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/messages/${chatId}`,
+        `https://lip-balance-analyze-extends.trycloudflare.com/api/messages/${chatId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -414,7 +414,7 @@ const ChatScreen: React.FC<ChatProps> = ({
     try {
       const token = await AsyncStorage.getItem("token");
       await axios.post(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/chats/${chatId}/approve`,
+        `https://lip-balance-analyze-extends.trycloudflare.com/chats/${chatId}/approve`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -431,7 +431,7 @@ const ChatScreen: React.FC<ChatProps> = ({
     try {
       const token = await AsyncStorage.getItem("token");
       await axios.post(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/chats/${chatId}/reject`,
+        `https://lip-balance-analyze-extends.trycloudflare.com/chats/${chatId}/reject`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -570,7 +570,7 @@ const ChatScreen: React.FC<ChatProps> = ({
       try {
         const token = await AsyncStorage.getItem("token");
         const response = await axios.get(
-          `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/chats/${chatId}/status`,
+          `https://lip-balance-analyze-extends.trycloudflare.com/chats/${chatId}/status`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -750,7 +750,7 @@ const ChatScreen: React.FC<ChatProps> = ({
     try {
       const token = await AsyncStorage.getItem("token");
       await axios.post(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/block`,
+        `https://lip-balance-analyze-extends.trycloudflare.com/block`,
         {
           blockedId: otherParticipantId,
           reason: blockReason,
@@ -774,7 +774,7 @@ const ChatScreen: React.FC<ChatProps> = ({
     try {
       const token = await AsyncStorage.getItem("token");
       await axios.delete(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/block/${otherParticipantId}`,
+        `https://lip-balance-analyze-extends.trycloudflare.com/block/${otherParticipantId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -1014,9 +1014,9 @@ const ChatScreen: React.FC<ChatProps> = ({
         return m.messageType === "image";
       });
       const imageArray = imageMessages.map((msg) => {
-        return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/messages/${getFilePart(msg.messageContent)}`;
+        return `https://lip-balance-analyze-extends.trycloudflare.com/uploads/messages/${getFilePart(msg.messageContent)}`;
       });
-      const imageUrl = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/messages/${getFilePart(item.messageContent)}`;
+      const imageUrl = `https://lip-balance-analyze-extends.trycloudflare.com/uploads/messages/${getFilePart(item.messageContent)}`;
       const isDeletedForEveryone = item.deletedBySender === "yes" && item.deletedByReceiver === "yes";
       const isVisibleToUser = !shouldHideMessage(item, currentUserId) || isDeletedForEveryone;
       if (!isVisibleToUser) return null;
@@ -1138,7 +1138,7 @@ const ChatScreen: React.FC<ChatProps> = ({
 
     // FILE MESSAGE
     if (item.messageType === "file") {
-      const fileUrl = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/messages/${getFilePart(item.messageContent)}`;
+      const fileUrl = `https://lip-balance-analyze-extends.trycloudflare.com/uploads/messages/${getFilePart(item.messageContent)}`;
       const fileName = getFilePart(item.messageContent);
       const fileExtension = fileName ? fileName.split('.').pop()?.toLowerCase() : '';
       const isDeletedForEveryone = item.deletedBySender === 'yes' && item.deletedByReceiver === 'yes';
@@ -1402,7 +1402,7 @@ const ChatScreen: React.FC<ChatProps> = ({
     try {
       const token = await AsyncStorage.getItem("token");
       const response = await axios.get(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/block/check/${otherParticipantId}`,
+        `https://lip-balance-analyze-extends.trycloudflare.com/block/check/${otherParticipantId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -1421,7 +1421,7 @@ const ChatScreen: React.FC<ChatProps> = ({
     try {
       const token = await AsyncStorage.getItem("token");
       const response = await axios.get(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/users/${currentUserId}/blocked-by`,
+        `https://lip-balance-analyze-extends.trycloudflare.com/users/${currentUserId}/blocked-by`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -3006,6 +3006,7 @@ callMessageSubtext: {
 });
 
 export default ChatScreen;
+
 
 
 

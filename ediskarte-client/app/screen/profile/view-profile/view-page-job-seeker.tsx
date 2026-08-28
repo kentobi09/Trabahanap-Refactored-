@@ -101,7 +101,7 @@ const UtilityWorkerProfile: React.FC = () => {
 
       // Fetch profile data
       const profileResponse = await fetch(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/profile/${jobseekerId}/details`,
+        `https://lip-balance-analyze-extends.trycloudflare.com/user/profile/${jobseekerId}/details`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -121,7 +121,7 @@ const UtilityWorkerProfile: React.FC = () => {
 
       // Fetch job tags
       const tagsResponse = await fetch(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/job-seeker/${jobseekerId}/tags`,
+        `https://lip-balance-analyze-extends.trycloudflare.com/api/job-seeker/${jobseekerId}/tags`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -140,7 +140,7 @@ const UtilityWorkerProfile: React.FC = () => {
 
       // Fetch reviews
       const reviewsResponse = await fetch(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/reviews/${jobseekerId}`,
+        `https://lip-balance-analyze-extends.trycloudflare.com/user/reviews/${jobseekerId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -164,9 +164,9 @@ const UtilityWorkerProfile: React.FC = () => {
         name: profileData.name || (profileData.user ? `${profileData.user.firstName} ${profileData.user.middleName || ""} ${profileData.user.lastName}`.trim() : ""),
         address: profileData.address || (profileData.user ? `${profileData.user.houseNumber || ""} ${profileData.user.street || ""} ${profileData.user.barangay || ""}`.trim() : ""),
         profileImage: profileData.profileImage
-          ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${profileData.profileImage.replace(/\\/g, "/")}`
+          ? `https://lip-balance-analyze-extends.trycloudflare.com/${profileData.profileImage.replace(/\\/g, "/")}`
           : (profileData.user?.profileImage
-              ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${profileData.user.profileImage.replace(/\\/g, "/")}`
+              ? `https://lip-balance-analyze-extends.trycloudflare.com/${profileData.user.profileImage.replace(/\\/g, "/")}`
               : ""),
         feedbacks: reviewsData || [],
         jobsDone: profileData.jobsDone !== undefined ? profileData.jobsDone : (profileData.user?.jobsDone || 0),
@@ -514,7 +514,7 @@ const UtilityWorkerProfile: React.FC = () => {
                       source={{
                         uri: typeof item === "string" && item.startsWith("http")
                           ? item
-                          : `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${String(item).replace(/\\/g, "/")}`,
+                          : `https://lip-balance-analyze-extends.trycloudflare.com/${String(item).replace(/\\/g, "/")}`,
                       }}
                       style={styles.credentialImage}
                     />
@@ -562,7 +562,7 @@ const UtilityWorkerProfile: React.FC = () => {
               <Image
                 source={{
                   uri: feedback.avatar
-                    ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${feedback.avatar.replace(/\\/g, "/")}`
+                    ? `https://lip-balance-analyze-extends.trycloudflare.com/${feedback.avatar.replace(/\\/g, "/")}`
                     : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"
                 }}
                 style={styles.feedbackAvatar}
@@ -645,7 +645,7 @@ const UtilityWorkerProfile: React.FC = () => {
                   <Image
                     source={{
                       uri: selectedFeedback.avatar
-                        ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${selectedFeedback.avatar.replace(/\\/g, "/")}`
+                        ? `https://lip-balance-analyze-extends.trycloudflare.com/${selectedFeedback.avatar.replace(/\\/g, "/")}`
                         : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"
                     }}
                     style={styles.feedbackAvatar}
@@ -732,7 +732,7 @@ const UtilityWorkerProfile: React.FC = () => {
                 source={{
                   uri: typeof item === "string" && item.startsWith("http")
                     ? item
-                    : `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${String(item).replace(/\\/g, "/")}`,
+                    : `https://lip-balance-analyze-extends.trycloudflare.com/${String(item).replace(/\\/g, "/")}`,
                 }}
                 style={styles.fullScreenImage}
                 resizeMode="contain"
@@ -1375,6 +1375,7 @@ const styles = StyleSheet.create({
 });
 
 export default UtilityWorkerProfile;
+
 
 
 
