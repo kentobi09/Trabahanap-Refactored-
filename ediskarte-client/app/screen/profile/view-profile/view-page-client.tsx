@@ -134,12 +134,31 @@ const UtilityWorkerProfile: React.FC = () => {
         return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${clean}`;
       };
 
+      const formatAddress = (pData: any, uObj: any) => {
+        if (typeof pData?.address === "string" && pData.address.trim() && pData.address !== "Not Specified") {
+          return pData.address.trim();
+        }
+        if (typeof uObj?.address === "string" && uObj.address.trim() && uObj.address !== "Not Specified") {
+          return uObj.address.trim();
+        }
+        const parts = [
+          uObj?.houseNumber || pData?.houseNumber,
+          uObj?.street || pData?.street,
+          uObj?.barangay || pData?.barangay,
+          uObj?.municipality || pData?.municipality,
+          uObj?.province || pData?.province
+        ].filter((p: any) => p && String(p).trim());
+
+        if (parts.length > 0) return parts.join(", ");
+        return "Not Specified";
+      };
+
       // Combine profile data with reviews
       const combinedData = {
         ...profileData,
         id: userObj.id || profileData.jobSeekerId || jobseekerId,
         name: `${userObj.firstName || ""} ${userObj.middleName || ""} ${userObj.lastName || ""}`.trim() || "Employer",
-        address: `${userObj.houseNumber || ""} ${userObj.street || ""} ${userObj.barangay || ""}`.trim() || "Not Specified",
+        address: formatAddress(profileData, userObj),
         profileImage: formatImg(userObj.profileImage || profileData.profileImage),
         feedbacks: reviewsData || [],
         joinedAt: userObj.joinedAt || profileData.joinedAt || '',
@@ -1012,4 +1031,10 @@ const styles = StyleSheet.create({
 });
 
 export default UtilityWorkerProfile;
+
+
+
+
+
+
 

@@ -810,9 +810,10 @@ export const searchJobSeekers = async (req, res) => {
 
     const db = await getNativeDb();
     
-    // Fetch users of type job-seeker from Native Mongo
+    // Fetch users of type job-seeker from Native Mongo (only verified jobseekers are searchable)
     const rawSeekerUsers = await db.collection("users").find({
-      userType: "job-seeker"
+      userType: "job-seeker",
+      verificationStatus: "verified"
     }).toArray();
 
     // Fetch all jobseeker profiles from Native Mongo
