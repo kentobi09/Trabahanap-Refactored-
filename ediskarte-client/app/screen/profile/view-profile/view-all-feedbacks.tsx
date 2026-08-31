@@ -56,7 +56,7 @@ const ViewAllFeedbacks: React.FC = () => {
       console.log('Fetching reviews for jobseeker ID:', jobseekerId);
       
       const response = await fetch(
-        `https://lip-balance-analyze-extends.trycloudflare.com/user/reviews/${jobseekerId}`,
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/reviews/${jobseekerId}`,
         {
           headers: { 
             Authorization: `Bearer ${token}`,
@@ -145,7 +145,7 @@ const ViewAllFeedbacks: React.FC = () => {
         <Image
           source={{
             uri: item.avatar
-              ? `https://lip-balance-analyze-extends.trycloudflare.com/${item.avatar.replace(/\\/g, "/")}`
+              ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item.avatar.replace(/\\/g, "/")}`
               : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"
           }}
           style={styles.feedbackAvatar}
@@ -355,6 +355,9 @@ const styles = StyleSheet.create({
 });
 
 export default ViewAllFeedbacks; 
+
+
+
 
 
 

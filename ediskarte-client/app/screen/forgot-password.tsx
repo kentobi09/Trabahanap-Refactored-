@@ -50,8 +50,8 @@ export default function ForgotPasswordScreen() {
   };
 
   const getBackendUrl = (endpoint: string) => {
-    const host = "lip-balance-analyze-extends.trycloudflare.com" || "localhost";
-    return `https://lip-balance-analyze-extends.trycloudflare.com${endpoint}`;
+    const host = process.env.EXPO_PUBLIC_IP_ADDRESS || "localhost";
+    return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000${endpoint}`;
   };
 
   // Helper fetch with fallback for Android emulator / local development
@@ -535,6 +535,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+
+
+
 
 
 

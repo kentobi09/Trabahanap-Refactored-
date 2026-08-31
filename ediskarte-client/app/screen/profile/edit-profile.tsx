@@ -295,7 +295,7 @@ const EditProfilePage: React.FC = () => {
       // Ensure the profile image path is properly formatted
       const imagePath = formData.profileImage.startsWith('http') 
         ? formData.profileImage 
-        : `https://lip-balance-analyze-extends.trycloudflare.com/${formData.profileImage}`;
+        : `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${formData.profileImage}`;
       return { uri: imagePath };
     } else {
       // For default image, use require
@@ -793,6 +793,9 @@ const styles = StyleSheet.create({
 });
 
 export default EditProfilePage;
+
+
+
 
 
 

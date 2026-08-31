@@ -317,7 +317,7 @@ const AgoraCallRoom = () => {
   }
 
   const cleanImageUrl = receiverImage
-    ? `https://lip-balance-analyze-extends.trycloudflare.com/${receiverImage.replace(/\\/g, "/")}`
+    ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${receiverImage.replace(/\\/g, "/")}`
     : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
 
   return (
@@ -623,6 +623,9 @@ const styles = StyleSheet.create({
 });
 
 export default AgoraCallRoom;
+
+
+
 
 
 

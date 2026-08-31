@@ -39,14 +39,13 @@ interface WorkerInfo {
 
 const AboutInfoPage: React.FC = () => {
   const router = useRouter();
-  const { otherParticipantId } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const rawId = params.otherParticipantId || params.jobseekerId || params.userId || params.id;
   const [workerInfo, setWorkerInfo] = useState<WorkerInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const jobseekerId = Array.isArray(otherParticipantId)
-    ? otherParticipantId[0]
-    : otherParticipantId;
+  const jobseekerId = Array.isArray(rawId) ? rawId[0] : rawId;
 
   useEffect(() => {
     if (jobseekerId) {
@@ -68,7 +67,7 @@ const AboutInfoPage: React.FC = () => {
       console.log('Fetching profile for ID:', jobseekerId);
       
       const response = await fetch(
-        `https://lip-balance-analyze-extends.trycloudflare.com/user/profile/${jobseekerId}/details`,
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/profile/${jobseekerId}/details`,
         {
           headers: { 
             Authorization: `Bearer ${token}`,
@@ -173,7 +172,7 @@ const AboutInfoPage: React.FC = () => {
     if (!img || typeof img !== "string") return 'https://via.placeholder.com/100';
     if (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("data:")) return img;
     const clean = img.replace(/\\/g, "/").replace(/^\/+/, "");
-    return `https://lip-balance-analyze-extends.trycloudflare.com/${clean}`;
+    return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${clean}`;
   };
 
   return (
@@ -372,6 +371,9 @@ const styles = StyleSheet.create({
 });
 
 export default AboutInfoPage;
+
+
+
 
 
 

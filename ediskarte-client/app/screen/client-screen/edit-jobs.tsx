@@ -174,7 +174,7 @@ export default function EditJobScreen() {
 
     const parsedImage = jobData.jobImage.map(
       (imgPath: string) =>
-        `https://lip-balance-analyze-extends.trycloudflare.com/${imgPath}`
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${imgPath}`
     );
 
     // Split duration into number and unit
@@ -1102,6 +1102,9 @@ const styles = StyleSheet.create({
     color: '#666666',
   },
 });
+
+
+
 
 
 

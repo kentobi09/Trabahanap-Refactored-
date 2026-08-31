@@ -43,7 +43,7 @@ const getProfileImageUri = (imagePath: any) => {
   if (!imagePath) return undefined;
   const normalized = (imagePath + "").replace(/\\/g, "/");
   const fileName = normalized.split("profiles/")[1] || "";
-  return `https://lip-balance-analyze-extends.trycloudflare.com/uploads/profiles/${fileName}`;
+  return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/profiles/${fileName}`;
 };
 
 const ChatScreen: React.FC = () => {
@@ -87,7 +87,7 @@ const ChatScreen: React.FC = () => {
         const userId = await AsyncStorage.getItem('currentUserId');
         const token = await AsyncStorage.getItem('token');
         if (userId && token) {
-          const res = await fetch(`https://lip-balance-analyze-extends.trycloudflare.com/user/profile/${userId}?userType=job-seeker`, {
+          const res = await fetch(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/profile/${userId}?userType=job-seeker`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (res.ok) {
@@ -209,7 +209,7 @@ const ChatScreen: React.FC = () => {
           return;
         }
 
-        const newSocket = io(`https://lip-balance-analyze-extends.trycloudflare.com`, {
+        const newSocket = io(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000`, {
           auth: { token }
         });
         if (currentUserId) {
@@ -763,6 +763,9 @@ const styles = StyleSheet.create({
 });
 
 export default ChatScreen;
+
+
+
 
 
 

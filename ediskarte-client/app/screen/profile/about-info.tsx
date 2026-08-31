@@ -32,19 +32,34 @@ const AboutInfoPage: React.FC = () => {
     safePush("./edit-profile", { ...workerInfo });
   };
 
-  const formatGender = (gender: string | undefined) => {
-    if (!gender) return "";
-    return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
+  const formatGender = (gender: any) => {
+    if (!gender) return "Not Specified";
+    const str = Array.isArray(gender) ? String(gender[0] || "") : String(gender);
+    if (!str.trim()) return "Not Specified";
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
   };
 
-  const formatBirthday = (birthday: string | undefined) => {
-    if (!birthday) return "";
-    const date = new Date(birthday);
-    return date.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
+  const formatBirthday = (birthday: any) => {
+    if (!birthday) return "Not Specified";
+    try {
+      const bStr = Array.isArray(birthday) ? birthday[0] : birthday;
+      const date = new Date(bStr);
+      if (isNaN(date.getTime())) return "Not Specified";
+      return date.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch (e) {
+      return "Not Specified";
+    }
+  };
+
+  const formatProfileImage = (img: any) => {
+    if (!img || typeof img !== "string") return "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
+    if (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("data:")) return img;
+    const clean = img.replace(/\\/g, "/").replace(/^\/+/, "");
+    return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${clean}`;
   };
 
   const formatAddress = (info: any) => {
@@ -78,9 +93,7 @@ const AboutInfoPage: React.FC = () => {
         <View style={styles.profileCard}>
           <Image
             source={{
-              uri: workerInfo?.profileImage
-                ? `https://lip-balance-analyze-extends.trycloudflare.com/${workerInfo.profileImage}`
-                : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+              uri: formatProfileImage(workerInfo?.profileImage)
             }}
             style={styles.profileImage}
           />
@@ -309,6 +322,9 @@ const styles = StyleSheet.create({
 });
 
 export default AboutInfoPage;
+
+
+
 
 
 

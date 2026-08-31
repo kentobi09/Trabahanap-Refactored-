@@ -65,13 +65,12 @@ const UtilityWorkerProfile: React.FC = () => {
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [showRoleTooltip, setShowRoleTooltip] = useState(false);
-  const { otherParticipantId } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const rawId = params.otherParticipantId || params.jobseekerId || params.userId || params.id;
   const [worker, setWorker] = useState<WorkerData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const jobseekerId = Array.isArray(otherParticipantId)
-    ? otherParticipantId[0]
-    : otherParticipantId;
+  const jobseekerId = Array.isArray(rawId) ? rawId[0] : rawId;
 
   useEffect(() => {
     fetchData();
@@ -89,7 +88,7 @@ const UtilityWorkerProfile: React.FC = () => {
       
       // Fetch profile data using /user/profile/:id/details endpoint
       const profileResponse = await fetch(
-        `https://lip-balance-analyze-extends.trycloudflare.com/user/profile/${jobseekerId}/details`,
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/profile/${jobseekerId}/details`,
         {
           headers: { 
             Authorization: `Bearer ${token}`,
@@ -110,7 +109,7 @@ const UtilityWorkerProfile: React.FC = () => {
       let reviewsData = [];
       try {
         const reviewsResponse = await fetch(
-          `https://lip-balance-analyze-extends.trycloudflare.com/user/reviews/${jobseekerId}`,
+          `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/user/reviews/${jobseekerId}`,
           {
             headers: { 
               Authorization: `Bearer ${token}`,
@@ -131,7 +130,7 @@ const UtilityWorkerProfile: React.FC = () => {
         if (!imgStr || typeof imgStr !== "string") return "";
         if (imgStr.startsWith("http://") || imgStr.startsWith("https://") || imgStr.startsWith("data:")) return imgStr;
         const clean = imgStr.replace(/\\/g, "/").replace(/^\/+/, "");
-        return `https://lip-balance-analyze-extends.trycloudflare.com/${clean}`;
+        return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${clean}`;
       };
 
       const formatAddress = (pData: any, uObj: any) => {
@@ -408,7 +407,7 @@ const UtilityWorkerProfile: React.FC = () => {
               <Image
                 source={{
                   uri: feedback.avatar
-                    ? `https://lip-balance-analyze-extends.trycloudflare.com/${feedback.avatar.replace(/\\/g, "/")}`
+                    ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${feedback.avatar.replace(/\\/g, "/")}`
                     : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"
                 }}
                 style={styles.feedbackAvatar}
@@ -458,7 +457,7 @@ const UtilityWorkerProfile: React.FC = () => {
                   <Image
                     source={{
                       uri: selectedFeedback.avatar
-                        ? `https://lip-balance-analyze-extends.trycloudflare.com/${selectedFeedback.avatar.replace(/\\/g, "/")}`
+                        ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${selectedFeedback.avatar.replace(/\\/g, "/")}`
                         : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"
                     }}
                     style={styles.feedbackAvatar}
@@ -1031,6 +1030,9 @@ const styles = StyleSheet.create({
 });
 
 export default UtilityWorkerProfile;
+
+
+
 
 
 

@@ -69,9 +69,9 @@ export default function SignInScreen() {
 
     setLoading(true);
     try {
-      const host = "lip-balance-analyze-extends.trycloudflare.com" || "localhost";
+      const host = process.env.EXPO_PUBLIC_IP_ADDRESS || "localhost";
       const response = await fetch(
-        `https://lip-balance-analyze-extends.trycloudflare.com/login`,
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/login`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -121,7 +121,7 @@ export default function SignInScreen() {
 
       // Initialize fresh socket and register new user
       const newSocket = io(
-        `https://lip-balance-analyze-extends.trycloudflare.com`,
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000`,
         {
           auth: {
             token: data.token,
@@ -582,6 +582,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
+
+
+
 
 
 

@@ -212,7 +212,7 @@ export default function RootLayout() {
                 <Image
                   source={{
                     uri: incomingCall.callerInfo?.profileImage
-                      ? `https://lip-balance-analyze-extends.trycloudflare.com/${incomingCall.callerInfo.profileImage.replace(/\\/g, "/")}`
+                      ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${incomingCall.callerInfo.profileImage.replace(/\\/g, "/")}`
                       : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"
                   }}
                   style={styles.callOverlayBackground}
@@ -225,7 +225,7 @@ export default function RootLayout() {
                     <Image
                       source={{
                         uri: incomingCall.callerInfo?.profileImage
-                          ? `https://lip-balance-analyze-extends.trycloudflare.com/${incomingCall.callerInfo.profileImage.replace(/\\/g, "/")}`
+                          ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${incomingCall.callerInfo.profileImage.replace(/\\/g, "/")}`
                           : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"
                       }}
                       style={styles.callOverlayAvatar}
@@ -439,6 +439,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#34C759",
   },
 });
+
+
+
 
 
 

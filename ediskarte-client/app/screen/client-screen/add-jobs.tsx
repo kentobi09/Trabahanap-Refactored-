@@ -385,7 +385,7 @@ export default function AddJobScreen() {
   const handleCheckToken = async () => {
     const dataToken = await AsyncStorage.getItem("token");
     const decodedToken = await axios.get(
-      `https://lip-balance-analyze-extends.trycloudflare.com/decodeToken`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/decodeToken`,
       { params: { token: dataToken } }
     );
     return decodedToken.data;
@@ -1078,6 +1078,9 @@ const styles = StyleSheet.create({
     color: '#666666',
   },
 });
+
+
+
 
 
 

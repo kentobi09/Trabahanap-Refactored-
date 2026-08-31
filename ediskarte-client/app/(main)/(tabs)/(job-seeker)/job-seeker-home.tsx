@@ -105,7 +105,7 @@ export default function JobListingScreen() {
         const storedUserType = await AsyncStorage.getItem('userType');
         setUserType(storedUserType as 'client' | 'job-seeker');
         
-        const response = await fetch(`https://lip-balance-analyze-extends.trycloudflare.com/api/hasUnreadNotification`, {
+        const response = await fetch(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/hasUnreadNotification`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -132,7 +132,7 @@ export default function JobListingScreen() {
       }
 
       const jobResponse = await fetch(
-        `https://lip-balance-analyze-extends.trycloudflare.com/api/job-requests`,
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/job-requests`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -142,7 +142,7 @@ export default function JobListingScreen() {
       setJobRequests(jobData);
  
       const myJobsResponse = await fetch(
-        `https://lip-balance-analyze-extends.trycloudflare.com/api/job-seeker/my-jobs`,
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/job-seeker/my-jobs`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -151,7 +151,7 @@ export default function JobListingScreen() {
       setMyJobs(myJobsData.sort((a: JobRequest, b: JobRequest) => new Date(b.datePosted).getTime() - new Date(a.datePosted).getTime()));
 
       const tagsResponse = await fetch(
-        `https://lip-balance-analyze-extends.trycloudflare.com/api/job-seeker/tags`,
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/job-seeker/tags`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -182,7 +182,7 @@ export default function JobListingScreen() {
   
           if (profileImagePath) {
             setUserProfileImage(
-              `https://lip-balance-analyze-extends.trycloudflare.com/${profileImagePath}`
+              `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${profileImagePath}`
             );
           }
         } catch (error) {
@@ -267,7 +267,7 @@ export default function JobListingScreen() {
   const markNotificationsAsRead = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch(`https://lip-balance-analyze-extends.trycloudflare.com/notifications/mark-read`, {
+      const response = await fetch(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/notifications/mark-read`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -383,7 +383,7 @@ export default function JobListingScreen() {
             displayedJobs.map((job) => {
               const hasImage = job.jobImage?.[0];
               const imageUri = hasImage
-                ? `https://lip-balance-analyze-extends.trycloudflare.com/uploads/${
+                ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/${
                     (job.jobImage[0] + "").replace(/\\/g, "/").split("job_request_files/")[1] ?? ''
                   }`
                 : null;
@@ -417,7 +417,7 @@ export default function JobListingScreen() {
                         <Image
                           source={
                             job.client?.profileImage
-                              ? { uri: `https://lip-balance-analyze-extends.trycloudflare.com/${job.client.profileImage.replace(/\\/g, "/")}` }
+                              ? { uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${job.client.profileImage.replace(/\\/g, "/")}` }
                               : require("assets/images/default-user.png")
                           }
                           style={styles.posterProfileImage}
@@ -571,7 +571,7 @@ export default function JobListingScreen() {
                       const job = myJobs1.find((job) => job.id === selectedJobId);
                       const reviewedId = job?.client.id;
                       const response = await fetch(
-                        `https://lip-balance-analyze-extends.trycloudflare.com/api/jobrequest/verify/${selectedJobId}`,
+                        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/jobrequest/verify/${selectedJobId}`,
                         {
                           method: "POST",
                           headers: {
@@ -880,6 +880,9 @@ const styles = StyleSheet.create({
 
   },
 });
+
+
+
 
 
 

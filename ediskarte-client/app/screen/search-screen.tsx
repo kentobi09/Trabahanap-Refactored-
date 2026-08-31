@@ -113,7 +113,7 @@ const SearchScreen = () => {
     if (!img || typeof img !== "string") return null;
     if (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("data:")) return img;
     const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
-    return `https://lip-balance-analyze-extends.trycloudflare.com/${cleanPath}`;
+    return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${cleanPath}`;
   };
 
   // Render individual job seeker search result
@@ -156,7 +156,7 @@ const SearchScreen = () => {
       }
 
       const response = await fetch(
-        `https://lip-balance-analyze-extends.trycloudflare.com/api/search/jobseekers?limit=1`,
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/search/jobseekers?limit=1`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -459,6 +459,9 @@ const styles = StyleSheet.create({
 });
 
 export default SearchScreen;
+
+
+
 
 
 

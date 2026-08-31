@@ -526,14 +526,14 @@ const UtilityWorkerProfile: React.FC = () => {
         <TouchableOpacity
           onPress={() => {
             if (worker?.profileImage) {
-              setPreviewImage(`https://lip-balance-analyze-extends.trycloudflare.com/${worker.profileImage.replace(/\\/g, "/")}`);
+              setPreviewImage(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${worker.profileImage.replace(/\\/g, "/")}`);
             }
           }}
         >
           <Image
             source={{
               uri: worker.profileImage
-                ? `https://lip-balance-analyze-extends.trycloudflare.com/${worker.profileImage.replace(/\\/g, "/")}`
+                ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${worker.profileImage.replace(/\\/g, "/")}`
                 : require("assets/images/default-user.png"),
             }}
             style={styles.profileImage}
@@ -793,7 +793,7 @@ const UtilityWorkerProfile: React.FC = () => {
                     <View key={index} style={styles.credentialItem}>
                       <Image
                         source={{
-                          uri: `https://lip-balance-analyze-extends.trycloudflare.com/${credential.imageUrl}`,
+                          uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${credential.imageUrl}`,
                         }}
                         style={styles.credentialImage}
                       />
@@ -1303,6 +1303,9 @@ const styles = StyleSheet.create({
 });
 
 export default UtilityWorkerProfile;
+
+
+
 
 
 

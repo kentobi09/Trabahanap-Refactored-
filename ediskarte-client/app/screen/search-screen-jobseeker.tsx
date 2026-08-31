@@ -81,7 +81,7 @@ const SearchScreen = () => {
       console.log('Using filter:', filter);
 
       const response = await fetch(
-        `https://lip-balance-analyze-extends.trycloudflare.com/api/jobs/search?searchQuery=${query}&filter=${filter || 'all'}`,
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/jobs/search?searchQuery=${query}&filter=${filter || 'all'}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -117,7 +117,7 @@ const SearchScreen = () => {
       }
 
       const response = await fetch(
-        `https://lip-balance-analyze-extends.trycloudflare.com/api/jobs/top-categories`,
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/jobs/top-categories`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -290,7 +290,7 @@ const SearchScreen = () => {
                       <Image
                         source={
                           job.client.profileImage
-                            ? { uri: `https://lip-balance-analyze-extends.trycloudflare.com/${job.client.profileImage.replace(/\\/g, "/")}` }
+                            ? { uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${job.client.profileImage.replace(/\\/g, "/")}` }
                             : require('assets/images/client-user.png')
                         }
                         style={styles.clientImage}
@@ -309,7 +309,7 @@ const SearchScreen = () => {
                       <Image
                         source={{ 
                           uri: job.jobImage?.[0]
-                            ? `https://lip-balance-analyze-extends.trycloudflare.com/uploads/${
+                            ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/uploads/${
                                 (job.jobImage[0] + "").replace(/\\/g, "/").split("job_request_files/")[1] ?? ''
                               }`
                             : undefined
@@ -609,6 +609,9 @@ const styles = StyleSheet.create({
 });
 
 export default SearchScreen; 
+
+
+
 
 
 

@@ -782,14 +782,14 @@ const UtilityWorkerProfile: React.FC = () => {
         <TouchableOpacity
           onPress={() => {
             if (worker?.profileImage) {
-              handleImagePreview(`https://lip-balance-analyze-extends.trycloudflare.com/${worker.profileImage.replace(/\\/g, "/")}`);
+              handleImagePreview(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${worker.profileImage.replace(/\\/g, "/")}`);
             }
           }}
         >
           <Image
             source={{
               uri: worker.profileImage
-                ? `https://lip-balance-analyze-extends.trycloudflare.com/${worker.profileImage.replace(/\\/g, "/")}`
+                ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${worker.profileImage.replace(/\\/g, "/")}`
                 : "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
             }}
             style={styles.profileImage}
@@ -1076,11 +1076,11 @@ const UtilityWorkerProfile: React.FC = () => {
                         renderItem={({ item, index }) => (
                           <View style={[styles.credentialItem, { position: "relative" }]}>
                             <TouchableOpacity 
-                              onPress={() => handleImagePreview(`https://lip-balance-analyze-extends.trycloudflare.com/${item}`)}
+                              onPress={() => handleImagePreview(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item}`)}
                             >
                               <Image
                                 source={{
-                                  uri: `https://lip-balance-analyze-extends.trycloudflare.com/${item}`,
+                                  uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item}`,
                                 }}
                                 style={styles.credentialImage}
                                 resizeMode="contain"
@@ -1178,11 +1178,11 @@ const UtilityWorkerProfile: React.FC = () => {
                     renderItem={({ item, index }) => (
                       <TouchableOpacity 
                         style={styles.credentialItem}
-                        onPress={() => handleImagePreview(`https://lip-balance-analyze-extends.trycloudflare.com/${item}`)}
+                        onPress={() => handleImagePreview(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item}`)}
                       >
                         <Image
                           source={{
-                            uri: `https://lip-balance-analyze-extends.trycloudflare.com/${item}`,
+                            uri: `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${item}`,
                           }}
                           style={styles.credentialImage}
                           resizeMode="contain"
@@ -2196,6 +2196,9 @@ const styles = StyleSheet.create({
 });
 
 export default UtilityWorkerProfile;
+
+
+
 
 
 

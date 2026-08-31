@@ -52,7 +52,7 @@ export async function AddCommunityPost(params) {
 
   try {
     const response = await axios.post(
-      `https://lip-balance-analyze-extends.trycloudflare.com/community/posts/create-post`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/community/posts/create-post`,
       formData,
       {
         headers: {
@@ -71,7 +71,7 @@ export async function AddCommunityPost(params) {
 export async function fetchCommunityPosts() {
   try {
     const { data: postsData } = await axios.get(
-      `https://lip-balance-analyze-extends.trycloudflare.com/community/posts`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/community/posts`,
       {
         timeout: 20000,
       }
@@ -87,7 +87,7 @@ export async function fetchCommunityPosts() {
     }));
 
     const { data: usernames } = await axios.get(
-      `https://lip-balance-analyze-extends.trycloudflare.com/community/getUsername`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/community/getUsername`,
       {
         params: { ids: extractIds },
         timeout: 15000,
@@ -98,7 +98,7 @@ export async function fetchCommunityPosts() {
       postsData.map(async (post) => {
         try {
           const { data: comments } = await axios.get(
-            `https://lip-balance-analyze-extends.trycloudflare.com/community/posts/${post.id}/getComments`,
+            `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/community/posts/${post.id}/getComments`,
             { timeout: 10000 }
           );
           return {
@@ -166,7 +166,7 @@ export async function likePost(postId) {
     };
 
     const response = await axios.post(
-      `https://lip-balance-analyze-extends.trycloudflare.com/community/posts/${postId}/hasLiked`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/community/posts/${postId}/hasLiked`,
       requestData,
       {
         headers: {
@@ -188,7 +188,7 @@ export async function checkIfLiked(postId) {
     const { data } = await decodeToken();
 
     const response = await axios.get(
-      `https://lip-balance-analyze-extends.trycloudflare.com/community/posts/${postId}/checkIfLiked`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/community/posts/${postId}/checkIfLiked`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -219,7 +219,7 @@ export async function unlikePost(postId) {
     };
 
     const response = await axios.delete(
-      `https://lip-balance-analyze-extends.trycloudflare.com/community/posts/${postId}/unlike`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/community/posts/${postId}/unlike`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -241,7 +241,7 @@ export async function deleteCommunityPost(postId) {
     // and postId to identify the resource to delete and verify ownership on the backend.
 
     const response = await axios.delete(
-      `https://lip-balance-analyze-extends.trycloudflare.com/community/posts/${postId}/delete`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/community/posts/${postId}/delete`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -265,7 +265,7 @@ export async function addComment(postId, comment) {
     const { data } = await decodeToken();
 
     const response = await axios.post(
-      `https://lip-balance-analyze-extends.trycloudflare.com/community/posts/${postId}/addComment`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/community/posts/${postId}/addComment`,
       {
         comment: comment.comment,
         userId: data.id,
@@ -306,7 +306,7 @@ function transformCommentData(comment) {
   }
 
   const avatarUrl = profileImage
-    ? `https://lip-balance-analyze-extends.trycloudflare.com/${profileImage.replace(/\\/g, "/")}`
+    ? `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/${profileImage.replace(/\\/g, "/")}`
     : null;
 
   return {
@@ -332,7 +332,7 @@ export async function fetchPostComments(postId) {
   try {
     const token = await AsyncStorage.getItem("token");
     const response = await axios.get(
-      `https://lip-balance-analyze-extends.trycloudflare.com/community/posts/${postId}/getComments`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/community/posts/${postId}/getComments`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -397,7 +397,7 @@ export async function editCommunityPost(postId, updatedData) {
     }
 
     const response = await axios.put(
-      `https://lip-balance-analyze-extends.trycloudflare.com/community/posts/${postId}/edit`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/community/posts/${postId}/edit`,
       formData,
       {
         headers: {
@@ -421,7 +421,7 @@ export async function editCommunityCommentOrReply(postId, commentId, newText) {
   try {
     const token = await AsyncStorage.getItem("token");
     const response = await axios.put(
-      `https://lip-balance-analyze-extends.trycloudflare.com/community/posts/${postId}/comments/${commentId}/edit`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/community/posts/${postId}/comments/${commentId}/edit`,
       { text: newText }, // Payload containing the new text
       {
         headers: {
@@ -445,7 +445,7 @@ export async function deleteCommunityCommentOrReply(postId, commentId) {
   try {
     const token = await AsyncStorage.getItem("token");
     const response = await axios.delete(
-      `https://lip-balance-analyze-extends.trycloudflare.com/community/posts/${postId}/comments/${commentId}/delete`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/community/posts/${postId}/comments/${commentId}/delete`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -468,7 +468,7 @@ export async function likeCommentOrReply(postId, commentId) {
     const token = await AsyncStorage.getItem("token");
     console.log("[likeCommentOrReply] Token being used:", token); // Debug log
     const response = await axios.post(
-      `https://lip-balance-analyze-extends.trycloudflare.com/community/posts/${postId}/comments/${commentId}/like`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/community/posts/${postId}/comments/${commentId}/like`,
       {},
       {
         headers: {
@@ -492,7 +492,7 @@ export async function unlikeCommentOrReply(postId, commentId) {
     const token = await AsyncStorage.getItem("token");
     console.log("[unlikeCommentOrReply] Token being used:", token); // Debug log
     const response = await axios.post(
-      `https://lip-balance-analyze-extends.trycloudflare.com/community/posts/${postId}/comments/${commentId}/unlike`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/community/posts/${postId}/comments/${commentId}/unlike`,
       {},
       {
         headers: {
@@ -526,7 +526,7 @@ export async function checkCommentLiked(postId, commentId) {
     }
     
     const response = await axios.get(
-      `https://lip-balance-analyze-extends.trycloudflare.com/community/posts/${postId}/comments/${commentId}/check-like`,
+      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/community/posts/${postId}/comments/${commentId}/check-like`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -545,6 +545,9 @@ export async function checkCommentLiked(postId, commentId) {
     return false;
   }
 }
+
+
+
 
 
 

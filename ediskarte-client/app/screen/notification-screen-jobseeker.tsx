@@ -58,7 +58,7 @@ const NotificationScreen = () => {
         setUserId(userId);
         setUserType(storedUserType as 'client' | 'job-seeker');
 
-        const response = await fetch(`https://lip-balance-analyze-extends.trycloudflare.com/api/notifications`, {
+        const response = await fetch(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/notifications`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -134,7 +134,7 @@ const NotificationScreen = () => {
         try {
           const token = await AsyncStorage.getItem('token');
           const response = await fetch(
-            `https://lip-balance-analyze-extends.trycloudflare.com/api/job-requests/${notification.jobId}`,
+            `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/api/job-requests/${notification.jobId}`,
             {
               headers: { Authorization: `Bearer ${token}` },
             }
@@ -370,6 +370,9 @@ const styles = StyleSheet.create({
 });
 
 export default NotificationScreen; 
+
+
+
 
 
 
