@@ -9,6 +9,12 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: false,
+    proxy: {
+      '/admin': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
     watch: {
       ignored: ['!**/node_modules/@trabahanap-admin/frontend/**'],
     },

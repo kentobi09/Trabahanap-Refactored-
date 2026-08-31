@@ -1,7 +1,10 @@
 import axios from "axios";
 
-// Hardcoded API base URL
-const API_BASE_URL = "http://localhost:8000";
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  return "";
+};
+const API_BASE_URL = getApiBaseUrl();
 
 const axiosInstance = axios.create({
   baseURL: `${API_BASE_URL}/admin`, // All admin routes are prefixed with /admin

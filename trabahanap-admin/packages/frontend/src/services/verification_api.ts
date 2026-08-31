@@ -26,7 +26,7 @@ interface ApplicantData {
   jobTags?: string[];
 }
 
-const baseUrl = "http://localhost:8000/admin";
+const baseUrl = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/admin` : "/admin";
 
 export const getAllApplicants = async (): Promise<ApplicantData[]> => {
   try {

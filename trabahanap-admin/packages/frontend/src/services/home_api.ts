@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:8000/admin";
+const BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/admin` : "/admin";
 
 // Endpoint URLs
 const url = `${BASE_URL}/get_total_users`;

@@ -1,6 +1,10 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:8000"; 
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  return "";
+};
+const API_BASE_URL = getApiBaseUrl(); 
 const LOGIN_URL = `${API_BASE_URL}/admin/login`;
 const ADMIN_ME_URL = `${API_BASE_URL}/admin/me`; 
 const TOKEN_KEY = 'authToken'; 
