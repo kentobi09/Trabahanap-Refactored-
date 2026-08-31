@@ -237,7 +237,7 @@ const VerificationPage = () => {
     if (confirmBan && selectedUsers.length > 0) {
       try {
         for (const userId of selectedUsers) {
-          await fetch(`http://localhost:8000/admin/api/users/${userId}/ban?reason=${encodeURIComponent("Banned by Admin via Verification Manager")}`, {
+          await fetch(`/admin/api/users/${userId}/ban?reason=${encodeURIComponent("Banned by Admin via Verification Manager")}`, {
             method: "PUT",
             headers: {
               Authorization: `Bearer ${localStorage.getItem("authToken") || ""}`,
@@ -281,7 +281,7 @@ const VerificationPage = () => {
       try {
         for (const userId of selectedUsers) {
           await fetch(
-            `http://localhost:8000/admin/api/users/${userId}/suspend?days=${suspendDays}&reason=${encodeURIComponent(suspendReason)}`,
+            `/admin/api/users/${userId}/suspend?days=${suspendDays}&reason=${encodeURIComponent(suspendReason)}`,
             {
               method: "PUT",
               headers: {
@@ -305,7 +305,7 @@ const VerificationPage = () => {
 
   const handleUnbanUser = async (userId: string, email: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/admin/api/users/${userId}/unban`, {
+      const response = await fetch(`/admin/api/users/${userId}/unban`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("authToken")}`,

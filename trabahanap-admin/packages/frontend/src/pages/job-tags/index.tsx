@@ -52,11 +52,11 @@ export const JobTagsPage: React.FC = () => {
     setError(null);
     try {
       const token = localStorage.getItem("authToken") || "";
-      let res = await fetch("http://localhost:8000/admin/api/job_tags", {
+      let res = await fetch("/admin/api/job_tags", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
-        res = await fetch("http://localhost:8000/api/job_tags", {
+        res = await fetch("/api/job_tags", {
           headers: { Authorization: `Bearer ${token}` },
         });
       }
@@ -125,8 +125,8 @@ export const JobTagsPage: React.FC = () => {
       const token = localStorage.getItem("authToken") || "";
       const isEdit = !!editingTag && !editingTag.isCustom;
       const url = isEdit
-        ? `http://localhost:8000/admin/api/job_tags/${editingTag.tagId}`
-        : `http://localhost:8000/admin/api/job_tags`;
+        ? `/admin/api/job_tags/${editingTag.tagId}`
+        : `/admin/api/job_tags`;
       const method = isEdit ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -162,7 +162,7 @@ export const JobTagsPage: React.FC = () => {
     if (!tagToDelete) return;
     try {
       const token = localStorage.getItem("authToken") || "";
-      const res = await fetch(`http://localhost:8000/admin/api/job_tags/${tagToDelete.tagId}`, {
+      const res = await fetch(`/admin/api/job_tags/${tagToDelete.tagId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

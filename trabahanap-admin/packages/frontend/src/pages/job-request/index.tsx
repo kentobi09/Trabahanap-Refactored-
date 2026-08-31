@@ -98,14 +98,14 @@ const JobRequestPage = () => {
 
       const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
-      let response = await fetch(`http://localhost:8000/admin/api/job_requests/export/csv${queryString}`, {
+      let response = await fetch(`/admin/api/job_requests/export/csv${queryString}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("authToken") || ""}`,
         },
       });
 
       if (!response.ok) {
-        response = await fetch(`http://localhost:8000/api/job_requests/export/csv${queryString}`, {
+        response = await fetch(`/api/job_requests/export/csv${queryString}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("authToken") || ""}`,
           },

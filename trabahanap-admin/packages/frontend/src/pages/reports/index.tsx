@@ -80,9 +80,9 @@ const ReportsPage: React.FC = () => {
     }
     const cleanPath = img.replace(/^\\+|^\\+/, "");
     if (cleanPath.startsWith("assets/report_evidence")) {
-      return `http://localhost:3000/${cleanPath}`;
+      return `/${cleanPath}`;
     }
-    return `http://localhost:8000/${cleanPath}`;
+    return `/${cleanPath}`;
   };
 
   const renderEvidenceImages = (evidence?: any) => {
@@ -190,14 +190,14 @@ const ReportsPage: React.FC = () => {
     if (!selectedReport) return;
     setIsLoading(true);
     try {
-      let response = await fetch(`http://localhost:8000/admin/api/reports/${selectedReport.id}/approve?action=${action}`, {
+      let response = await fetch(`/admin/api/reports/${selectedReport.id}/approve?action=${action}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("authToken") || ""}`,
         },
       });
       if (!response.ok) {
-        response = await fetch(`http://localhost:8000/api/reports/${selectedReport.id}/approve?action=${action}`, {
+        response = await fetch(`/api/reports/${selectedReport.id}/approve?action=${action}`, {
           method: "PUT",
           headers: {
             Authorization: `Bearer ${localStorage.getItem("authToken") || ""}`,

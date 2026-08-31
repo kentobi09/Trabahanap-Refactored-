@@ -179,7 +179,7 @@ const VerificationProfilePage = () => {
   const handleBanUser = async () => {
     if (confirmBan && id) {
       try {
-        await fetch(`http://localhost:8000/admin/api/users/${id}/ban?reason=${encodeURIComponent("Banned during ID verification review")}`, {
+        await fetch(`/admin/api/users/${id}/ban?reason=${encodeURIComponent("Banned during ID verification review")}`, {
           method: "PUT",
           headers: {
             Authorization: `Bearer ${localStorage.getItem("authToken") || ""}`,

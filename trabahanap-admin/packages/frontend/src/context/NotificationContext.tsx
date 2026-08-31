@@ -50,9 +50,7 @@ const MAX_STORED_NOTIFICATIONS = 100;
 
 const getWebSocketURL = () => {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const host = import.meta.env.MODE === 'development' 
-    ? 'localhost:8000' // Your backend dev server
-    : window.location.host; // Production host
+  const host = window.location.hostname ? `${window.location.hostname}:8000` : 'localhost:8000';
   return `${protocol}//${host}/admin/ws/notifications`;
 };
 
