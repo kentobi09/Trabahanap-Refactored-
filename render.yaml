@@ -1,0 +1,62 @@
+services:
+  # 1. Main Express / Socket.io Backend
+  - type: web
+    name: ediskarte-api
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: ediskarte-server/app
+    buildCommand: npm install && npx prisma generate
+    startCommand: node index.js
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_API_KEY
+        sync: false
+      - key: TWILIO_API_SECRET
+        sync: false
+
+  # 2. Admin FastAPI Backend
+  - type: web
+    name: ediskarte-admin-api
+    runtime: python
+    plan: free
+    region: singapore
+    rootDir: trabahanap-admin/packages/backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn admin_api.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: MONGO_DB_NAME
+        value: ediskarte
+      - key: SECRET_KEY
+        sync: false
+      - key: ALGORITHM
+        value: HS256
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_SERVER
+        value: smtp.gmail.com
+      - key: MAIL_STARTTLS
+        value: "True"
+      - key: MAIL_SSL_TLS
+        value: "False"
+      - key: MAIL_USE_CREDENTIALS
+        value: "True"
+      - key: MAIL_VALIDATE_CERTS
+        value: "True"
