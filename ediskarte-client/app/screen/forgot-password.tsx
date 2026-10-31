@@ -51,7 +51,9 @@ export default function ForgotPasswordScreen() {
 
   const getBackendUrl = (endpoint: string) => {
     const host = process.env.EXPO_PUBLIC_IP_ADDRESS || "localhost";
-    return `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000${endpoint}`;
+    const isDomain = host.includes(".") && !/^[0-9.]+$/.test(host);
+    const base = isDomain ? `https://${host}` : `http://${host}:3000`;
+    return `${base}${endpoint}`;
   };
 
   // Helper fetch with fallback for Android emulator / local development

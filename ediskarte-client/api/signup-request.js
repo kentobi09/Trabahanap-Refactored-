@@ -61,11 +61,17 @@ export function SignUpData(params) {
   }
 }
 
+const getBaseUrl = () => {
+  const host = process.env.EXPO_PUBLIC_IP_ADDRESS || 'localhost';
+  const isDomain = host.includes('.') && !/^[0-9.]+$/.test(host);
+  return isDomain ? `https://${host}` : `http://${host}:3000`;
+};
+
 export const handleFormData = async () => {
   try {
-    const host = process.env.EXPO_PUBLIC_IP_ADDRESS || 'localhost';
+    const baseUrl = getBaseUrl();
     const response = await axios.post(
-      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/signup`,
+      `${baseUrl}/signup`,
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },
@@ -80,9 +86,9 @@ export const handleFormData = async () => {
 
 export const storeOTPRequest = async (email) => {
   try {
-    const host = process.env.EXPO_PUBLIC_IP_ADDRESS || 'localhost';
+    const baseUrl = getBaseUrl();
     const response = await axios.post(
-      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/store-otp`,
+      `${baseUrl}/store-otp`,
       { email },
       {
         headers: { "Content-Type": "application/json" },
@@ -99,9 +105,9 @@ export const storeOTPRequest = async (email) => {
 
 export const verifyOTPRequest = async (email, otp) => {
   try {
-    const host = process.env.EXPO_PUBLIC_IP_ADDRESS || 'localhost';
+    const baseUrl = getBaseUrl();
     const response = await axios.post(
-      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/verify-otp`,
+      `${baseUrl}/verify-otp`,
       { email, otp },
       {
         headers: { "Content-Type": "application/json" },
@@ -124,9 +130,9 @@ export const clearFormData = () => {
 
 export const verifyApplicant = async () => {
   try {
-    const host = process.env.EXPO_PUBLIC_IP_ADDRESS || 'localhost';
+    const baseUrl = getBaseUrl();
     const response = await axios.post(
-      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:3000/verify-applicant`,
+      `${baseUrl}/verify-applicant`,
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },
@@ -139,11 +145,6 @@ export const verifyApplicant = async () => {
     return { success: false, error: errMsg };
   }
 };
-
-
-
-
-
 
 
 

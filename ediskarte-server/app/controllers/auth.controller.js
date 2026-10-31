@@ -31,14 +31,117 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Verify email configuration
-transporter.verify(function (error, success) {
-  if (error) {
-    console.error("Nodemailer configuration error:", error);
-  } else {
-    console.log("Nodemailer is ready to send messages");
+// Verify email configuration (non-blocking)
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  transporter.verify(function (error, success) {
+    if (error) {
+      console.warn("Nodemailer SMTP notice (expected if cloud host blocks port 587/465):", error.message);
+    } else {
+      console.log("Nodemailer SMTP is ready to send messages");
+    }
+  });
+}
+
+/**
+ * Robust Email Dispatcher:
+ * 1. Uses Brevo HTTP API (Port 443) if BREVO_API_KEY is configured (works on Render free tier!)
+ * 2. Uses Resend HTTP API (Port 443) if RESEND_API_KEY is configured
+ * 3. Falls back to Nodemailer SMTP with a 4-second timeout for local development
+ */
+async function sendEmailHelper({ to, subject, text, html }) {
+  const fromEmail = process.env.EMAIL_USER || "trabahanap.works@gmail.com";
+  const fromName = "eDiskarte";
+
+  // 1. Try Brevo HTTPS API (Port 443 - NEVER blocked by cloud hosts)
+  if (process.env.BREVO_API_KEY) {
+    try {
+      console.log(`[Email] Sending via Brevo HTTPS API to ${to}...`);
+      const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "accept": "application/json",
+          "api-key": process.env.BREVO_API_KEY,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          sender: { name: fromName, email: fromEmail },
+          to: [{ email: to }],
+          subject: subject,
+          htmlContent: html,
+          textContent: text,
+        }),
+      });
+
+      if (response.ok) {
+        console.log(`[Email] Successfully sent email via Brevo to ${to}`);
+        return true;
+      } else {
+        const errText = await response.text();
+        console.warn(`[Email] Brevo API error (${response.status}):`, errText);
+      }
+    } catch (brevoErr) {
+      console.warn(`[Email] Brevo request failed:`, brevoErr.message);
+    }
   }
-});
+
+  // 2. Try Resend HTTPS API (Port 443)
+  if (process.env.RESEND_API_KEY) {
+    try {
+      console.log(`[Email] Sending via Resend HTTPS API to ${to}...`);
+      const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: `${fromName} <onboarding@resend.dev>`,
+          to: [to],
+          subject: subject,
+          html: html,
+          text: text,
+        }),
+      });
+
+      if (response.ok) {
+        console.log(`[Email] Successfully sent email via Resend to ${to}`);
+        return true;
+      } else {
+        const errText = await response.text();
+        console.warn(`[Email] Resend API error (${response.status}):`, errText);
+      }
+    } catch (resendErr) {
+      console.warn(`[Email] Resend request failed:`, resendErr.message);
+    }
+  }
+
+  // 3. Fallback: Nodemailer SMTP with a strict 4-second timeout (prevents Render hanging)
+  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    try {
+      console.log(`[Email] Attempting Nodemailer SMTP (4s timeout) for ${to}...`);
+      const mailPromise = transporter.sendMail({
+        from: `"${fromName}" <${fromEmail}>`,
+        to: to,
+        subject: subject,
+        text: text,
+        html: html,
+      });
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("SMTP timeout after 4s (port blocked by cloud host)")), 4000)
+      );
+
+      await Promise.race([mailPromise, timeoutPromise]);
+      console.log(`[Email] Successfully sent email via Nodemailer SMTP to ${to}`);
+      return true;
+    } catch (smtpErr) {
+      console.warn(`[Email] Nodemailer SMTP attempt ended: ${smtpErr.message}`);
+    }
+  }
+
+  console.warn(`[Email] Notice: Set BREVO_API_KEY in Render environment to enable instant HTTPS email delivery.`);
+  return false;
+}
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
@@ -370,17 +473,15 @@ export const storeOTP = async (req, res) => {
       `Stored temporary OTP hash for ${email}. Expires: ${otpExpires.toISOString()}`
     );
 
-    // Send OTP via email using process.env.EMAIL_USER / EMAIL_PASS
+    // Send OTP via email using sendEmailHelper (HTTPS API or quick SMTP fallback)
     try {
-      const mailOptions = {
-        from: `"Trabahanap App" <${process.env.EMAIL_USER || "noreply@trabahanap.com"}>`,
+      await sendEmailHelper({
         to: email,
         subject: "Your Verification Code",
         text: `Your verification code is: ${otp}. It will expire in 10 minutes.`,
         html: `<p>Your verification code is: <strong>${otp}</strong></p><p>It will expire in 10 minutes.</p>`,
-      };
-      await transporter.sendMail(mailOptions);
-      console.log(`OTP email sent to ${email}`);
+      });
+      console.log(`OTP email dispatched for ${email}`);
     } catch (mailErr) {
       console.warn(`Email sending notice for ${email}: ${mailErr.message}. OTP code is active: [${otp}]`);
     }
