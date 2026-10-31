@@ -42,29 +42,66 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   });
 }
 
+let cachedBrevoSender = null;
+async function resolveBrevoSender(apiKey, preferredEmail) {
+  if (cachedBrevoSender) return cachedBrevoSender;
+  try {
+    const res = await fetch("https://api.brevo.com/v3/senders", {
+      headers: {
+        "accept": "application/json",
+        "api-key": apiKey,
+      },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.senders) && data.senders.length > 0) {
+        const preferred = data.senders.find(s => s.active && s.email.toLowerCase() === preferredEmail.toLowerCase());
+        if (preferred) {
+          cachedBrevoSender = preferred.email;
+        } else {
+          const firstActive = data.senders.find(s => s.active) || data.senders[0];
+          cachedBrevoSender = firstActive.email;
+          console.log(`[Email] Note: preferred sender "${preferredEmail}" not verified in Brevo. Using account's verified sender: "${cachedBrevoSender}"`);
+        }
+        return cachedBrevoSender;
+      }
+    } else {
+      console.warn("[Email] Failed to fetch Brevo senders:", await res.text());
+    }
+  } catch (err) {
+    console.warn("[Email] Error fetching Brevo senders:", err.message);
+  }
+  return preferredEmail;
+}
+
 /**
  * Robust Email Dispatcher:
- * 1. Uses Brevo HTTP API (Port 443) if BREVO_API_KEY is configured (works on Render free tier!)
+ * 1. Uses Brevo HTTP API (Port 443) if BREVO_API_KEY is configured
  * 2. Uses Resend HTTP API (Port 443) if RESEND_API_KEY is configured
- * 3. Falls back to Nodemailer SMTP with a 4-second timeout for local development
+ * 3. Falls back to Nodemailer SMTP with a 4-second timeout for local dev
  */
 async function sendEmailHelper({ to, subject, text, html }) {
-  const fromEmail = process.env.EMAIL_USER || "trabahanap.works@gmail.com";
-  const fromName = "eDiskarte";
+  const preferredSender = process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_FROM || process.env.EMAIL_USER || "trabahanap.works@gmail.com";
+  const fromName = process.env.EMAIL_FROM_NAME || "eDiskarte";
+
+  const brevoKey = (process.env.BREVO_API_KEY || process.env.BREVO_KEY || process.env.SENDINBLUE_API_KEY || "").trim();
+  const resendKey = (process.env.RESEND_API_KEY || process.env.RESEND_KEY || "").trim();
 
   // 1. Try Brevo HTTPS API (Port 443 - NEVER blocked by cloud hosts)
-  if (process.env.BREVO_API_KEY) {
+  if (brevoKey) {
     try {
-      console.log(`[Email] Sending via Brevo HTTPS API to ${to}...`);
+      const activeSenderEmail = await resolveBrevoSender(brevoKey, preferredSender);
+      console.log(`[Email] Sending via Brevo HTTPS API to ${to} (from: ${activeSenderEmail})...`);
+
       const response = await fetch("https://api.brevo.com/v3/smtp/email", {
         method: "POST",
         headers: {
           "accept": "application/json",
-          "api-key": process.env.BREVO_API_KEY,
+          "api-key": brevoKey,
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          sender: { name: fromName, email: fromEmail },
+          sender: { name: fromName, email: activeSenderEmail },
           to: [{ email: to }],
           subject: subject,
           htmlContent: html,
@@ -73,25 +110,28 @@ async function sendEmailHelper({ to, subject, text, html }) {
       });
 
       if (response.ok) {
+        const resData = await response.json().catch(() => ({}));
         console.log(`[Email] Successfully sent email via Brevo to ${to}`);
-        return true;
+        return { success: true, provider: "brevo", sender: activeSenderEmail, messageId: resData.messageId };
       } else {
         const errText = await response.text();
         console.warn(`[Email] Brevo API error (${response.status}):`, errText);
+        return { success: false, provider: "brevo", sender: activeSenderEmail, status: response.status, error: errText };
       }
     } catch (brevoErr) {
       console.warn(`[Email] Brevo request failed:`, brevoErr.message);
+      return { success: false, provider: "brevo", error: brevoErr.message };
     }
   }
 
   // 2. Try Resend HTTPS API (Port 443)
-  if (process.env.RESEND_API_KEY) {
+  if (resendKey) {
     try {
       console.log(`[Email] Sending via Resend HTTPS API to ${to}...`);
       const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+          "Authorization": `Bearer ${resendKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -104,14 +144,17 @@ async function sendEmailHelper({ to, subject, text, html }) {
       });
 
       if (response.ok) {
+        const resData = await response.json().catch(() => ({}));
         console.log(`[Email] Successfully sent email via Resend to ${to}`);
-        return true;
+        return { success: true, provider: "resend", id: resData.id };
       } else {
         const errText = await response.text();
         console.warn(`[Email] Resend API error (${response.status}):`, errText);
+        return { success: false, provider: "resend", status: response.status, error: errText };
       }
     } catch (resendErr) {
       console.warn(`[Email] Resend request failed:`, resendErr.message);
+      return { success: false, provider: "resend", error: resendErr.message };
     }
   }
 
@@ -120,7 +163,7 @@ async function sendEmailHelper({ to, subject, text, html }) {
     try {
       console.log(`[Email] Attempting Nodemailer SMTP (4s timeout) for ${to}...`);
       const mailPromise = transporter.sendMail({
-        from: `"${fromName}" <${fromEmail}>`,
+        from: `"${fromName}" <${preferredSender}>`,
         to: to,
         subject: subject,
         text: text,
@@ -133,15 +176,54 @@ async function sendEmailHelper({ to, subject, text, html }) {
 
       await Promise.race([mailPromise, timeoutPromise]);
       console.log(`[Email] Successfully sent email via Nodemailer SMTP to ${to}`);
-      return true;
+      return { success: true, provider: "nodemailer-smtp" };
     } catch (smtpErr) {
       console.warn(`[Email] Nodemailer SMTP attempt ended: ${smtpErr.message}`);
+      return { success: false, provider: "nodemailer-smtp", error: smtpErr.message };
     }
   }
 
   console.warn(`[Email] Notice: Set BREVO_API_KEY in Render environment to enable instant HTTPS email delivery.`);
-  return false;
+  return { success: false, provider: "none", error: "No email service configured. Please set BREVO_API_KEY in Render." };
 }
+
+export const debugEmail = async (req, res) => {
+  const targetEmail = req.query.email || req.query.to || "trabahanap.works@gmail.com";
+  const brevoKey = (process.env.BREVO_API_KEY || process.env.BREVO_KEY || process.env.SENDINBLUE_API_KEY || "").trim();
+  const resendKey = (process.env.RESEND_API_KEY || process.env.RESEND_KEY || "").trim();
+
+  let sendersList = null;
+  if (brevoKey) {
+    try {
+      const sRes = await fetch("https://api.brevo.com/v3/senders", {
+        headers: { "accept": "application/json", "api-key": brevoKey },
+      });
+      sendersList = sRes.ok ? await sRes.json() : await sRes.text();
+    } catch (e) {
+      sendersList = e.message;
+    }
+  }
+
+  const deliveryResult = await sendEmailHelper({
+    to: targetEmail,
+    subject: "eDiskarte Debug Test Email",
+    text: "This is a test email verifying that HTTPS email delivery on Render is functioning properly.",
+    html: "<p>This is a test email verifying that <strong>HTTPS email delivery</strong> on Render is functioning properly.</p>",
+  });
+
+  return res.json({
+    timestamp: new Date().toISOString(),
+    config: {
+      brevoKeyConfigured: Boolean(brevoKey),
+      brevoKeyPrefix: brevoKey ? brevoKey.substring(0, 10) + "..." : null,
+      resendKeyConfigured: Boolean(resendKey),
+      emailUserConfigured: Boolean(process.env.EMAIL_USER),
+      brevoSenderEmailEnv: process.env.BREVO_SENDER_EMAIL || null,
+      brevoSendersFromApi: sendersList,
+    },
+    testDelivery: deliveryResult,
+  });
+};
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
@@ -474,21 +556,26 @@ export const storeOTP = async (req, res) => {
     );
 
     // Send OTP via email using sendEmailHelper (HTTPS API or quick SMTP fallback)
+    let delivery = null;
     try {
-      await sendEmailHelper({
+      delivery = await sendEmailHelper({
         to: email,
         subject: "Your Verification Code",
         text: `Your verification code is: ${otp}. It will expire in 10 minutes.`,
         html: `<p>Your verification code is: <strong>${otp}</strong></p><p>It will expire in 10 minutes.</p>`,
       });
-      console.log(`OTP email dispatched for ${email}`);
+      console.log(`OTP email dispatched for ${email}, result:`, delivery);
     } catch (mailErr) {
       console.warn(`Email sending notice for ${email}: ${mailErr.message}. OTP code is active: [${otp}]`);
+      delivery = { success: false, error: mailErr.message };
     }
 
     res.status(200).json({
-      message: "OTP sent to your email address. Please use it to continue.",
-      otp: otp, // return otp for local fallback testing
+      message: delivery?.success
+        ? "OTP sent to your email address. Please use it to continue."
+        : "OTP generated. Please check your email or enter the code.",
+      otp: otp, // return otp for fallback testing
+      delivery: delivery,
     });
   } catch (error) {
     console.error(`Error in storeOTP for ${email}:`, error);

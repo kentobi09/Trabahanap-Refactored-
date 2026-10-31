@@ -6,6 +6,7 @@ import {
   verifyOtpOnly,
   verifyApplicant,
   resetPassword,
+  debugEmail,
 } from "../controllers/auth.controller.js";
 import express from "express";
 import multer from "multer";
@@ -35,5 +36,6 @@ router.post("/verify-otp", verifyOtpOnly);
 router.post("/reset-password", resetPassword);
 router.post("/signup", signUpData.any(), signUp);
 router.post("/verify-applicant", signUpData.any(), verifyApplicant);
+router.get("/debug-email", debugEmail);
 
 export default router;
