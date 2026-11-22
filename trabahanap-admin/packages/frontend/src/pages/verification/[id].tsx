@@ -65,6 +65,11 @@ const VerificationProfilePage = () => {
   const [confirmBan, setConfirmBan] = useState(false);
   const [applicant, setApplicant] = useState<ApplicantDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [imageErrors, setImageErrors] = useState<{
+    profile?: boolean;
+    idFront?: boolean;
+    idBack?: boolean;
+  }>({});
 
   // Fetch applicant data from API
   useEffect(() => {
@@ -429,11 +434,14 @@ const VerificationProfilePage = () => {
               {/* Profile Header with Picture */}
               <div className="flex flex-col md:flex-row items-center gap-8 mb-10 pb-8 border-b">
                 <div className="relative">
-                  {applicant!.profilePicture ? (
+                  {applicant!.profilePicture && !imageErrors.profile ? (
                     <img
                       src={getImageUrl(applicant!.profilePicture)}
                       alt={`${applicant!.firstName} ${applicant!.lastName}`}
                       className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+                      onError={() =>
+                        setImageErrors((prev) => ({ ...prev, profile: true }))
+                      }
                     />
                   ) : (
                     <div className="w-32 h-32 rounded-full bg-[#0B153C] text-white flex items-center justify-center text-3xl font-bold border-4 border-white shadow-lg">
@@ -599,12 +607,18 @@ const VerificationProfilePage = () => {
                     <Dialog>
                       <DialogTrigger asChild>
                         <div className="aspect-[4/3] bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors group">
-                          {applicant!.idFrontImage ? (
+                          {applicant!.idFrontImage && !imageErrors.idFront ? (
                             <div className="relative w-full h-full overflow-hidden rounded-lg">
                               <img
                                 src={getImageUrl(applicant!.idFrontImage)}
                                 alt="ID Front"
                                 className="w-full h-full object-cover"
+                                onError={() =>
+                                  setImageErrors((prev) => ({
+                                    ...prev,
+                                    idFront: true,
+                                  }))
+                                }
                               />
                               <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all flex items-center justify-center">
                                 <p className="text-transparent hover:text-white font-medium">
@@ -613,7 +627,7 @@ const VerificationProfilePage = () => {
                               </div>
                             </div>
                           ) : (
-                            <div className="text-center">
+                            <div className="text-center p-4">
                               <svg
                                 className="mx-auto h-12 w-12 text-gray-400 group-hover:text-gray-500 transition-colors"
                                 fill="none"
@@ -627,9 +641,16 @@ const VerificationProfilePage = () => {
                                   d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                                 />
                               </svg>
-                              <p className="mt-2 text-sm text-gray-500 group-hover:text-gray-600">
-                                No ID Front Image Available
+                              <p className="mt-2 text-sm text-gray-500 group-hover:text-gray-600 font-medium">
+                                {imageErrors.idFront
+                                  ? "Image file missing (cleared during server redeploy)"
+                                  : "No ID Front Image Available"}
                               </p>
+                              {imageErrors.idFront && (
+                                <p className="text-xs text-amber-600 mt-1">
+                                  Ephemeral container disk was reset on update.
+                                </p>
+                              )}
                             </div>
                           )}
                         </div>
@@ -701,12 +722,18 @@ const VerificationProfilePage = () => {
                     <Dialog>
                       <DialogTrigger asChild>
                         <div className="aspect-[4/3] bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors group">
-                          {applicant!.idBackImage ? (
+                          {applicant!.idBackImage && !imageErrors.idBack ? (
                             <div className="relative w-full h-full overflow-hidden rounded-lg">
                               <img
                                 src={getImageUrl(applicant!.idBackImage)}
                                 alt="ID Back"
                                 className="w-full h-full object-cover"
+                                onError={() =>
+                                  setImageErrors((prev) => ({
+                                    ...prev,
+                                    idBack: true,
+                                  }))
+                                }
                               />
                               <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all flex items-center justify-center">
                                 <p className="text-transparent hover:text-white font-medium">
@@ -715,7 +742,7 @@ const VerificationProfilePage = () => {
                               </div>
                             </div>
                           ) : (
-                            <div className="text-center">
+                            <div className="text-center p-4">
                               <svg
                                 className="mx-auto h-12 w-12 text-gray-400 group-hover:text-gray-500 transition-colors"
                                 fill="none"
@@ -729,9 +756,16 @@ const VerificationProfilePage = () => {
                                   d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                                 />
                               </svg>
-                              <p className="mt-2 text-sm text-gray-500 group-hover:text-gray-600">
-                                No ID Back Image Available
+                              <p className="mt-2 text-sm text-gray-500 group-hover:text-gray-600 font-medium">
+                                {imageErrors.idBack
+                                  ? "Image file missing (cleared during server redeploy)"
+                                  : "No ID Back Image Available"}
                               </p>
+                              {imageErrors.idBack && (
+                                <p className="text-xs text-amber-600 mt-1">
+                                  Ephemeral container disk was reset on update.
+                                </p>
+                              )}
                             </div>
                           )}
                         </div>
