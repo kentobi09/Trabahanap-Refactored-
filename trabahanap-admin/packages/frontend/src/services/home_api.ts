@@ -1,6 +1,9 @@
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/admin` : "/admin";
+const BASE_URL =
+  (
+    import.meta.env.VITE_API_URL || "https://ediskarte-admin-api.onrender.com"
+  ).replace(/\/+$/, "") + "/admin";
 
 // Endpoint URLs
 const url = `${BASE_URL}/get_total_users`;

@@ -2,7 +2,10 @@ import axios from "axios";
 
 // Define the base URL for your API
 // Vite exposes env variables on import.meta.env
-const API_BASE_URL = (import.meta.env.VITE_API_URL || "") + "/admin";
+const API_BASE_URL =
+  (
+    import.meta.env.VITE_API_URL || "https://ediskarte-admin-api.onrender.com"
+  ).replace(/\/+$/, "") + "/admin";
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
