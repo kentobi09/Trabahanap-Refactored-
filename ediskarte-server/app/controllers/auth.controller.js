@@ -902,3 +902,54 @@ export const verifyApplicant = async (req, res) => {
     });
   }
 };
+
+export const deleteUserOrApplicant = async (req, res) => {
+  try {
+    const email = req.query.email || req.body.email;
+    const name = req.query.name || req.body.name;
+    const id = req.query.id || req.body.id;
+
+    if (!email && !name && !id) {
+      return res.status(400).json({ error: "id, email, or name is required" });
+    }
+
+    const db = await getNativeDb();
+    const queryConditions = [];
+
+    if (id) {
+      if (ObjectId.isValid(id)) queryConditions.push({ _id: new ObjectId(id) });
+      queryConditions.push({ _id: id });
+    }
+    if (email) {
+      queryConditions.push({ emailAddress: email }, { email: email });
+    }
+    if (name) {
+      const parts = name.trim().split(/\s+/);
+      if (parts.length > 1) {
+        queryConditions.push({
+          firstName: { $regex: new RegExp(`^${parts[0]}$`, "i") },
+          lastName: { $regex: new RegExp(`^${parts[parts.length - 1]}$`, "i") },
+        });
+      } else {
+        queryConditions.push({
+          firstName: { $regex: new RegExp(parts[0], "i") },
+        });
+      }
+    }
+
+    const query = { $or: queryConditions };
+    const r1 = await db.collection("users").deleteMany(query);
+    const r2 = await db.collection("applicants").deleteMany(query);
+    const r3 = await db.collection("jobseekers").deleteMany(query);
+
+    return res.json({
+      status: "success",
+      deletedUsers: r1.deletedCount,
+      deletedApplicants: r2.deletedCount,
+      deletedJobseekers: r3.deletedCount,
+    });
+  } catch (error) {
+    console.error("Error deleting user/applicant:", error);
+    return res.status(500).json({ error: error.message });
+  }
+};

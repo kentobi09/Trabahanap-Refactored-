@@ -67,3 +67,15 @@ export const getApplicantById = async (
     throw error;
   }
 };
+
+export const deleteApplicant = async (applicantId: string): Promise<any> => {
+  try {
+    const response = await axios.delete(
+      `${baseUrl}/delete_applicant/${applicantId}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error(`Error deleting applicant with ID ${applicantId}:`, error);
+    throw error;
+  }
+};

@@ -291,6 +291,79 @@ async def update_verification_status(applicant_id: str, status: str, background_
     # Fallback for cases where status doesn't change or is just set to pending
     return {"status": "success", "message": f"Applicant status updated to {status}. No notification sent as status is '{status}' or unchanged."}
 
+@router.delete("/delete_applicant/{applicant_id}")
+async def delete_applicant(applicant_id: str):
+    db = Applicant.get_motor_collection().database
+    deleted_applicants = 0
+    target_email = None
+
+    try:
+        app_doc = await Applicant.get(applicant_id)
+        if not app_doc:
+            app_doc = await Applicant.find_one(Applicant.id == PydanticObjectId(applicant_id))
+        if app_doc:
+            target_email = app_doc.email
+            await app_doc.delete()
+            deleted_applicants += 1
+    except Exception as e:
+        logger.warning(f"Error fetching applicant via Beanie: {e}")
+
+    query_or = []
+    try:
+        from bson import ObjectId
+        if ObjectId.is_valid(applicant_id):
+            query_or.append({"_id": ObjectId(applicant_id)})
+    except Exception:
+        pass
+    query_or.append({"_id": applicant_id})
+    if target_email:
+        query_or.append({"emailAddress": target_email})
+        query_or.append({"email": target_email})
+
+    res_app = await db["applicants"].delete_many({"$or": query_or})
+    res_usr = await db["users"].delete_many({"$or": query_or})
+    if target_email:
+        await db["jobseekers"].delete_many({"$or": [{"email": target_email}, {"emailAddress": target_email}]})
+
+    return {
+        "status": "success",
+        "message": f"Deleted applicant record {applicant_id}",
+        "deleted_applicants": deleted_applicants + res_app.deleted_count,
+        "deleted_users": res_usr.deleted_count
+    }
+
+@router.delete("/delete_by_name_or_email")
+async def delete_by_name_or_email(
+    email: Optional[str] = None,
+    first_name: Optional[str] = None,
+    last_name: Optional[str] = None
+):
+    db = Applicant.get_motor_collection().database
+    conditions = []
+    if email:
+        conditions.extend([{"emailAddress": email}, {"email": email}])
+    if first_name and last_name:
+        conditions.extend([
+            {"firstName": {"$regex": f"^{first_name}$", "$options": "i"}, "lastName": {"$regex": f"^{last_name}$", "$options": "i"}},
+            {"first_name": {"$regex": f"^{first_name}$", "$options": "i"}, "last_name": {"$regex": f"^{last_name}$", "$options": "i"}}
+        ])
+    
+    if not conditions:
+        raise HTTPException(status_code=400, detail="Must provide email or first_name + last_name")
+
+    query = {"$or": conditions}
+    res_app = await db["applicants"].delete_many(query)
+    res_usr = await db["users"].delete_many(query)
+    res_js = await db["jobseekers"].delete_many(query)
+
+    return {
+        "status": "success",
+        "message": "Deleted matching records",
+        "deleted_applicants": res_app.deleted_count,
+        "deleted_users": res_usr.deleted_count,
+        "deleted_jobseekers": res_js.deleted_count
+    }
+
 @router.get("/get_monthly_applications", response_model=MonthlyData)
 async def get_monthly_applications():
     try:
