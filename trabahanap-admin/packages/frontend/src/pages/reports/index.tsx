@@ -78,11 +78,9 @@ const ReportsPage: React.FC = () => {
     if (img.startsWith("data:") || img.startsWith("http:") || img.startsWith("https:")) {
       return img;
     }
-    const cleanPath = img.replace(/^\\+|^\\+/, "");
-    if (cleanPath.startsWith("assets/report_evidence")) {
-      return `/${cleanPath}`;
-    }
-    return `/${cleanPath}`;
+    const mainApiUrl = (import.meta.env.VITE_MAIN_API_URL || "https://ediskarte-api.onrender.com").replace(/\/+$/, "");
+    const cleanPath = img.replace(/\\/g, "/").replace(/^\/+/, "");
+    return `${mainApiUrl}/${cleanPath}`;
   };
 
   const renderEvidenceImages = (evidence?: any) => {

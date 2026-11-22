@@ -134,28 +134,16 @@ const VerificationProfilePage = () => {
   const getImageUrl = (imagePath: string | null | undefined): string => {
     if (!imagePath) return "";
 
-    // If the image path is already a full URL, return it as is
-    if (imagePath.startsWith("http")) {
+    if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
       return imagePath;
     }
 
-    // Server base URL with port 3000 as seen in reference image
-    const serverIp = "localhost"; // Use the correct IP for your environment
-    const serverPort = "3000";
-    const serverBaseUrl = `http://${serverIp}:${serverPort}`;
+    const mainApiUrl = (
+      import.meta.env.VITE_MAIN_API_URL || "https://ediskarte-api.onrender.com"
+    ).replace(/\/+$/, "");
 
-    // If it includes 'assets/profiles' (as seen in image references)
-    if (imagePath.includes("assets/profiles")) {
-      return `${serverBaseUrl}/${imagePath}`;
-    }
-
-    // For other relative paths, construct the full URL
-    // If the path doesn't start with a slash, add one
-    const formattedPath = imagePath.startsWith("/")
-      ? imagePath
-      : `/${imagePath}`;
-
-    return `${serverBaseUrl}${formattedPath}`;
+    const cleanPath = imagePath.replace(/\\/g, "/").replace(/^\/+/, "");
+    return `${mainApiUrl}/${cleanPath}`;
   };
 
   const handleZoomIn = () => {

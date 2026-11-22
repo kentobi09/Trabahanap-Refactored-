@@ -1,3 +1,7 @@
+import path from "path";
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import express from "express";
 import http from "http";
 import "dotenv/config";
@@ -61,8 +65,16 @@ app.use("/store-otp", authLimiter);
 app.use("/verify-otp", authLimiter);
 app.use("/forgot-password", authLimiter);
 
-app.use("/assets", express.static("assets"));
-app.use(express.static("public"));
+const corsStaticOptions = {
+  setHeaders: (res) => {
+    res.set("Cross-Origin-Resource-Policy", "cross-origin");
+    res.set("Access-Control-Allow-Origin", "*");
+  },
+};
+app.use("/assets", express.static(path.join(__dirname, "assets"), corsStaticOptions));
+app.use("/assets", express.static(path.join(__dirname, "../assets"), corsStaticOptions));
+app.use("/assets", express.static("assets", corsStaticOptions));
+app.use(express.static("public", corsStaticOptions));
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));

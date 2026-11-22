@@ -105,7 +105,7 @@ const JobRequestDetailsPage = () => {
 
   // Determine the base URL for assets. Assumes VITE_API_URL is the root of the backend server (e.g., http://localhost:8000)
   const ASSET_BASE_URL =
-    import.meta.env.VITE_API_URL || "http://localhost:3000";
+    import.meta.env.VITE_MAIN_API_URL || "https://ediskarte-api.onrender.com";
 
   return (
     <MainLayout>
