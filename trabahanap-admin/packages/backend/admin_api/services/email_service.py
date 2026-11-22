@@ -21,15 +21,64 @@ conf = ConnectionConfig(
 
 fm = FastMail(conf)
 
+import asyncio
+import re
+import requests
+
+EMAILJS_SERVICE_ID = os.getenv("EMAILJS_SERVICE_ID", "service_qg94gxv")
+EMAILJS_TEMPLATE_ID = os.getenv("EMAILJS_TEMPLATE_ID_GENERAL", "template_dvylntp")
+EMAILJS_PUBLIC_KEY = os.getenv("EMAILJS_PUBLIC_KEY", "xmhtwwzKLI5RM0v7V")
+EMAILJS_PRIVATE_KEY = os.getenv("EMAILJS_PRIVATE_KEY", "sd32MHxs0xH4vo2P3d3li")
+
+def _send_emailjs_sync(subject: str, recipient: str, body: str) -> bool:
+    clean_body = re.sub(r'<[^>]+>', ' ', body).strip()
+    clean_body = re.sub(r'\s+', ' ', clean_body)
+
+    payload = {
+        "service_id": EMAILJS_SERVICE_ID,
+        "template_id": EMAILJS_TEMPLATE_ID,
+        "user_id": EMAILJS_PUBLIC_KEY,
+        "accessToken": EMAILJS_PRIVATE_KEY,
+        "template_params": {
+            "to_email": recipient,
+            "email": recipient,
+            "subject": subject,
+            "name": recipient.split("@")[0],
+            "message": clean_body,
+        }
+    }
+    try:
+        resp = requests.post("https://api.emailjs.com/api/v1.0/email/send", json=payload, timeout=10)
+        if resp.status_code == 200:
+            print(f"[EmailJS] Successfully sent email to {recipient}: {subject}")
+            return True
+        else:
+            print(f"[EmailJS] Error ({resp.status_code}): {resp.text}")
+    except Exception as e:
+        print(f"[EmailJS] Request failed: {e}")
+    return False
+
 async def send_email_async(subject: str, recipients: List[EmailStr], body: str):
+    # 1. Try EmailJS HTTPS REST API (Port 443 - never blocked by cloud hosts)
+    if EMAILJS_SERVICE_ID and EMAILJS_PUBLIC_KEY:
+        loop = asyncio.get_event_loop()
+        all_ok = True
+        for rec in recipients:
+            ok = await loop.run_in_executor(None, _send_emailjs_sync, subject, str(rec), body)
+            if not ok:
+                all_ok = False
+        if all_ok:
+            return
+
+    # 2. Fallback to FastMail SMTP if EmailJS not available
     message = MessageSchema(
         subject=subject,
         recipients=recipients,
         body=body,
-        subtype="html"  # Send emails as HTML
+        subtype="html"
     )
     try:
-        await fm.send_message(message)
+        await asyncio.wait_for(fm.send_message(message), timeout=4.0)
         print(f"Email sent to {recipients} with subject: {subject}")
     except Exception as e:
         print(f"Failed to send email: {e}")
