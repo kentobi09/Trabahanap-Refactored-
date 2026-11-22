@@ -76,11 +76,57 @@ async function resolveBrevoSender(apiKey, preferredEmail) {
 
 /**
  * Robust Email Dispatcher:
- * 1. Uses Brevo HTTP API (Port 443) if BREVO_API_KEY is configured
- * 2. Uses Resend HTTP API (Port 443) if RESEND_API_KEY is configured
- * 3. Falls back to Nodemailer SMTP with a 4-second timeout for local dev
+ * 1. Uses EmailJS HTTPS API (Port 443) -> Dispatches directly through authenticated Gmail account!
+ * 2. Uses Brevo HTTP API (Port 443) if configured
+ * 3. Uses Resend HTTP API (Port 443) if configured
+ * 4. Falls back to Nodemailer SMTP with a 4-second timeout for local dev
  */
-async function sendEmailHelper({ to, subject, text, html }) {
+async function sendEmailHelper({ to, subject, text, html, otp, time }) {
+  const emailjsServiceId = (process.env.EMAILJS_SERVICE_ID || "service_qg94gxv").trim();
+  const emailjsTemplateId = (process.env.EMAILJS_TEMPLATE_ID || "template_56z3c6l").trim();
+  const emailjsPublicKey = (process.env.EMAILJS_PUBLIC_KEY || "xmhtwwzKLI5RM0v7V").trim();
+  const emailjsPrivateKey = (process.env.EMAILJS_PRIVATE_KEY || "sd32MHxs0xH4vo2P3d3li").trim();
+
+  // 1. Try EmailJS HTTPS REST API (Port 443 - Direct Google Gmail Delivery, passes all SPF/DKIM checks)
+  if (emailjsServiceId && emailjsTemplateId && emailjsPublicKey) {
+    try {
+      console.log(`[Email] Sending via EmailJS HTTPS API to ${to}...`);
+      const payload = {
+        service_id: emailjsServiceId,
+        template_id: emailjsTemplateId,
+        user_id: emailjsPublicKey,
+        accessToken: emailjsPrivateKey,
+        template_params: {
+          to_email: to,
+          email: to,
+          passcode: otp || text,
+          otp: otp || text,
+          time: time || "10 minutes",
+          company_name: "Trabahanap",
+          from_name: "Trabahanap Team",
+        },
+      };
+
+      const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        console.log(`[Email] Successfully sent email via EmailJS to ${to}`);
+        return { success: true, provider: "emailjs" };
+      } else {
+        const errText = await response.text();
+        console.warn(`[Email] EmailJS error (${response.status}):`, errText);
+      }
+    } catch (ejsErr) {
+      console.warn(`[Email] EmailJS request failed:`, ejsErr.message);
+    }
+  }
+
   const preferredSender = process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_FROM || process.env.EMAIL_USER || "trabahanap.works@gmail.com";
   const fromName = process.env.EMAIL_FROM_NAME || "eDiskarte";
 
@@ -209,6 +255,8 @@ export const debugEmail = async (req, res) => {
     subject: "eDiskarte Debug Test Email",
     text: "This is a test email verifying that HTTPS email delivery on Render is functioning properly.",
     html: "<p>This is a test email verifying that <strong>HTTPS email delivery</strong> on Render is functioning properly.</p>",
+    otp: "123456",
+    time: "10 minutes",
   });
 
   return res.json({
@@ -558,11 +606,14 @@ export const storeOTP = async (req, res) => {
     // Send OTP via email using sendEmailHelper (HTTPS API or quick SMTP fallback)
     let delivery = null;
     try {
+      const expiryTimeFormatted = new Date(Date.now() + 10 * 60 * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       delivery = await sendEmailHelper({
         to: email,
-        subject: "Your Verification Code",
+        subject: "Your Verification Code - Trabahanap",
         text: `Your verification code is: ${otp}. It will expire in 10 minutes.`,
         html: `<p>Your verification code is: <strong>${otp}</strong></p><p>It will expire in 10 minutes.</p>`,
+        otp: otp,
+        time: expiryTimeFormatted,
       });
       console.log(`OTP email dispatched for ${email}, result:`, delivery);
     } catch (mailErr) {
