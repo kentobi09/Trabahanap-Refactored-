@@ -114,8 +114,10 @@ const VerificationProfilePage = () => {
   }, [id]);
 
   // Function to generate initials for avatar placeholder
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  const getInitials = (firstName?: string, lastName?: string) => {
+    const f = (firstName || "").trim().charAt(0);
+    const l = (lastName || "").trim().charAt(0);
+    return `${f}${l}`.toUpperCase() || "NA";
   };
 
   // Function to format snake_case to Title Case with spaces
@@ -441,11 +443,11 @@ const VerificationProfilePage = () => {
                 </div>
                 <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                    {`${applicant!.firstName} ${
+                    {`${applicant!.firstName || ""} ${
                       applicant!.middleName ? applicant!.middleName + " " : ""
-                    }${applicant!.lastName}${
+                    }${applicant!.lastName || ""}${
                       applicant!.suffix ? " " + applicant!.suffix : ""
-                    }`}
+                    }`.trim() || "Applicant"}
                   </h2>
                   <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                     {applicant!.verificationStatus === "verified" && (
@@ -521,8 +523,10 @@ const VerificationProfilePage = () => {
                       Gender
                     </h3>
                     <p className="text-base text-gray-900 mt-2">
-                      {applicant!.gender.charAt(0).toUpperCase() +
-                        applicant!.gender.slice(1)}
+                      {applicant!.gender
+                        ? applicant!.gender.charAt(0).toUpperCase() +
+                          applicant!.gender.slice(1)
+                        : "-"}
                     </p>
                   </div>
                   <div>

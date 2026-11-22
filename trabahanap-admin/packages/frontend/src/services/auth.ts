@@ -1,8 +1,9 @@
 import axios from "axios";
 
 const getApiBaseUrl = () => {
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-  return "";
+  return (
+    import.meta.env.VITE_API_URL || "https://ediskarte-admin-api.onrender.com"
+  ).replace(/\/+$/, "");
 };
 const API_BASE_URL = getApiBaseUrl(); 
 const LOGIN_URL = `${API_BASE_URL}/admin/login`;
