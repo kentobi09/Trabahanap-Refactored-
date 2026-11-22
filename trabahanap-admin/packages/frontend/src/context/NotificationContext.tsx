@@ -49,6 +49,12 @@ const NOTIFICATIONS_STORAGE_KEY = 'trabahanap_admin_notifications';
 const MAX_STORED_NOTIFICATIONS = 100; 
 
 const getWebSocketURL = () => {
+  if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL;
+  const adminApi = import.meta.env.VITE_API_URL || "https://ediskarte-admin-api.onrender.com";
+  if (adminApi.startsWith("http")) {
+    const wsBase = adminApi.replace(/^http/, "ws").replace(/\/+$/, "");
+    return `${wsBase}/admin/ws/notifications`;
+  }
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const host = window.location.hostname ? `${window.location.hostname}:8000` : 'localhost:8000';
   return `${protocol}//${host}/admin/ws/notifications`;
