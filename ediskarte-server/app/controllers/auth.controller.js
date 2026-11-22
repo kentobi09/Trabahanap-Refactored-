@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
+import fs from "fs";
 import { PrismaClient } from "@prisma/client";
 import { MongoClient, ObjectId, DBRef } from "mongodb";
 import otpGenerator from "otp-generator";
@@ -438,7 +439,41 @@ export const login = async (req, res) => {
   }
 };
 
+export const fileToDataUrl = (file) => {
+  if (!file) return null;
+  const filePath = file.path || file;
+  if (typeof filePath !== "string") return null;
+  try {
+    if (fs.existsSync(filePath)) {
+      const buffer = fs.readFileSync(filePath);
+      const mime = file.mimetype || "image/jpeg";
+      return `data:${mime};base64,${buffer.toString("base64")}`;
+    }
+  } catch (err) {
+    console.warn("Failed to convert file to data url:", err.message);
+  }
+  return filePath;
+};
+
+export const resolveUploadedImage = (req, fieldNames) => {
+  if (Array.isArray(req.files)) {
+    const file = req.files.find((f) => fieldNames.includes(f.fieldname));
+    if (file) return fileToDataUrl(file);
+  } else if (req.files) {
+    for (const name of fieldNames) {
+      if (req.files[name] && req.files[name][0]) {
+        return fileToDataUrl(req.files[name][0]);
+      }
+    }
+  }
+  return "";
+};
+
 export const signUp = async (req, res) => {
+  const profileImageVal = resolveUploadedImage(req, ["profileImage", "profile_image", "avatar"]);
+  const frontImageVal = resolveUploadedImage(req, ["idValidationFrontImage", "frontImage", "idFront", "idValidationFront"]);
+  const backImageVal = resolveUploadedImage(req, ["idValidationBackImage", "backImage", "idBack", "idValidationBack"]);
+
   if (req.body.userType === "job-seeker") {
     const user = await prisma.user.create({
       data: {
@@ -451,13 +486,9 @@ export const signUp = async (req, res) => {
         age: parseInt(req.body.age),
         emailAddress: req.body.emailAddress,
         password: bcrypt.hashSync(req.body.password, 10),
-        profileImage: req.files ? req.files.profileImage[0].path : "",
-        idValidationFrontImage: req.files
-          ? req.files.idValidationFrontImage[0].path
-          : "",
-        idValidationBackImage: req.files
-          ? req.files.idValidationBackImage[0].path
-          : "",
+        profileImage: profileImageVal,
+        idValidationFrontImage: frontImageVal,
+        idValidationBackImage: backImageVal,
         idType: req.body.idType,
         bio: req.body.bio,
         barangay: req.body.barangay,
@@ -508,13 +539,9 @@ export const signUp = async (req, res) => {
       birthday: new Date(req.body.birthday),
       emailAddress: req.body.emailAddress,
       password: bcrypt.hashSync(req.body.password, 10),
-      profileImage: req.files ? req.files.profileImage[0].path : "",
-      idValidationFrontImage: req.files
-        ? req.files.idValidationFrontImage[0].path
-        : "",
-      idValidationBackImage: req.files
-        ? req.files.idValidationBackImage[0].path
-        : "",
+      profileImage: profileImageVal,
+      idValidationFrontImage: frontImageVal,
+      idValidationBackImage: backImageVal,
       idType: req.body.idType,
       bio: req.body.bio,
       barangay: req.body.barangay,
@@ -786,25 +813,9 @@ export const verifyApplicant = async (req, res) => {
         : "DefaultPass123!";
     const hashedPassword = bcrypt.hashSync(rawPassword, 10);
 
-    let profileImagePath = null;
-    let frontImagePath = null;
-    let backImagePath = null;
-
-    if (Array.isArray(req.files)) {
-      for (const file of req.files) {
-        if (["profileImage", "profile_image", "avatar"].includes(file.fieldname)) {
-          profileImagePath = file.path;
-        } else if (["idValidationFrontImage", "frontImage", "idFront", "idValidationFront"].includes(file.fieldname)) {
-          frontImagePath = file.path;
-        } else if (["idValidationBackImage", "backImage", "idBack", "idValidationBack"].includes(file.fieldname)) {
-          backImagePath = file.path;
-        }
-      }
-    } else if (req.files) {
-      if (req.files.profileImage) profileImagePath = req.files.profileImage[0]?.path || null;
-      if (req.files.idValidationFrontImage) frontImagePath = req.files.idValidationFrontImage[0]?.path || null;
-      if (req.files.idValidationBackImage) backImagePath = req.files.idValidationBackImage[0]?.path || null;
-    }
+    let profileImagePath = resolveUploadedImage(req, ["profileImage", "profile_image", "avatar"]) || null;
+    let frontImagePath = resolveUploadedImage(req, ["idValidationFrontImage", "frontImage", "idFront", "idValidationFront"]) || null;
+    let backImagePath = resolveUploadedImage(req, ["idValidationBackImage", "backImage", "idBack", "idValidationBack"]) || null;
 
     const applicantData = {
       firstName: req.body.firstName || "",

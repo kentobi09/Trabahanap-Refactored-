@@ -256,7 +256,17 @@ export const updateUserProfile = async (req, res) => {
       houseNumber: req.body.houseNumber,
     };
     if (req.file) {
-      userUpdateFields.profileImage = req.file.path;
+      try {
+        if (req.file.path && fs.existsSync(req.file.path)) {
+          const buffer = fs.readFileSync(req.file.path);
+          const mime = req.file.mimetype || "image/jpeg";
+          userUpdateFields.profileImage = `data:${mime};base64,${buffer.toString("base64")}`;
+        } else {
+          userUpdateFields.profileImage = req.file.path;
+        }
+      } catch (e) {
+        userUpdateFields.profileImage = req.file.path;
+      }
     }
     // Remove undefined values
     Object.keys(userUpdateFields).forEach(key => userUpdateFields[key] === undefined && delete userUpdateFields[key]);
